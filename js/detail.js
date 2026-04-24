@@ -152,20 +152,26 @@ const Detail = {
         html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 14px;">';
 
         // 估算净值
-        if (fund.estimateNetValue) {
-            html += `<div><span style="color: #666;">估算净值：</span><span style="font-weight: bold;">${fund.estimateNetValue}</span></div>`;
+        if (fund.estimatedValue) {
+            html += `<div><span style="color: #666;">估算净值：</span><span style="font-weight: bold;">${fund.estimatedValue}</span></div>`;
         }
 
         // 估算日期
-        if (fund.estimateDate) {
-            html += `<div><span style="color: #666;">估算日期：</span><span>${fund.estimateDate}</span></div>`;
+        if (fund.estimatedDate) {
+            html += `<div><span style="color: #666;">估算日期：</span><span>${fund.estimatedDate}</span></div>`;
         }
 
-        // 估算增长率
-        if (fund.estimateGrowthRate) {
-            const rate = parseFloat(fund.estimateGrowthRate);
+        // 估算涨幅
+        if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
+            const rate = parseFloat(fund.estimatedGrowth);
             const color = rate >= 0 ? '#4caf50' : '#f44336';
             html += `<div><span style="color: #666;">估算涨幅：</span><span style="font-weight: bold; color: ${color};">${rate >= 0 ? '+' : ''}${rate}%</span></div>`;
+        }
+
+        // 更新时间
+        if (fund.updateTime) {
+            const updateDate = new Date(fund.updateTime);
+            html += `<div><span style="color: #666;">更新时间：</span><span>${updateDate.toLocaleString('zh-CN')}</span></div>`;
         }
 
         // 基金类型
