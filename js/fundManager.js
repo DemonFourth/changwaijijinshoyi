@@ -4,11 +4,33 @@
  */
 
 const FundManager = {
+    // 统计数据缓存
+    _statsCache: new Map(),
+
     /**
      * 初始化基金管理器
      */
     init() {
         console.log('FundManager initialized');
+
+        // 监听数据变更事件，自动清除缓存
+        EventBus.on(EventType.FUND_UPDATED, () => this.clearStatsCache());
+        EventBus.on(EventType.FUND_DELETED, () => this.clearStatsCache());
+        EventBus.on(EventType.TRADE_ADDED, () => this.clearStatsCache());
+        EventBus.on(EventType.TRADE_DELETED, () => this.clearStatsCache());
+        EventBus.on(EventType.FUND_REFRESHED, () => this.clearStatsCache());
+    },
+
+    /**
+     * 清除统计缓存
+     * @param {string} [fundId] - 指定基金ID，不传则清除全部
+     */
+    clearStatsCache(fundId) {
+        if (fundId) {
+            this._statsCache.delete(fundId);
+        } else {
+            this._statsCache.clear();
+        }
     },
 
     /**
@@ -212,11 +234,16 @@ const FundManager = {
     },
 
     /**
-     * 获取基金统计信息
+     * 获取基金统计信息（带缓存）
      * @param {string} fundId - 基金ID
      * @returns {object}
      */
     getFundStats(fundId) {
+        // 检查缓存
+        if (this._statsCache.has(fundId)) {
+            return this._statsCache.get(fundId);
+        }
+
         const fund = DataService.getFund(fundId);
         if (!fund) {
             return null;
@@ -226,7 +253,25 @@ const FundManager = {
         const netValue = fund.netValue || 0;
 
         // 使用CalculatorV2计算
-        return CalculatorV2.calculateFundProfit(trades, netValue);
+        const stats = CalculatorV2.calculateFundProfit(trades, netValue);
+
+        // 存入缓存
+        this._statsCache.set(fundId, stats);
+
+        return stats;
+    },
+
+    /**
+     * 批量获取基金统计信息（避免重复计算）
+     * @param {array} fundIds - 基金ID数组
+     * @returns {Map} fundId -> stats
+     */
+    batchGetFundStats(fundIds) {
+        const results = new Map();
+        for (const fundId of fundIds) {
+            results.set(fundId, this.getFundStats(fundId));
+        }
+        return results;
     },
 
     /**

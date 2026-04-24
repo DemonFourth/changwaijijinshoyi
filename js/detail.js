@@ -263,34 +263,33 @@ const Detail = {
         const chartContainer = document.getElementById('chart-detail-trend');
         if (!chartContainer) return;
 
-        // 暂时显示交易记录统计图表
-        const trades = TradeManager.getTradesByFund(fund.id);
-        if (trades.length === 0) {
+        const summary = stats.summary;
+
+        // 没有交易记录
+        if (summary.totalCycles === 0) {
             chartContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">暂无交易记录</p>';
             return;
         }
 
-        // 简单的统计图表（使用HTML/CSS实现）
-        let html = '<div style="padding: 20px;">';
-        html += '<h4 style="margin-bottom: 15px;">交易统计</h4>';
-
-        // 统计数据
-        let buyCount = 0, sellCount = 0;
-        let buyAmount = 0, sellAmount = 0;
-
-        trades.forEach(t => {
-            if (t.type === 'buy') {
-                buyCount++;
-                buyAmount += parseFloat(t.amount);
-            } else if (t.type === 'sell') {
-                sellCount++;
-                sellAmount += parseFloat(t.amount);
-            }
-        });
-
+        // 使用stats中的数据，不重复计算
+        const buyAmount = summary.totalBuyAmount;
+        const sellAmount = summary.totalSellAmount;
         const totalAmount = buyAmount + sellAmount;
         const buyPercent = totalAmount > 0 ? (buyAmount / totalAmount * 100) : 0;
         const sellPercent = totalAmount > 0 ? (sellAmount / totalAmount * 100) : 0;
+
+        // 买入/卖出笔数从周期数据中统计
+        let buyCount = 0, sellCount = 0;
+        stats.cycles.forEach(cycle => {
+            cycle.trades.forEach(t => {
+                if (t.type === 'buy') buyCount++;
+                else if (t.type === 'sell') sellCount++;
+            });
+        });
+
+        // 简单的统计图表（使用HTML/CSS实现）
+        let html = '<div style="padding: 20px;">';
+        html += '<h4 style="margin-bottom: 15px;">交易统计</h4>';
 
         html += '<div style="margin-bottom: 20px;">';
         html += `<div style="margin-bottom: 10px;"><span style="color: #4caf50;">买入 ${buyCount}笔</span> vs <span style="color: #f44336;">卖出 ${sellCount}笔</span></div>`;
@@ -304,22 +303,20 @@ const Detail = {
         html += '</div>';
         html += '</div>';
 
-        // 收益趋势
-        if (stats && stats.summary) {
-            html += '<div style="border-top: 1px solid #eee; padding-top: 15px;">';
-            html += '<h4 style="margin-bottom: 10px;">收益情况</h4>';
-            html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">';
-            html += '<div style="padding: 10px; background: #f9f9f9; border-radius: 4px;">';
-            html += '<div style="color: #666; font-size: 12px;">已实现收益</div>';
-            html += `<div style="font-weight: bold; color: ${stats.summary.totalRealizedProfit >= 0 ? '#4caf50' : '#f44336'};">¥${stats.summary.totalRealizedProfit.toFixed(2)}</div>`;
-            html += '</div>';
-            html += '<div style="padding: 10px; background: #f9f9f9; border-radius: 4px;">';
-            html += '<div style="color: #666; font-size: 12px;">浮动收益</div>';
-            html += `<div style="font-weight: bold; color: ${stats.summary.totalFloatingProfit >= 0 ? '#4caf50' : '#f44336'};">¥${(stats.summary.totalFloatingProfit || 0).toFixed(2)}</div>`;
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-        }
+        // 收益趋势 - 直接使用stats数据
+        html += '<div style="border-top: 1px solid #eee; padding-top: 15px;">';
+        html += '<h4 style="margin-bottom: 10px;">收益情况</h4>';
+        html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">';
+        html += '<div style="padding: 10px; background: #f9f9f9; border-radius: 4px;">';
+        html += '<div style="color: #666; font-size: 12px;">已实现收益</div>';
+        html += `<div style="font-weight: bold; color: ${summary.totalRealizedProfit >= 0 ? '#4caf50' : '#f44336'};">¥${summary.totalRealizedProfit.toFixed(2)}</div>`;
+        html += '</div>';
+        html += '<div style="padding: 10px; background: #f9f9f9; border-radius: 4px;">';
+        html += '<div style="color: #666; font-size: 12px;">浮动收益</div>';
+        html += `<div style="font-weight: bold; color: ${(summary.totalFloatingProfit || 0) >= 0 ? '#4caf50' : '#f44336'};">¥${(summary.totalFloatingProfit || 0).toFixed(2)}</div>`;
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
 
         html += '</div>';
         chartContainer.innerHTML = html;
