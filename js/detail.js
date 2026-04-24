@@ -110,8 +110,91 @@ const Detail = {
         if (title) title.textContent = fund.name;
         if (code) code.textContent = fund.code;
         if (name) name.textContent = fund.name;
-        if (netValue) netValue.textContent = Utils.formatNumber(fund.netValue);
-        if (netDate) netDate.textContent = fund.netValueDate;
+
+        // 净值显示 - 保持API返回的精度
+        if (netValue) {
+            if (fund.netValue) {
+                // 直接显示，不格式化，保持原始精度
+                netValue.textContent = fund.netValue;
+            } else {
+                netValue.textContent = '-';
+            }
+        }
+
+        if (netDate) netDate.textContent = fund.netValueDate || '-';
+
+        // 显示更多基金信息（如果API返回了）
+        this.updateExtraFundInfo(fund);
+    },
+
+    /**
+     * 更新额外的基金信息
+     * @param {object} fund - 基金对象
+     */
+    updateExtraFundInfo(fund) {
+        // 查找或创建额外信息容器
+        let extraInfo = document.getElementById('extra-fund-info');
+        if (!extraInfo) {
+            // 在fund-info区域后添加
+            const fundInfo = document.querySelector('.fund-info');
+            if (fundInfo) {
+                extraInfo = document.createElement('div');
+                extraInfo.id = 'extra-fund-info';
+                extraInfo.style.cssText = 'margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 8px;';
+                fundInfo.appendChild(extraInfo);
+            }
+        }
+
+        if (!extraInfo) return;
+
+        // 构建额外信息HTML
+        let html = '<h4 style="margin-bottom: 10px;">详细信息</h4>';
+        html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 14px;">';
+
+        // 估算净值
+        if (fund.estimateNetValue) {
+            html += `<div><span style="color: #666;">估算净值：</span><span style="font-weight: bold;">${fund.estimateNetValue}</span></div>`;
+        }
+
+        // 估算日期
+        if (fund.estimateDate) {
+            html += `<div><span style="color: #666;">估算日期：</span><span>${fund.estimateDate}</span></div>`;
+        }
+
+        // 估算增长率
+        if (fund.estimateGrowthRate) {
+            const rate = parseFloat(fund.estimateGrowthRate);
+            const color = rate >= 0 ? '#4caf50' : '#f44336';
+            html += `<div><span style="color: #666;">估算涨幅：</span><span style="font-weight: bold; color: ${color};">${rate >= 0 ? '+' : ''}${rate}%</span></div>`;
+        }
+
+        // 基金类型
+        if (fund.fundType) {
+            html += `<div><span style="color: #666;">基金类型：</span><span>${fund.fundType}</span></div>`;
+        }
+
+        // 基金规模
+        if (fund.fundScale) {
+            html += `<div><span style="color: #666;">基金规模：</span><span>${fund.fundScale}</span></div>`;
+        }
+
+        // 基金经理
+        if (fund.fundManager) {
+            html += `<div><span style="color: #666;">基金经理：</span><span>${fund.fundManager}</span></div>`;
+        }
+
+        // 成立日期
+        if (fund.establishDate) {
+            html += `<div><span style="color: #666;">成立日期：</span><span>${fund.establishDate}</span></div>`;
+        }
+
+        // 公司
+        if (fund.company) {
+            html += `<div style="grid-column: span 2;"><span style="color: #666;">基金公司：</span><span>${fund.company}</span></div>`;
+        }
+
+        html += '</div>';
+        extraInfo.innerHTML = html;
     },
 
     /**
@@ -120,7 +203,12 @@ const Detail = {
      */
     updateHoldingInfo(fund) {
         const stats = FundManager.getFundStats(fund.id);
-        if (!stats) return;
+        if (!stats) {
+            console.warn('No stats for fund:', fund.id);
+            return;
+        }
+
+        console.log('Stats data:', stats);
 
         const summary = stats.summary;
         const currentHolding = summary.currentHolding;
@@ -192,6 +280,80 @@ const Detail = {
         if (cycleList) {
             this.renderCycleList(stats.cycles);
         }
+
+        // 更新图表区域
+        this.updateChart(fund, stats);
+    },
+
+    /**
+     * 更新图表
+     * @param {object} fund - 基金对象
+     * @param {object} stats - 统计数据
+     */
+    updateChart(fund, stats) {
+        const chartContainer = document.getElementById('chart-detail-trend');
+        if (!chartContainer) return;
+
+        // 暂时显示交易记录统计图表
+        const trades = TradeManager.getTradesByFund(fund.id);
+        if (trades.length === 0) {
+            chartContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">暂无交易记录</p>';
+            return;
+        }
+
+        // 简单的统计图表（使用HTML/CSS实现）
+        let html = '<div style="padding: 20px;">';
+        html += '<h4 style="margin-bottom: 15px;">交易统计</h4>';
+
+        // 统计数据
+        let buyCount = 0, sellCount = 0;
+        let buyAmount = 0, sellAmount = 0;
+
+        trades.forEach(t => {
+            if (t.type === 'buy') {
+                buyCount++;
+                buyAmount += parseFloat(t.amount);
+            } else if (t.type === 'sell') {
+                sellCount++;
+                sellAmount += parseFloat(t.amount);
+            }
+        });
+
+        const totalAmount = buyAmount + sellAmount;
+        const buyPercent = totalAmount > 0 ? (buyAmount / totalAmount * 100) : 0;
+        const sellPercent = totalAmount > 0 ? (sellAmount / totalAmount * 100) : 0;
+
+        html += '<div style="margin-bottom: 20px;">';
+        html += `<div style="margin-bottom: 10px;"><span style="color: #4caf50;">买入 ${buyCount}笔</span> vs <span style="color: #f44336;">卖出 ${sellCount}笔</span></div>`;
+        html += '<div style="display: flex; height: 30px; border-radius: 4px; overflow: hidden;">';
+        html += `<div style="width: ${buyPercent}%; background: #4caf50; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">${buyPercent > 10 ? '买入' : ''}</div>`;
+        html += `<div style="width: ${sellPercent}%; background: #f44336; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">${sellPercent > 10 ? '卖出' : ''}</div>`;
+        html += '</div>';
+        html += '<div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px; color: #666;">';
+        html += `<span>¥${buyAmount.toFixed(2)}</span>`;
+        html += `<span>¥${sellAmount.toFixed(2)}</span>`;
+        html += '</div>';
+        html += '</div>';
+
+        // 收益趋势
+        if (stats && stats.summary) {
+            html += '<div style="border-top: 1px solid #eee; padding-top: 15px;">';
+            html += '<h4 style="margin-bottom: 10px;">收益情况</h4>';
+            html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">';
+            html += '<div style="padding: 10px; background: #f9f9f9; border-radius: 4px;">';
+            html += '<div style="color: #666; font-size: 12px;">已实现收益</div>';
+            html += `<div style="font-weight: bold; color: ${stats.summary.totalRealizedProfit >= 0 ? '#4caf50' : '#f44336'};">¥${stats.summary.totalRealizedProfit.toFixed(2)}</div>`;
+            html += '</div>';
+            html += '<div style="padding: 10px; background: #f9f9f9; border-radius: 4px;">';
+            html += '<div style="color: #666; font-size: 12px;">浮动收益</div>';
+            html += `<div style="font-weight: bold; color: ${stats.summary.totalFloatingProfit >= 0 ? '#4caf50' : '#f44336'};">¥${(stats.summary.totalFloatingProfit || 0).toFixed(2)}</div>`;
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        chartContainer.innerHTML = html;
     },
 
     /**
