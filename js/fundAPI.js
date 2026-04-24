@@ -108,18 +108,44 @@ const FundAPI = {
                 console.log('=== JSONP Callback Debug ===');
                 console.log('1. Raw data received:', data);
                 console.log('2. Data type:', typeof data);
-                console.log('3. Fund code:', data ? data.fundcode : 'N/A');
-                console.log('4. Fund name (raw):', data ? data.name : 'N/A');
+                
+                // 如果data是字符串，尝试解析JSONP格式
+                if (typeof data === 'string') {
+                    console.log('3. Data is string, attempting to parse JSONP...');
+                    try {
+                        // 移除jsonpgz(和末尾的);
+                        const jsonString = data.replace(/^[^(]*\(|\);?$/g, '');
+                        console.log('4. Cleaned JSON string:', jsonString);
+                        
+                        const parsedData = JSON.parse(jsonString);
+                        console.log('5. Parsed data:', parsedData);
+                        data = parsedData;
+                    } catch (e) {
+                        console.error('Failed to parse JSONP string:', e);
+                        console.error('Raw string:', data);
+                        cleanup();
+                        if (originalJsonpgz) {
+                            window.jsonpgz = originalJsonpgz;
+                        } else {
+                            delete window.jsonpgz;
+                        }
+                        reject(new Error('JSONP parse error: ' + e.message));
+                        return;
+                    }
+                }
+                
+                console.log('6. Fund code:', data ? data.fundcode : 'N/A');
+                console.log('7. Fund name (raw):', data ? data.name : 'N/A');
 
                 // 修复编码问题：如果name是乱码，尝试修复
                 if (data && data.name) {
                     const originalName = data.name;
-                    console.log('5. Original name char codes:',
+                    console.log('8. Original name char codes:',
                         Array.from(originalName).slice(0, 10).map(c => `${c}(${c.charCodeAt(0)})`));
 
                     // 检查是否是乱码（不包含中文字符）
                     const hasChinese = /[\u4e00-\u9fa5]/.test(originalName);
-                    console.log('6. Has Chinese characters:', hasChinese);
+                    console.log('9. Has Chinese characters:', hasChinese);
 
                     // 如果名称看起来像乱码（包含非ASCII字符但不是中文），尝试修复
                     const isLikelyGarbled = originalName.includes('�') || 
@@ -131,10 +157,10 @@ const FundAPI = {
                         originalName.includes('骞宠　') ||
                         originalName.includes('娣峰悎');
 
-                    console.log('7. Is likely garbled:', isLikelyGarbled);
+                    console.log('10. Is likely garbled:', isLikelyGarbled);
 
                     if (isLikelyGarbled) {
-                        console.log('8. Attempting to fix garbled name...');
+                        console.log('11. Attempting to fix garbled name...');
                         
                         // 尝试多种编码修复方法
                         let fixedName = originalName;
@@ -151,7 +177,7 @@ const FundAPI = {
                             // 尝试GBK解码
                             const decoder = new TextDecoder('gbk');
                             const gbkDecoded = decoder.decode(bytes);
-                            console.log('9. GBK decoded:', gbkDecoded);
+                            console.log('12. GBK decoded:', gbkDecoded);
                             
                             if (/[\u4e00-\u9fa5]/.test(gbkDecoded)) {
                                 fixedName = gbkDecoded;
@@ -160,7 +186,7 @@ const FundAPI = {
                                 // 方法2: 尝试UTF-8解码（如果被双重编码）
                                 const utf8Decoder = new TextDecoder('utf-8');
                                 const utf8Decoded = utf8Decoder.decode(bytes);
-                                console.log('10. UTF-8 decoded:', utf8Decoded);
+                                console.log('13. UTF-8 decoded:', utf8Decoded);
                                 
                                 if (/[\u4e00-\u9fa5]/.test(utf8Decoded)) {
                                     fixedName = utf8Decoded;
