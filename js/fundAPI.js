@@ -105,24 +105,19 @@ const FundAPI = {
 
             // 创建临时的jsonpgz回调函数
             window.jsonpgz = (data) => {
-                console.log('=== JSONP Callback Debug ===');
-                console.log('1. Raw data received:', data);
-                console.log('2. Data type:', typeof data);
+                console.log('=== JSONP Callback ===');
+                console.log('Data type:', typeof data);
+                console.log('Fund code:', data ? data.fundcode : 'N/A');
+                console.log('Fund name:', data ? data.name : 'N/A');
                 
                 // 如果data是字符串，尝试解析JSONP格式
                 if (typeof data === 'string') {
-                    console.log('3. Data is string, attempting to parse JSONP...');
                     try {
-                        // 移除jsonpgz(和末尾的);
                         const jsonString = data.replace(/^[^(]*\(|\);?$/g, '');
-                        console.log('4. Cleaned JSON string:', jsonString);
-                        
-                        const parsedData = JSON.parse(jsonString);
-                        console.log('5. Parsed data:', parsedData);
-                        data = parsedData;
+                        data = JSON.parse(jsonString);
+                        console.log('Parsed JSONP string:', data);
                     } catch (e) {
-                        console.error('Failed to parse JSONP string:', e);
-                        console.error('Raw string:', data);
+                        console.error('JSONP parse error:', e);
                         cleanup();
                         if (originalJsonpgz) {
                             window.jsonpgz = originalJsonpgz;
@@ -131,80 +126,6 @@ const FundAPI = {
                         }
                         reject(new Error('JSONP parse error: ' + e.message));
                         return;
-                    }
-                }
-                
-                console.log('6. Fund code:', data ? data.fundcode : 'N/A');
-                console.log('7. Fund name (raw):', data ? data.name : 'N/A');
-
-                // 修复编码问题：如果name是乱码，尝试修复
-                if (data && data.name) {
-                    const originalName = data.name;
-                    console.log('8. Original name char codes:',
-                        Array.from(originalName).slice(0, 10).map(c => `${c}(${c.charCodeAt(0)})`));
-
-                    // 检查是否是乱码（不包含中文字符）
-                    const hasChinese = /[\u4e00-\u9fa5]/.test(originalName);
-                    console.log('9. Has Chinese characters:', hasChinese);
-
-                    // 如果名称看起来像乱码（包含非ASCII字符但不是中文），尝试修复
-                    const isLikelyGarbled = originalName.includes('�') || 
-                        (originalName.match(/[^\x00-\x7F]/g) && !hasChinese) ||
-                        originalName.includes('浜ら摱') || // 已知的乱码模式
-                        originalName.includes('瀹氭湡') ||
-                        originalName.includes('鏀粯') ||
-                        originalName.includes('鍙屾伅') ||
-                        originalName.includes('骞宠　') ||
-                        originalName.includes('娣峰悎');
-
-                    console.log('10. Is likely garbled:', isLikelyGarbled);
-
-                    if (isLikelyGarbled) {
-                        console.log('11. Attempting to fix garbled name...');
-                        
-                        // 尝试多种编码修复方法
-                        let fixedName = originalName;
-                        
-                        // 方法1: 尝试GBK -> UTF-8 转换（常见的中文乱码）
-                        try {
-                            // 假设原始是GBK编码，被错误地当作UTF-8读取
-                            // 常见乱码模式：UTF-8字节被当作Latin-1读取
-                            const bytes = new Uint8Array(originalName.length);
-                            for (let i = 0; i < originalName.length; i++) {
-                                bytes[i] = originalName.charCodeAt(i);
-                            }
-                            
-                            // 尝试GBK解码
-                            const decoder = new TextDecoder('gbk');
-                            const gbkDecoded = decoder.decode(bytes);
-                            console.log('12. GBK decoded:', gbkDecoded);
-                            
-                            if (/[\u4e00-\u9fa5]/.test(gbkDecoded)) {
-                                fixedName = gbkDecoded;
-                                console.log('✅ GBK decoding successful');
-                            } else {
-                                // 方法2: 尝试UTF-8解码（如果被双重编码）
-                                const utf8Decoder = new TextDecoder('utf-8');
-                                const utf8Decoded = utf8Decoder.decode(bytes);
-                                console.log('13. UTF-8 decoded:', utf8Decoded);
-                                
-                                if (/[\u4e00-\u9fa5]/.test(utf8Decoded)) {
-                                    fixedName = utf8Decoded;
-                                    console.log('✅ UTF-8 decoding successful');
-                                }
-                            }
-                        } catch (e) {
-                            console.error('Decoding failed:', e);
-                        }
-                        
-                        // 如果修复成功，更新数据
-                        if (fixedName !== originalName && /[\u4e00-\u9fa5]/.test(fixedName)) {
-                            data.name = fixedName;
-                            console.log('✅ Name fixed from:', originalName);
-                            console.log('✅ Name fixed to:', fixedName);
-                        } else {
-                            console.log('⚠️ Could not fix name, keeping original');
-                        }
                     }
                 }
 
@@ -313,25 +234,6 @@ const FundAPI = {
         if (now - cached.timestamp > ttl) {
             this.cache.delete(fundCode);
             return null;
-        }
-
-        // 检查缓存数据是否是乱码
-        if (cached.data && cached.data.name) {
-            const hasChinese = /[\u4e00-\u9fa5]/.test(cached.data.name);
-            const isLikelyGarbled = cached.data.name.includes('�') || 
-                (cached.data.name.match(/[^\x00-\x7F]/g) && !hasChinese) ||
-                cached.data.name.includes('浜ら摱') ||
-                cached.data.name.includes('瀹氭湡') ||
-                cached.data.name.includes('鏀粯') ||
-                cached.data.name.includes('鍙屾伅') ||
-                cached.data.name.includes('骞宠　') ||
-                cached.data.name.includes('娣峰悎');
-            
-            if (isLikelyGarbled) {
-                console.log('⚠️ Cached data is garbled, invalidating cache for', fundCode);
-                this.cache.delete(fundCode);
-                return null;
-            }
         }
 
         return cached.data;
