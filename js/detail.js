@@ -106,6 +106,9 @@ const Detail = {
         const name = document.getElementById('info-name');
         const netValue = document.getElementById('info-net-value');
         const netDate = document.getElementById('info-net-date');
+        const estimatedValue = document.getElementById('info-estimated-value');
+        const estimatedGrowth = document.getElementById('info-estimated-growth');
+        const updateTime = document.getElementById('info-update-time');
 
         if (title) title.textContent = fund.name;
         if (code) code.textContent = fund.code;
@@ -123,84 +126,37 @@ const Detail = {
 
         if (netDate) netDate.textContent = fund.netValueDate || '-';
 
-        // 显示更多基金信息（如果API返回了）
-        this.updateExtraFundInfo(fund);
-    },
-
-    /**
-     * 更新额外的基金信息
-     * @param {object} fund - 基金对象
-     */
-    updateExtraFundInfo(fund) {
-        // 查找或创建额外信息容器
-        let extraInfo = document.getElementById('extra-fund-info');
-        if (!extraInfo) {
-            // 在fund-info区域后添加
-            const fundInfo = document.querySelector('.fund-info');
-            if (fundInfo) {
-                extraInfo = document.createElement('div');
-                extraInfo.id = 'extra-fund-info';
-                extraInfo.style.cssText = 'margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 8px;';
-                fundInfo.appendChild(extraInfo);
+        // 估算净值
+        if (estimatedValue) {
+            if (fund.estimatedValue) {
+                estimatedValue.textContent = fund.estimatedValue;
+            } else {
+                estimatedValue.textContent = '-';
             }
         }
 
-        if (!extraInfo) return;
-
-        // 构建额外信息HTML
-        let html = '<h4 style="margin-bottom: 10px;">详细信息</h4>';
-        html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 14px;">';
-
-        // 估算净值
-        if (fund.estimatedValue) {
-            html += `<div><span style="color: #666;">估算净值：</span><span style="font-weight: bold;">${fund.estimatedValue}</span></div>`;
-        }
-
-        // 估算日期
-        if (fund.estimatedDate) {
-            html += `<div><span style="color: #666;">估算日期：</span><span>${fund.estimatedDate}</span></div>`;
-        }
-
         // 估算涨幅
-        if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
-            const rate = parseFloat(fund.estimatedGrowth);
-            const color = rate >= 0 ? '#4caf50' : '#f44336';
-            html += `<div><span style="color: #666;">估算涨幅：</span><span style="font-weight: bold; color: ${color};">${rate >= 0 ? '+' : ''}${rate}%</span></div>`;
+        if (estimatedGrowth) {
+            if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
+                const rate = parseFloat(fund.estimatedGrowth);
+                const color = rate >= 0 ? '#4caf50' : '#f44336';
+                estimatedGrowth.textContent = `${rate >= 0 ? '+' : ''}${rate}%`;
+                estimatedGrowth.style.color = color;
+                estimatedGrowth.style.fontWeight = 'bold';
+            } else {
+                estimatedGrowth.textContent = '-';
+            }
         }
 
         // 更新时间
-        if (fund.updateTime) {
-            const updateDate = new Date(fund.updateTime);
-            html += `<div><span style="color: #666;">更新时间：</span><span>${updateDate.toLocaleString('zh-CN')}</span></div>`;
+        if (updateTime) {
+            if (fund.updateTime) {
+                const updateDate = new Date(fund.updateTime);
+                updateTime.textContent = updateDate.toLocaleString('zh-CN');
+            } else {
+                updateTime.textContent = '-';
+            }
         }
-
-        // 基金类型
-        if (fund.fundType) {
-            html += `<div><span style="color: #666;">基金类型：</span><span>${fund.fundType}</span></div>`;
-        }
-
-        // 基金规模
-        if (fund.fundScale) {
-            html += `<div><span style="color: #666;">基金规模：</span><span>${fund.fundScale}</span></div>`;
-        }
-
-        // 基金经理
-        if (fund.fundManager) {
-            html += `<div><span style="color: #666;">基金经理：</span><span>${fund.fundManager}</span></div>`;
-        }
-
-        // 成立日期
-        if (fund.establishDate) {
-            html += `<div><span style="color: #666;">成立日期：</span><span>${fund.establishDate}</span></div>`;
-        }
-
-        // 公司
-        if (fund.company) {
-            html += `<div style="grid-column: span 2;"><span style="color: #666;">基金公司：</span><span>${fund.company}</span></div>`;
-        }
-
-        html += '</div>';
-        extraInfo.innerHTML = html;
     },
 
     /**
