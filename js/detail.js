@@ -120,10 +120,12 @@ const Detail = {
      */
     updateHoldingInfo(fund) {
         const stats = FundManager.getFundStats(fund.id);
-        const holding = stats ? stats.holding : {};
-        const realized = stats ? stats.realized : {};
-        const total = stats ? stats.total : {};
+        if (!stats) return;
 
+        const summary = stats.summary;
+        const currentHolding = summary.currentHolding;
+
+        // 基础持仓信息
         const shares = document.getElementById('holding-shares');
         const cost = document.getElementById('holding-cost');
         const costPerShare = document.getElementById('cost-per-share');
@@ -131,43 +133,114 @@ const Detail = {
         const profit = document.getElementById('holding-profit');
         const rate = document.getElementById('holding-rate');
 
-        // 新增：已实现收益和总收益显示
+        // 已实现收益和总收益
         const realizedProfit = document.getElementById('realized-profit');
         const totalProfit = document.getElementById('total-profit');
         const totalRate = document.getElementById('total-rate');
 
-        if (shares) shares.textContent = Utils.formatNumber(holding.shares || 0);
-        if (cost) cost.textContent = Utils.formatMoney(holding.cost || 0);
-        if (costPerShare) costPerShare.textContent = Utils.formatMoney(holding.costPerShare || 0);
-        if (value) value.textContent = Utils.formatMoney(holding.value || 0);
+        // 持仓周期信息
+        const cycleCount = document.getElementById('cycle-count');
+        const closedCycles = document.getElementById('closed-cycles');
+        const activeCycles = document.getElementById('active-cycles');
+        const cycleList = document.getElementById('cycle-list');
+
+        // 显示基础持仓
+        if (shares) shares.textContent = Utils.formatNumber(currentHolding.shares || 0);
+        if (cost) cost.textContent = Utils.formatMoney(currentHolding.cost || 0);
+        if (costPerShare) costPerShare.textContent = Utils.formatMoney(
+            currentHolding.shares > 0 ? currentHolding.cost / currentHolding.shares : 0
+        );
+        if (value) value.textContent = Utils.formatMoney(currentHolding.value || 0);
 
         if (profit) {
-            profit.textContent = Utils.formatMoney(holding.profit || 0);
-            profit.className = `value ${Utils.getValueColor(holding.profit || 0)}`;
+            profit.textContent = Utils.formatMoney(currentHolding.floatingProfit || 0);
+            profit.className = `value ${Utils.getValueColor(currentHolding.floatingProfit || 0)}`;
         }
 
         if (rate) {
-            rate.textContent = Utils.formatPercent(holding.profitRate || 0);
-            rate.className = `value ${Utils.getValueColor(holding.profitRate || 0)}`;
+            const holdingRate = currentHolding.cost > 0
+                ? (currentHolding.floatingProfit / currentHolding.cost * 100)
+                : 0;
+            rate.textContent = Utils.formatPercent(holdingRate);
+            rate.className = `value ${Utils.getValueColor(holdingRate)}`;
         }
 
         // 显示已实现收益
         if (realizedProfit) {
-            realizedProfit.textContent = Utils.formatMoney(realized.profit || 0);
-            realizedProfit.className = `value ${Utils.getValueColor(realized.profit || 0)}`;
+            realizedProfit.textContent = Utils.formatMoney(summary.totalRealizedProfit || 0);
+            realizedProfit.className = `value ${Utils.getValueColor(summary.totalRealizedProfit || 0)}`;
         }
 
         // 显示总收益
         if (totalProfit) {
-            totalProfit.textContent = Utils.formatMoney(total.amount || 0);
-            totalProfit.className = `value ${Utils.getValueColor(total.amount || 0)}`;
+            totalProfit.textContent = Utils.formatMoney(summary.totalProfit || 0);
+            totalProfit.className = `value ${Utils.getValueColor(summary.totalProfit || 0)}`;
         }
 
-        // 显示总收益率（这才是真正的收益率）
+        // 显示总收益率
         if (totalRate) {
-            totalRate.textContent = Utils.formatPercent(total.rate || 0);
-            totalRate.className = `value ${Utils.getValueColor(total.rate || 0)}`;
+            totalRate.textContent = Utils.formatPercent(summary.profitRate || 0);
+            totalRate.className = `value ${Utils.getValueColor(summary.profitRate || 0)}`;
         }
+
+        // 显示持仓周期统计
+        if (cycleCount) cycleCount.textContent = summary.totalCycles;
+        if (closedCycles) closedCycles.textContent = summary.closedCycles;
+        if (activeCycles) activeCycles.textContent = summary.activeCycles;
+
+        // 显示周期列表
+        if (cycleList) {
+            this.renderCycleList(stats.cycles);
+        }
+    },
+
+    /**
+     * 渲染持仓周期列表
+     * @param {array} cycles - 持仓周期数组
+     */
+    renderCycleList(cycles) {
+        const cycleList = document.getElementById('cycle-list');
+        if (!cycleList) return;
+
+        if (!cycles || cycles.length === 0) {
+            cycleList.innerHTML = '<p style="color: #999; text-align: center;">暂无持仓周期</p>';
+            return;
+        }
+
+        let html = '';
+        cycles.forEach(cycle => {
+            const statusText = cycle.status === 'closed' ? '已结束' : '进行中';
+            const statusColor = cycle.status === 'closed' ? '#4caf50' : '#ff9800';
+
+            html += `
+                <div class="cycle-item" style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 8px; border-left: 4px solid ${statusColor};">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-weight: bold; color: ${statusColor};">周期${cycle.id} (${statusText})</span>
+                        <span style="color: #666; font-size: 14px;">${cycle.startDate} ~ ${cycle.endDate || '至今'}</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 14px;">
+                        <div>
+                            <span style="color: #666;">投入：</span>
+                            <span style="font-weight: bold;">¥${cycle.totalInvest.toFixed(2)}</span>
+                        </div>
+                        <div>
+                            <span style="color: #666;">收益：</span>
+                            <span style="font-weight: bold; color: ${cycle.totalProfit >= 0 ? '#4caf50' : '#f44336'};">¥${cycle.totalProfit.toFixed(2)}</span>
+                        </div>
+                        <div>
+                            <span style="color: #666;">收益率：</span>
+                            <span style="font-weight: bold; color: ${cycle.profitRate >= 0 ? '#4caf50' : '#f44336'};">${cycle.profitRate.toFixed(2)}%</span>
+                        </div>
+                        <div>
+                            <span style="color: #666;">持仓天数：</span>
+                            <span style="font-weight: bold;">${cycle.holdingDays || 0}天</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        cycleList.innerHTML = html;
     },
 
     /**

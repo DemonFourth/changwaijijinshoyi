@@ -134,6 +134,28 @@
                     </div>
                 </div>
 
+                <!-- 持仓周期 -->
+                <div class="cycle-info-section" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">
+                    <h3 style="margin-bottom: 15px;">持仓周期</h3>
+                    <div class="cycle-summary" style="display: flex; gap: 20px; margin-bottom: 15px;">
+                        <div class="cycle-stat-item">
+                            <span class="label">总周期数：</span>
+                            <span id="cycle-count" class="value">0</span>
+                        </div>
+                        <div class="cycle-stat-item">
+                            <span class="label">已结束：</span>
+                            <span id="closed-cycles" class="value">0</span>
+                        </div>
+                        <div class="cycle-stat-item">
+                            <span class="label">进行中：</span>
+                            <span id="active-cycles" class="value">0</span>
+                        </div>
+                    </div>
+                    <div id="cycle-list" style="margin-top: 10px;">
+                        <!-- 周期列表将在这里动态生成 -->
+                    </div>
+                </div>
+
                 <!-- 交易记录 -->
                 <div class="trade-records">
                     <div class="records-header">
