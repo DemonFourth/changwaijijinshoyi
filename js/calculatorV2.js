@@ -63,7 +63,7 @@ const CalculatorV2 = {
             } else if (trade.type === 'sell') {
                 // 卖出
                 holdingShares -= parseFloat(trade.shares);
-                
+
                 if (currentCycle) {
                     currentCycle.trades.push(trade);
                 }
@@ -95,17 +95,17 @@ const CalculatorV2 = {
      * @returns {object} 周期收益对象
      */
     calculateCycleProfit(cycle, currentNetValue) {
-        let totalInvest = 0;        // 总投入(买入金额+手续费)
-        let totalBuyAmount = 0;     // 总买入金额
-        let totalSellAmount = 0;    // 总卖出金额
-        let totalBuyFee = 0;        // 总买入手续费
-        let totalSellFee = 0;       // 总卖出手续费
-        let totalShares = 0;        // 总买入份额
-        let holdingShares = 0;      // 持有份额
-        let holdingCost = 0;        // 持仓成本
-        let realizedProfit = 0;     // 已实现收益
+        let totalInvest = 0; // 总投入(买入金额+手续费)
+        let totalBuyAmount = 0; // 总买入金额
+        let totalSellAmount = 0; // 总卖出金额
+        let totalBuyFee = 0; // 总买入手续费
+        let totalSellFee = 0; // 总卖出手续费
+        let totalShares = 0; // 总买入份额
+        let holdingShares = 0; // 持有份额
+        let holdingCost = 0; // 持仓成本
+        let realizedProfit = 0; // 已实现收益
         const realizedDetails = []; // 已实现收益明细
-        const tradeDetails = [];    // 交易明细
+        const tradeDetails = []; // 交易明细
 
         // FIFO队列
         const holdingQueue = [];
@@ -228,31 +228,31 @@ const CalculatorV2 = {
             totalBuyAmount,
             totalBuyFee,
             totalShares,
-            
+
             // 卖出统计
             totalSellAmount,
             totalSellFee,
             sellCount: realizedDetails.filter(d => d.type !== 'dividend').length,
-            
+
             // 持仓信息
             holdingShares,
             holdingCost,
             holdingValue,
             holdingDays,
-            
+
             // 收益信息
             realizedProfit,
             floatingProfit,
             totalProfit,
             profitRate,
-            
+
             // 明细
             realizedDetails,
             tradeDetails
         };
     },
 
-    
+
     /**
      * 计算持仓天数
      * @param {object} cycle - 持仓周期对象
@@ -282,7 +282,7 @@ const CalculatorV2 = {
         let closedCycles = 0;
         let activeCycles = 0;
 
-        let currentHolding = {
+        const currentHolding = {
             shares: 0,
             cost: 0,
             value: 0,
@@ -322,27 +322,27 @@ const CalculatorV2 = {
                 totalCycles: cycles.length,
                 closedCycles,
                 activeCycles,
-                
+
                 // 投入统计
                 totalInvest,
                 totalBuyAmount,
                 totalBuyFee,
-                
+
                 // 卖出统计
                 totalSellAmount,
                 totalSellFee,
                 totalFee,
-                
+
                 // 收益统计
                 totalProfit,
                 totalRealizedProfit,
                 totalFloatingProfit,
                 profitRate,
-                
+
                 // 当前持仓
                 currentHolding
             },
-            
+
             // 兼容旧格式
             holding: {
                 shares: currentHolding.shares,

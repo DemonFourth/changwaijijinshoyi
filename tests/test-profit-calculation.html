@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>收益率问题诊断</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .section { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .error { color: red; }
+        .success { color: green; }
+        .warning { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>收益率问题诊断</h1>
+    
+    <div class="section">
+        <h2>诊断步骤</h2>
+        <ol>
+            <li>打开浏览器控制台 (F12)</li>
+            <li>添加一笔买入交易</li>
+            <li>记录收益率</li>
+            <li>添加一笔卖出交易</li>
+            <li>检查收益率是否变化</li>
+        </ol>
+    </div>
+    
+    <div class="section">
+        <h2>实时监控</h2>
+        <button onclick="checkAll()">检查所有数据</button>
+        <button onclick="testCalculation()">测试计算</button>
+        <pre id="output"></pre>
+    </div>
+    
+    <script src="../js/namespace.js"></script>
+    <script src="../js/moduleRegistry.js"></script>
+    <script src="../js/eventBus.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/storage.js"></script>
+    <script src="../js/dataService.js"></script>
+    <script src="../js/calculator.js"></script>
+    <script src="../js/fundManager.js"></script>
+    <script src="../js/tradeManager.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(msg, type = 'info') {
+            const line = document.createElement('div');
+            line.className = type;
+            line.textContent = msg;
+            output.appendChild(line);
+            console.log(msg);
+        }
+        
+        function checkAll() {
+            output.innerHTML = '';
+            log('=== 开始诊断 ===', 'info');
+            
+            // 1. 检查基金数据
+            const funds = DataService.loadFunds();
+            log(`基金数量: ${funds.length}`, funds.length > 0 ? 'success' : 'warning');
+            
+            if (funds.length === 0) {
+                log('请先添加基金', 'error');
+                return;
+            }
+            
+            // 2. 检查每个基金
+            funds.forEach(fund => {
+                log(`\n--- 基金: ${fund.name} (${fund.code}) ---`);
+                log(`ID: ${fund.id}`);
+                log(`净值: ${fund.netValue}`);
+                
+                // 3. 检查交易记录
+                const trades = DataService.getTradesByFund(fund.id);
+                log(`交易记录数: ${trades.length}`, trades.length > 0 ? 'success' : 'warning');
+                
+                if (trades.length === 0) {
+                    log('该基金没有交易记录', 'warning');
+                    return;
+                }
+                
+                // 4. 显示交易记录
+                trades.forEach((trade, i) => {
+                    log(`${i+1}. ${trade.date} | ${trade.type} | 份额:${trade.shares} | 金额:${trade.amount} | 手续费:${trade.fee}`);
+                });
+                
+                // 5. 计算收益
+                log('\n计算结果:');
+                const stats = Calculator.calculateFundProfit(trades, fund.netValue);
+                
+                log(`持仓份额: ${stats.holding.shares}`);
+                log(`持仓成本: ${stats.holding.cost}`);
+                log(`每份成本: ${stats.holding.costPerShare}`);
+                log(`当前市值: ${stats.holding.value}`);
+                log(`持仓收益: ${stats.holding.profit}`, stats.holding.profit >= 0 ? 'success' : 'error');
+                log(`持仓收益率: ${stats.holding.profitRate}%`, stats.holding.profitRate >= 0 ? 'success' : 'error');
+                log(`已实现收益: ${stats.realized.profit}`, stats.realized.profit >= 0 ? 'success' : 'error');
+                log(`总收益: ${stats.total.amount}`, stats.total.amount >= 0 ? 'success' : 'error');
+                log(`总收益率: ${stats.total.rate}%`, stats.total.rate >= 0 ? 'success' : 'error');
+                
+                // 6. 检查已实现收益详情
+                if (stats.realized.details.length > 0) {
+                    log('\n已实现收益详情:');
+                    stats.realized.details.forEach(detail => {
+                        if (detail.type === 'dividend') {
+                            log(`  分红: ${detail.amount}`);
+                        } else {
+                            log(`  卖出: 份额${detail.shares}, 卖出金额${detail.sellAmount}, 成本${detail.costAmount}, 手续费${detail.fee}, 收益${detail.profit}`);
+                        }
+                    });
+                }
+            });
+        }
+        
+        function testCalculation() {
+            output.innerHTML = '';
+            log('=== 测试计算逻辑 ===');
+            
+            // 创建测试数据
+            const testTrades = [
+                { id: '1', date: '2024-01-01', type: 'buy', shares: 100, amount: 1000, fee: 0 },
+                { id: '2', date: '2024-01-02', type: 'buy', shares: 100, amount: 1100, fee: 0 },
+                { id: '3', date: '2024-01-03', type: 'sell', shares: 50, amount: 600, fee: 5 }
+            ];
+            
+            const netValue = 11; // 假设当前净值11元
+            
+            log('测试数据:');
+            testTrades.forEach(t => {
+                log(`  ${t.date} | ${t.type} | 份额:${t.shares} | 金额:${t.amount} | 手续费:${t.fee}`);
+            });
+            log(`当前净值: ${netValue}`);
+            
+            // 计算
+            const result = Calculator.calculateFundProfit(testTrades, netValue);
+            
+            log('\n计算结果:');
+            log(`持仓份额: ${result.holding.shares} (预期: 150)`);
+            log(`持仓成本: ${result.holding.cost} (预期: 1550)`);
+            log(`每份成本: ${result.holding.costPerShare} (预期: 10.33)`);
+            log(`当前市值: ${result.holding.value} (预期: 1650)`);
+            log(`持仓收益: ${result.holding.profit} (预期: 100)`);
+            log(`持仓收益率: ${result.holding.profitRate}% (预期: 6.45%)`);
+            log(`已实现收益: ${result.realized.profit} (预期: 95)`);
+            log(`总收益: ${result.total.amount} (预期: 195)`);
+            log(`总收益率: ${result.total.rate}% (预期: 12.58%)`);
+            
+            // 验证
+            log('\n验证:');
+            const expectedShares = 150;
+            const expectedRealizedProfit = 95; // 600 - 500(成本) - 5(手续费)
+            
+            if (Math.abs(result.holding.shares - expectedShares) < 0.01) {
+                log('✅ 持仓份额正确', 'success');
+            } else {
+                log(`❌ 持仓份额错误: 预期${expectedShares}, 实际${result.holding.shares}`, 'error');
+            }
+            
+            if (Math.abs(result.realized.profit - expectedRealizedProfit) < 0.01) {
+                log('✅ 已实现收益正确', 'success');
+            } else {
+                log(`❌ 已实现收益错误: 预期${expectedRealizedProfit}, 实际${result.realized.profit}`, 'error');
+            }
+        }
+        
+        // 监听事件
+        EventBus.on(EventType.TRADE_ADDED, (data) => {
+            log('\n📢 交易添加事件触发', 'success');
+            log(JSON.stringify(data.trade));
+        });
+        
+        EventBus.on(EventType.TRADE_UPDATED, (data) => {
+            log('\n📢 交易更新事件触发', 'success');
+        });
+        
+        EventBus.on(EventType.TRADE_DELETED, (data) => {
+            log('\n📢 交易删除事件触发', 'success');
+        });
+        
+        // 页面加载时自动检查
+        window.addEventListener('load', () => {
+            setTimeout(checkAll, 500);
+        });
+    </script>
+</body>
+</html>

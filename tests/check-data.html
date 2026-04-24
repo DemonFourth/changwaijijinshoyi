@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>数据检查</title>
+</head>
+<body>
+    <h1>数据检查</h1>
+    <pre id="output"></pre>
+    
+    <script src="../js/namespace.js"></script>
+    <script src="../js/moduleRegistry.js"></script>
+    <script src="../js/eventBus.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/storage.js"></script>
+    <script src="../js/dataService.js"></script>
+    <script src="../js/calculator.js"></script>
+    <script src="../js/fundManager.js"></script>
+    <script src="../js/tradeManager.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        const logs = [];
+        
+        function log(msg) {
+            logs.push(msg);
+            console.log(msg);
+        }
+        
+        // 1. 检查所有基金
+        const funds = DataService.loadFunds();
+        log('=== 所有基金 ===');
+        log('基金数量: ' + funds.length);
+        funds.forEach(f => {
+            log(`ID: ${f.id}, 代码: ${f.code}, 名称: ${f.name}, 净值: ${f.netValue}`);
+        });
+        
+        // 2. 检查所有交易
+        const trades = DataService.loadTrades();
+        log('\n=== 所有交易 ===');
+        log('交易数量: ' + trades.length);
+        
+        // 按基金分组
+        const tradesByFund = {};
+        trades.forEach(t => {
+            if (!tradesByFund[t.fundId]) {
+                tradesByFund[t.fundId] = [];
+            }
+            tradesByFund[t.fundId].push(t);
+        });
+        
+        // 3. 显示每个基金的交易和计算结果
+        funds.forEach(fund => {
+            log(`\n=== 基金: ${fund.name} (${fund.code}) ===`);
+            log(`基金ID: ${fund.id}`);
+            log(`当前净值: ${fund.netValue}`);
+            
+            const fundTrades = tradesByFund[fund.id] || [];
+            log(`交易记录数: ${fundTrades.length}`);
+            
+            if (fundTrades.length > 0) {
+                // 按日期排序
+                fundTrades.sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                log('\n交易记录:');
+                fundTrades.forEach((t, i) => {
+                    log(`${i+1}. ${t.date} | ${t.type.padEnd(8)} | 净值:${(t.netValue || 0).toFixed(4)} | 份额:${t.shares} | 金额:${t.amount} | 手续费:${t.fee}`);
+                });
+                
+                // 计算收益
+                log('\n计算收益:');
+                const stats = Calculator.calculateFundProfit(fundTrades, fund.netValue);
+                
+                log(`持仓份额: ${stats.holding.shares.toFixed(2)}`);
+                log(`持仓成本: ${stats.holding.cost.toFixed(2)}`);
+                log(`每份成本: ${stats.holding.costPerShare.toFixed(4)}`);
+                log(`当前市值: ${stats.holding.value.toFixed(2)}`);
+                log(`持仓收益: ${stats.holding.profit.toFixed(2)}`);
+                log(`持仓收益率: ${stats.holding.profitRate.toFixed(2)}%`);
+                log(`已实现收益: ${stats.realized.profit.toFixed(2)}`);
+                log(`总收益: ${stats.total.amount.toFixed(2)}`);
+                log(`总收益率: ${stats.total.rate.toFixed(2)}%`);
+                
+                if (stats.realized.details.length > 0) {
+                    log('\n已实现收益详情:');
+                    stats.realized.details.forEach((d, i) => {
+                        if (d.type === 'dividend') {
+                            log(`  ${i+1}. 分红: ${d.amount.toFixed(2)}`);
+                        } else {
+                            log(`  ${i+1}. 卖出: 份额${d.shares}, 危出${d.sellAmount.toFixed(2)}, 成本${d.costAmount.toFixed(2)}, 手续费${d.fee}, 收益${d.profit.toFixed(2)}`);
+                        }
+                    });
+                }
+            } else {
+                log('该基金没有交易记录');
+            }
+        });
+        
+        output.textContent = logs.join('\n');
+    </script>
+</body>
+</html>

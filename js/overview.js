@@ -75,7 +75,30 @@ const Overview = {
      * 更新统计信息
      */
     updateStats() {
-        const stats = Calculator.calculateAllStats();
+        // 使用CalculatorV2计算汇总
+        const funds = FundManager.getAllFunds();
+        let totalInvest = 0;
+        let totalValue = 0;
+        let totalProfit = 0;
+        let totalProfitRate = 0;
+
+        funds.forEach(fund => {
+            const stats = FundManager.getFundStats(fund.id);
+            if (stats) {
+                totalInvest += stats.summary.totalInvest;
+                totalValue += stats.summary.currentHolding.value;
+                totalProfit += stats.summary.totalProfit;
+            }
+        });
+
+        totalProfitRate = totalInvest > 0 ? (totalProfit / totalInvest * 100) : 0;
+
+        const statsData = {
+            totalInvest,
+            totalValue,
+            totalProfit,
+            totalProfitRate
+        };
 
         // 更新统计卡片
         const totalInvest = document.getElementById('total-invest');
@@ -84,21 +107,21 @@ const Overview = {
         const totalRate = document.getElementById('total-rate');
 
         if (totalInvest) {
-            totalInvest.textContent = Utils.formatMoney(stats.totalInvest);
+            totalInvest.textContent = Utils.formatMoney(statsData.totalInvest);
         }
 
         if (totalValue) {
-            totalValue.textContent = Utils.formatMoney(stats.totalValue);
+            totalValue.textContent = Utils.formatMoney(statsData.totalValue);
         }
 
         if (totalProfit) {
-            totalProfit.textContent = Utils.formatMoney(stats.totalProfit);
-            totalProfit.className = `stat-value ${Utils.getValueColor(stats.totalProfit)}`;
+            totalProfit.textContent = Utils.formatMoney(statsData.totalProfit);
+            totalProfit.className = `stat-value ${Utils.getValueColor(statsData.totalProfit)}`;
         }
 
         if (totalRate) {
-            totalRate.textContent = Utils.formatPercent(stats.totalProfitRate);
-            totalRate.className = `stat-value ${Utils.getValueColor(stats.totalProfitRate)}`;
+            totalRate.textContent = Utils.formatPercent(statsData.totalProfitRate);
+            totalRate.className = `stat-value ${Utils.getValueColor(statsData.totalProfitRate)}`;
         }
     },
 

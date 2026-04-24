@@ -217,7 +217,16 @@ const FundManager = {
      * @returns {object}
      */
     getFundStats(fundId) {
-        return Calculator.calculateFundStats(fundId);
+        const fund = DataService.getFund(fundId);
+        if (!fund) {
+            return null;
+        }
+
+        const trades = DataService.getTradesByFund(fundId);
+        const netValue = fund.netValue || 0;
+
+        // 使用CalculatorV2计算
+        return CalculatorV2.calculateFundProfit(trades, netValue);
     },
 
     /**
