@@ -214,6 +214,8 @@ const Detail = {
         console.log('Profit Rate:', stats.summary.profitRate);
         console.log('Total Realized:', stats.summary.totalRealizedProfit);
         console.log('Total Floating:', stats.summary.totalFloatingProfit);
+        console.log('Current Holding:', stats.summary.currentHolding);
+        console.log('Holding Profit Rate:', (stats.summary.currentHolding.floatingProfit / stats.summary.currentHolding.cost * 100).toFixed(2) + '%');
 
         const summary = stats.summary;
         const currentHolding = summary.currentHolding;
