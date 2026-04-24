@@ -157,6 +157,35 @@ jsonpgz({
 
 ## 开发说明
 
+### 📚 开发规范文档
+
+**重要**: 开发前请务必阅读以下文档，避免重复问题：
+
+- **[开发规范与最佳实践](./docs/DEVELOPMENT_STANDARDS.md)** - 完整的开发规范、常见问题解决方案
+- **[快速参考](./docs/QUICK_REFERENCE.md)** - 一页纸快速参考卡片
+- **[问题诊断](./docs/DIAGNOSIS.md)** - 问题诊断方法和步骤
+- **[解决方案](./docs/SOLUTION.md)** - 已解决问题的详细记录
+
+### ⚠️ 最重要的规则
+
+**禁止在对象方法内部使用`this`调用其他方法**：
+
+```javascript
+// ❌ 错误 - 会导致作用域解析异常
+const MyObject = {
+    methodA() {
+        return this.methodB();  // 错误！
+    }
+};
+
+// ✅ 正确 - 使用明确的对象名
+const MyObject = {
+    methodA() {
+        return MyObject.methodB();  // 正确！
+    }
+};
+```
+
 ### 模块系统
 应用采用自定义的模块注册系统：
 ```javascript
