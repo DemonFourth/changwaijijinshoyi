@@ -121,6 +121,8 @@ const Detail = {
     updateHoldingInfo(fund) {
         const stats = FundManager.getFundStats(fund.id);
         const holding = stats ? stats.holding : {};
+        const realized = stats ? stats.realized : {};
+        const total = stats ? stats.total : {};
 
         const shares = document.getElementById('holding-shares');
         const cost = document.getElementById('holding-cost');
@@ -128,6 +130,11 @@ const Detail = {
         const value = document.getElementById('holding-value');
         const profit = document.getElementById('holding-profit');
         const rate = document.getElementById('holding-rate');
+
+        // 新增：已实现收益和总收益显示
+        const realizedProfit = document.getElementById('realized-profit');
+        const totalProfit = document.getElementById('total-profit');
+        const totalRate = document.getElementById('total-rate');
 
         if (shares) shares.textContent = Utils.formatNumber(holding.shares || 0);
         if (cost) cost.textContent = Utils.formatMoney(holding.cost || 0);
@@ -142,6 +149,24 @@ const Detail = {
         if (rate) {
             rate.textContent = Utils.formatPercent(holding.profitRate || 0);
             rate.className = `value ${Utils.getValueColor(holding.profitRate || 0)}`;
+        }
+
+        // 显示已实现收益
+        if (realizedProfit) {
+            realizedProfit.textContent = Utils.formatMoney(realized.profit || 0);
+            realizedProfit.className = `value ${Utils.getValueColor(realized.profit || 0)}`;
+        }
+
+        // 显示总收益
+        if (totalProfit) {
+            totalProfit.textContent = Utils.formatMoney(total.amount || 0);
+            totalProfit.className = `value ${Utils.getValueColor(total.amount || 0)}`;
+        }
+
+        // 显示总收益率（这才是真正的收益率）
+        if (totalRate) {
+            totalRate.textContent = Utils.formatPercent(total.rate || 0);
+            totalRate.className = `value ${Utils.getValueColor(total.rate || 0)}`;
         }
     },
 
