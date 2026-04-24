@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>多轮持仓计算测试</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .cycle { margin: 10px 0; padding: 10px; background: #f9f9f9; border-left: 3px solid #1976d2; }
+        .cycle.closed { border-left-color: #4caf50; }
+        .cycle.active { border-left-color: #ff9800; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+        .profit { color: #4caf50; }
+        .loss { color: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>多轮持仓计算测试</h1>
+        <div id="content"></div>
+    </div>
+    
+    <script src="../js/namespace.js"></script>
+    <script src="../js/moduleRegistry.js"></script>
+    <script src="../js/eventBus.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/storage.js"></script>
+    <script src="../js/dataService.js"></script>
+    <script src="../js/calculatorV2.js"></script>
+    
+    <script>
+        const content = document.getElementById('content');
+        
+        // 测试场景1: 单轮持仓
+        const test1 = [
+            { id: '1', date: '2024-01-01', type: 'buy', shares: 100, amount: 1000, fee: 0 },
+            { id: '2', date: '2024-02-01', type: 'sell', shares: 50, amount: 600, fee: 5 },
+            { id: '3', date: '2024-03-01', type: 'sell', shares: 50, amount: 650, fee: 5 }
+        ];
+        
+        // 测试场景2: 多轮持仓
+        const test2 = [
+            { id: '1', date: '2024-01-01', type: 'buy', shares: 100, amount: 1000, fee: 0 },
+            { id: '2', date: '2024-02-01', type: 'sell', shares: 100, amount: 1200, fee: 10 }, // 清仓
+            { id: '3', date: '2024-03-01', type: 'buy', shares: 100, amount: 1100, fee: 0 },
+            { id: '4', date: '2024-04-01', type: 'sell', shares: 50, amount: 600, fee: 5 },
+            { id: '5', date: '2024-05-01', type: 'buy', shares: 50, amount: 550, fee: 0 },
+            { id: '6', date: '2024-06-01', type: 'sell', shares: 100, amount: 1300, fee: 10 } // 清仓
+        ];
+        
+        // 测试场景3: 当前持仓
+        const test3 = [
+            { id: '1', date: '2024-01-01', type: 'buy', shares: 100, amount: 1000, fee: 0 },
+            { id: '2', date: '2024-02-01', type: 'sell', shares: 100, amount: 1200, fee: 10 }, // 清仓
+            { id: '3', date: '2024-03-01', type: 'buy', shares: 100, amount: 1100, fee: 0 },
+            { id: '4', date: '2024-04-01', type: 'sell', shares: 50, amount: 600, fee: 5 }
+        ];
+        
+        function runTest(name, trades, netValue) {
+            let html = `<div class="section"><h2>${name}</h2>`;
+            
+            // 显示交易记录
+            html += '<h3>交易记录</h3>';
+            html += '<table><thead><tr><th>日期</th><th>类型</th><th>份额</th><th>金额</th><th>手续费</th></tr></thead><tbody>';
+            trades.forEach(t => {
+                html += `<tr>
+                    <td>${t.date}</td>
+                    <td>${t.type}</td>
+                    <td>${t.shares}</td>
+                    <td>${t.amount}</td>
+                    <td>${t.fee}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            
+            // 计算
+            const result = CalculatorV2.calculateFundProfit(trades, netValue);
+            
+            // 显示持仓周期
+            html += '<h3>持仓周期</h3>';
+            result.cycles.forEach(cycle => {
+                const statusClass = cycle.status === 'closed' ? 'closed' : 'active';
+                const statusText = cycle.status === 'closed' ? '已结束' : '进行中';
+                
+                html += `<div class="cycle ${statusClass}">
+                    <strong>周期${cycle.id} (${statusText})</strong><br>
+                    时间: ${cycle.startDate} ~ ${cycle.endDate || '至今'}<br>
+                    <br>
+                    <strong>投入统计:</strong><br>
+                    总投入: ¥${cycle.totalInvest.toFixed(2)}<br>
+                    买入金额: ¥${(cycle.totalBuyAmount || 0).toFixed(2)}<br>
+                    买入手续费: ¥${(cycle.totalBuyFee || 0).toFixed(2)}<br>
+                    买入份额: ${cycle.totalShares.toFixed(2)}<br>
+                    <br>
+                    <strong>卖出统计:</strong><br>
+                    卖出金额: ¥${(cycle.totalSellAmount || 0).toFixed(2)}<br>
+                    危出手续费: ¥${(cycle.totalSellFee || 0).toFixed(2)}<br>
+                    危出次数: ${cycle.sellCount || 0}<br>
+                    <br>
+                    <strong>收益统计:</strong><br>
+                    已实现收益: <span class="${cycle.realizedProfit >= 0 ? 'profit' : 'loss'}">¥${cycle.realizedProfit.toFixed(2)}</span><br>
+                    ${cycle.status === 'active' ? `
+                        <br>
+                        <strong>当前持仓:</strong><br>
+                        持有份额: ${cycle.holdingShares.toFixed(2)}<br>
+                        持仓成本: ¥${cycle.holdingCost.toFixed(2)}<br>
+                        当前市值: ¥${cycle.holdingValue.toFixed(2)}<br>
+                        浮动收益: <span class="${cycle.floatingProfit >= 0 ? 'profit' : 'loss'}">¥${cycle.floatingProfit.toFixed(2)}</span><br>
+                    ` : ''}
+                    <br>
+                    <strong>周期汇总:</strong><br>
+                    周期总收益: <span class="${cycle.totalProfit >= 0 ? 'profit' : 'loss'}">¥${cycle.totalProfit.toFixed(2)}</span><br>
+                    周期收益率: <span class="${cycle.profitRate >= 0 ? 'profit' : 'loss'}">${cycle.profitRate.toFixed(2)}%</span>
+                `;
+                
+                // 显示每次卖出的收益明细
+                if (cycle.realizedDetails && cycle.realizedDetails.length > 0) {
+                    html += '<br><br><strong>卖出明细:</strong>';
+                    cycle.realizedDetails.forEach((detail, i) => {
+                        if (detail.type !== 'dividend') {
+                            html += `<br>${i+1}. ${detail.date}: 危出${detail.shares}份, 金额¥${detail.sellAmount.toFixed(2)}, 成本¥${detail.costAmount.toFixed(2)}, 手续费¥${detail.fee.toFixed(2)}, 收益<span class="${detail.profit >= 0 ? 'profit' : 'loss'}">¥${detail.profit.toFixed(2)}</span> (${detail.profitRate.toFixed(2)}%)`;
+                        }
+                    });
+                }
+                
+                html += '</div>';
+            });
+            
+            // 显示汇总
+            html += '<h3>总汇总统计</h3>';
+            html += `<table>
+                <tr><th>项目</th><th>数值</th></tr>
+                <tr><td>总周期数</td><td>${result.summary.totalCycles}</td></tr>
+                <tr><td>已结束周期</td><td>${result.summary.closedCycles}</td></tr>
+                <tr><td>进行中周期</td><td>${result.summary.activeCycles}</td></tr>
+                <tr><td colspan="2" style="background:#f0f0f0;"><strong>投入统计</strong></td></tr>
+                <tr><td>总投入</td><td>¥${result.summary.totalInvest.toFixed(2)}</td></tr>
+                <tr><td>总买入金额</td><td>¥${(result.summary.totalBuyAmount || 0).toFixed(2)}</td></tr>
+                <tr><td>总买入手续费</td><td>¥${(result.summary.totalBuyFee || 0).toFixed(2)}</td></tr>
+                <tr><td colspan="2" style="background:#f0f0f0;"><strong>卖出统计</strong></td></tr>
+                <tr><td>总卖出金额</td><td>¥${(result.summary.totalSellAmount || 0).toFixed(2)}</td></tr>
+                <tr><td>总卖出手续费</td><td>¥${(result.summary.totalSellFee || 0).toFixed(2)}</td></tr>
+                <tr><td>总手续费</td><td>¥${(result.summary.totalFee || 0).toFixed(2)}</td></tr>
+                <tr><td colspan="2" style="background:#f0f0f0;"><strong>收益统计</strong></td></tr>
+                <tr><td>已实现收益</td><td class="${result.summary.totalRealizedProfit >= 0 ? 'profit' : 'loss'}">¥${result.summary.totalRealizedProfit.toFixed(2)}</td></tr>
+                <tr><td>浮动收益</td><td class="${result.summary.totalFloatingProfit >= 0 ? 'profit' : 'loss'}">¥${(result.summary.totalFloatingProfit || 0).toFixed(2)}</td></tr>
+                <tr><td>总收益</td><td class="${result.summary.totalProfit >= 0 ? 'profit' : 'loss'}"><strong>¥${result.summary.totalProfit.toFixed(2)}</strong></td></tr>
+                <tr><td>总收益率</td><td class="${result.summary.profitRate >= 0 ? 'profit' : 'loss'}"><strong>${result.summary.profitRate.toFixed(2)}%</strong></td></tr>
+            </table>`;
+            
+            html += '</div>';
+            return html;
+        }
+        
+        let html = '';
+        html += runTest('测试1: 单轮持仓', test1, 12);
+        html += runTest('测试2: 多轮持仓(已清仓)', test2, 12);
+        html += runTest('测试3: 多轮持仓(当前持仓)', test3, 12);
+        
+        content.innerHTML = html;
+    </script>
+</body>
+</html>
