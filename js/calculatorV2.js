@@ -218,6 +218,9 @@ const CalculatorV2 = {
         const totalProfit = realizedProfit + floatingProfit;
         const profitRate = totalInvest > 0 ? (totalProfit / totalInvest * 100) : 0;
 
+        // 计算持仓天数
+        const holdingDays = this.calculateHoldingDays(cycle);
+
         return {
             ...cycle,
             // 投入统计
@@ -235,6 +238,7 @@ const CalculatorV2 = {
             holdingShares,
             holdingCost,
             holdingValue,
+            holdingDays,
             
             // 收益信息
             realizedProfit,
@@ -246,6 +250,19 @@ const CalculatorV2 = {
             realizedDetails,
             tradeDetails
         };
+    },
+
+    
+    /**
+     * 计算持仓天数
+     * @param {object} cycle - 持仓周期对象
+     * @returns {number} 持仓天数
+     */
+    calculateHoldingDays(cycle) {
+        const startDate = new Date(cycle.startDate);
+        const endDate = cycle.endDate ? new Date(cycle.endDate) : new Date();
+        const days = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+        return days > 0 ? days : 0;
     },
 
     /**
