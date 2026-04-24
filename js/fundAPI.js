@@ -315,6 +315,25 @@ const FundAPI = {
             return null;
         }
 
+        // 检查缓存数据是否是乱码
+        if (cached.data && cached.data.name) {
+            const hasChinese = /[\u4e00-\u9fa5]/.test(cached.data.name);
+            const isLikelyGarbled = cached.data.name.includes('�') || 
+                (cached.data.name.match(/[^\x00-\x7F]/g) && !hasChinese) ||
+                cached.data.name.includes('浜ら摱') ||
+                cached.data.name.includes('瀹氭湡') ||
+                cached.data.name.includes('鏀粯') ||
+                cached.data.name.includes('鍙屾伅') ||
+                cached.data.name.includes('骞宠　') ||
+                cached.data.name.includes('娣峰悎');
+            
+            if (isLikelyGarbled) {
+                console.log('⚠️ Cached data is garbled, invalidating cache for', fundCode);
+                this.cache.delete(fundCode);
+                return null;
+            }
+        }
+
         return cached.data;
     },
 
