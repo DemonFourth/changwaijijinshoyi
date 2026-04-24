@@ -121,27 +121,63 @@ const FundAPI = {
                     const hasChinese = /[\u4e00-\u9fa5]/.test(originalName);
                     console.log('6. Has Chinese characters:', hasChinese);
 
-                    if (!hasChinese) {
-                        // 尝试修复：将乱码字符串重新编码为UTF-8
+                    // 如果名称看起来像乱码（包含非ASCII字符但不是中文），尝试修复
+                    const isLikelyGarbled = originalName.includes('�') || 
+                        (originalName.match(/[^\x00-\x7F]/g) && !hasChinese) ||
+                        originalName.includes('浜ら摱') || // 已知的乱码模式
+                        originalName.includes('瀹氭湡') ||
+                        originalName.includes('鏀粯') ||
+                        originalName.includes('鍙屾伅') ||
+                        originalName.includes('骞宠　') ||
+                        originalName.includes('娣峰悎');
+
+                    console.log('7. Is likely garbled:', isLikelyGarbled);
+
+                    if (isLikelyGarbled) {
+                        console.log('8. Attempting to fix garbled name...');
+                        
+                        // 尝试多种编码修复方法
+                        let fixedName = originalName;
+                        
+                        // 方法1: 尝试GBK -> UTF-8 转换（常见的中文乱码）
                         try {
-                            // 方法1：将字符串转为Latin-1字节，再用UTF-8解码
+                            // 假设原始是GBK编码，被错误地当作UTF-8读取
+                            // 常见乱码模式：UTF-8字节被当作Latin-1读取
                             const bytes = new Uint8Array(originalName.length);
                             for (let i = 0; i < originalName.length; i++) {
                                 bytes[i] = originalName.charCodeAt(i);
                             }
-                            const decoder = new TextDecoder('utf-8');
-                            const fixedName = decoder.decode(bytes);
-
-                            console.log('7. Fixed name:', fixedName);
-                            console.log('8. Fixed name has Chinese:', /[\u4e00-\u9fa5]/.test(fixedName));
-
-                            // 如果修复后包含中文，使用修复后的名称
-                            if (/[\u4e00-\u9fa5]/.test(fixedName)) {
-                                data.name = fixedName;
-                                console.log('✅ Name fixed successfully');
+                            
+                            // 尝试GBK解码
+                            const decoder = new TextDecoder('gbk');
+                            const gbkDecoded = decoder.decode(bytes);
+                            console.log('9. GBK decoded:', gbkDecoded);
+                            
+                            if (/[\u4e00-\u9fa5]/.test(gbkDecoded)) {
+                                fixedName = gbkDecoded;
+                                console.log('✅ GBK decoding successful');
+                            } else {
+                                // 方法2: 尝试UTF-8解码（如果被双重编码）
+                                const utf8Decoder = new TextDecoder('utf-8');
+                                const utf8Decoded = utf8Decoder.decode(bytes);
+                                console.log('10. UTF-8 decoded:', utf8Decoded);
+                                
+                                if (/[\u4e00-\u9fa5]/.test(utf8Decoded)) {
+                                    fixedName = utf8Decoded;
+                                    console.log('✅ UTF-8 decoding successful');
+                                }
                             }
                         } catch (e) {
-                            console.error('Failed to fix name:', e);
+                            console.error('Decoding failed:', e);
+                        }
+                        
+                        // 如果修复成功，更新数据
+                        if (fixedName !== originalName && /[\u4e00-\u9fa5]/.test(fixedName)) {
+                            data.name = fixedName;
+                            console.log('✅ Name fixed from:', originalName);
+                            console.log('✅ Name fixed to:', fixedName);
+                        } else {
+                            console.log('⚠️ Could not fix name, keeping original');
                         }
                     }
                 }
