@@ -346,7 +346,205 @@ Chrome DevTools -> Network -> Disable cache
 
 ## 架构设计原则
 
-### 1. 模块化原则
+### 1. SOLID原则 ⚠️ 重要
+
+#### 单一职责原则 (SRP)
+**定义**: 一个类/模块应该只有一个引起它变化的原因。
+
+```javascript
+// ✅ 正确：每个模块只负责一件事
+const TradeManager = {
+    // 只负责交易相关
+    addTrade() { },
+    deleteTrade() { },
+    getTrades() { }
+};
+
+const FundManager = {
+    // 只负责基金相关
+    addFund() { },
+    deleteFund() { },
+    getFunds() { }
+};
+
+// ❌ 错误：一个模块负责多件事
+const DataManager = {
+    addFund() { },      // 基金相关
+    addTrade() { },     // 交易相关
+    calculateReturn() { }, // 计算相关
+    renderUI() { }      // UI相关
+};
+```
+
+#### 开闭原则 (OCP)
+**定义**: 对扩展开放，对修改关闭。
+
+```javascript
+// ✅ 正确：通过扩展添加新功能
+const Calculator = {
+    strategies: {
+        'FIFO': calculateFIFO,
+        'LIFO': calculateLIFO,
+        'average': calculateAverage
+    },
+    
+    calculate(type, data) {
+        const strategy = this.strategies[type];
+        return strategy(data);
+    },
+    
+    // 添加新策略不需要修改现有代码
+    addStrategy(name, fn) {
+        this.strategies[name] = fn;
+    }
+};
+
+// ❌ 错误：每次添加新功能都要修改代码
+function calculate(type, data) {
+    if (type === 'FIFO') {
+        // ...
+    } else if (type === 'LIFO') {
+        // ...
+    } else if (type === 'average') {
+        // ...
+    }
+    // 添加新类型需要修改这里
+}
+```
+
+#### 里氏替换原则 (LSP)
+**定义**: 子类可以替换父类而不影响程序正确性。
+
+```javascript
+// ✅ 正确：子类完全兼容父类
+class BaseStorage {
+    save(key, value) { }
+    load(key) { }
+}
+
+class LocalStorage extends BaseStorage {
+    save(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+    load(key) {
+        return JSON.parse(localStorage.getItem(key));
+    }
+}
+
+// 可以无缝替换
+const storage = new LocalStorage(); // 或 new SessionStorage()
+```
+
+#### 接口隔离原则 (ISP)
+**定义**: 不应该强迫客户依赖于它们不使用的方法。
+
+```javascript
+// ✅ 正确：接口职责单一
+const TradeReader = {
+    getTrade() { },
+    getTrades() { }
+};
+
+const TradeWriter = {
+    addTrade() { },
+    deleteTrade() { }
+};
+
+// ❌ 错误：接口过于庞大
+const TradeManager = {
+    getTrade() { },
+    getTrades() { },
+    addTrade() { },
+    deleteTrade() { },
+    validate() { },
+    calculate() { }
+};
+```
+
+#### 依赖倒置原则 (DIP)
+**定义**: 依赖于抽象，不依赖于具体。
+
+```javascript
+// ✅ 正确：依赖于抽象接口
+function processData(data, storage) {
+    // storage可以是任何实现了save/load的对象
+    storage.save('data', data);
+}
+
+// ❌ 错误：依赖于具体实现
+function processData(data) {
+    localStorage.setItem('data', JSON.stringify(data));
+}
+```
+
+### 2. 低耦合高内聚 ⚠️ 重要
+
+#### 低耦合
+**定义**: 模块之间的依赖关系应该尽可能少。
+
+```javascript
+// ✅ 正确：通过事件解耦
+// 模块A
+EventBus.emit(EventType.DATA_CHANGED, data);
+
+// 模块B
+EventBus.on(EventType.DATA_CHANGED, (data) => {
+    // 处理数据
+});
+
+// ❌ 错误：直接依赖
+// 模块A
+ModuleB.handleData(data);
+
+// 模块B
+const data = ModuleA.getData();
+```
+
+**耦合度等级**:
+1. **无耦合**: 模块完全独立
+2. **数据耦合**: 只传递数据
+3. **标记耦合**: 传递控制参数
+4. **控制耦合**: 传递控制信息
+5. **外部耦合**: 依赖外部数据格式
+6. **公共耦合**: 共享公共数据
+7. **内容耦合**: 直接访问对方内部
+
+**目标**: 保持数据耦合或更低
+
+#### 高内聚
+**定义**: 模块内部的元素应该紧密相关。
+
+```javascript
+// ✅ 正确：高内聚 - 所有方法都与交易相关
+const TradeManager = {
+    addTrade() { },
+    deleteTrade() { },
+    updateTrade() { },
+    getTrade() { },
+    validateTrade() { }
+};
+
+// ❌ 错误：低内聚 - 方法之间关系松散
+const Manager = {
+    addTrade() { },      // 交易相关
+    renderUI() { },      // UI相关
+    fetchAPI() { },      // API相关
+    formatDate() { }     // 工具方法
+};
+```
+
+**内聚度等级**:
+1. **功能内聚**: 所有元素共同完成一个功能（最高）
+2. **顺序内聚**: 元素按顺序执行
+3. **通信内聚**: 元素操作相同数据
+4. **过程内聚**: 元素按流程执行
+5. **时间内聚**: 元素在同一时间执行
+6. **逻辑内聚**: 元素逻辑相关
+7. **偶然内聚**: 元素无关系（最低）
+
+**目标**: 保持功能内聚或通信内聚
+
+### 3. 模块化原则
 
 **单一职责**:
 ```javascript
@@ -425,6 +623,143 @@ EventBus.on(EventType.TRADE_ADDED, (trade) => {
 ---
 
 ## 测试规范
+
+### 0. 开发后必须测试 ⚠️ 最重要
+
+**强制要求**: 每次修改或开发代码后，必须进行测试验证！
+
+#### 测试流程
+
+**步骤1: 代码质量检查**
+```bash
+# 运行ESLint检查JavaScript代码
+npm run lint:js
+
+# 运行Stylelint检查CSS代码
+npm run lint:css
+
+# 或同时检查
+npm run lint
+```
+
+**预期结果**: 0个错误（警告可以接受）
+
+**步骤2: 浏览器测试**
+```bash
+# 1. 清除浏览器缓存
+Ctrl + Shift + Delete
+
+# 2. 打开应用
+# 直接在浏览器打开 index.html
+
+# 3. 硬刷新
+Ctrl + F5
+
+# 4. 打开开发者工具
+F12 -> Console
+```
+
+**步骤3: 功能测试**
+根据修改的功能，测试相应操作：
+
+| 修改内容 | 测试操作 |
+|---------|---------|
+| 基金相关 | 添加基金、查看基金、删除基金 |
+| 交易相关 | 添加交易、编辑交易、删除交易 |
+| 计算相关 | 查看收益、计算成本 |
+| UI相关 | 页面显示、交互响应 |
+| API相关 | 数据获取、数据更新 |
+
+**步骤4: 检查控制台**
+```javascript
+// 必须检查：
+// 1. 是否有红色错误信息
+// 2. 是否有黄色警告信息
+// 3. 模块是否正确初始化
+// 4. 事件是否正确触发
+```
+
+**步骤5: 边界测试**
+```javascript
+// 测试异常情况：
+// 1. 空值输入
+// 2. 错误格式
+// 3. 超出范围
+// 4. 重复操作
+// 5. 并发操作
+```
+
+#### 测试检查清单
+
+**每次修改后必须检查**:
+- [ ] ESLint检查通过（0个错误）
+- [ ] Stylelint检查通过（0个错误）
+- [ ] 浏览器控制台无错误
+- [ ] 修改的功能正常工作
+- [ ] 相关功能未受影响
+- [ ] 异常情况处理正确
+- [ ] UI显示正常
+- [ ] 数据保存正确
+
+#### 测试报告模板
+
+```markdown
+## 测试报告
+
+**测试时间**: 2024-04-24 10:00
+**测试人员**: AI Agent / 开发者
+**修改内容**: 修复TradeManager的this上下文问题
+
+### 测试结果
+
+**代码质量检查**:
+- [x] ESLint: 0 errors, 2 warnings
+- [x] Stylelint: 0 errors
+
+**功能测试**:
+- [x] 添加交易记录成功
+- [x] 数据验证正常
+- [x] 收益计算正确
+- [x] UI显示正常
+
+**控制台检查**:
+- [x] 无错误信息
+- [x] 模块初始化正常
+- [x] 事件触发正常
+
+**边界测试**:
+- [x] 空值处理正确
+- [x] 错误格式提示友好
+- [x] 超出范围限制有效
+
+**结论**: ✅ 测试通过，可以提交
+```
+
+#### 常见测试错误
+
+**错误1: 忘记清除缓存**
+```
+症状: 修改不生效
+解决: Ctrl + F5 硬刷新
+```
+
+**错误2: 只测试正常情况**
+```
+症状: 异常情况报错
+解决: 必须测试边界和异常情况
+```
+
+**错误3: 不检查控制台**
+```
+症状: 有隐藏错误未发现
+解决: 每次测试都打开控制台
+```
+
+**错误4: 测试不完整**
+```
+症状: 相关功能受影响
+解决: 测试所有相关功能
+```
 
 ### 1. 单元测试
 

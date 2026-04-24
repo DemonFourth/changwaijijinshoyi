@@ -16,6 +16,60 @@ ObjectName.methodName()
 
 **适用所有模块**: TradeManager, FundManager, DataService, Calculator等
 
+### 2. 开发后必须测试
+
+**每次修改代码后必须执行**:
+```bash
+# 1. 代码质量检查
+npm run lint
+
+# 2. 清除缓存并刷新
+Ctrl + Shift + Delete  # 清除缓存
+Ctrl + F5              # 硬刷新
+
+# 3. 打开控制台检查
+F12 -> Console
+
+# 4. 功能测试
+# 测试修改的功能和相关功能
+
+# 5. 边界测试
+# 测试异常情况和边界值
+```
+
+---
+
+## 架构设计原则
+
+### SOLID原则
+
+| 原则 | 说明 | 示例 |
+|------|------|------|
+| **S**单一职责 | 一个模块只负责一件事 | TradeManager只管交易 |
+| **O**开闭原则 | 对扩展开放，对修改关闭 | 用策略模式添加新算法 |
+| **L**里氏替换 | 子类可替换父类 | LocalStorage替换BaseStorage |
+| **I**接口隔离 | 接口职责单一 | 分离读写接口 |
+| **D**依赖倒置 | 依赖抽象不依赖具体 | 依赖接口而非实现 |
+
+### 低耦合高内聚
+
+**低耦合**: 模块间依赖最少化
+```javascript
+// ✅ 通过事件解耦
+EventBus.emit(EventType.DATA_CHANGED, data);
+EventBus.on(EventType.DATA_CHANGED, handler);
+```
+
+**高内聚**: 模块内元素紧密相关
+```javascript
+// ✅ 所有方法都与交易相关
+const TradeManager = {
+    addTrade() { },
+    deleteTrade() { },
+    validateTrade() { }
+};
+```
+
 ---
 
 ## 常见问题速查
