@@ -228,8 +228,8 @@ const Detail = {
 
         // 已实现收益和总收益
         const realizedProfit = document.getElementById('realized-profit');
-        const totalProfit = document.getElementById('total-profit');
-        const totalRate = document.getElementById('total-rate');
+        const totalProfit = document.getElementById('detail-total-profit');
+        const totalRate = document.getElementById('detail-total-rate');
 
         // 持仓周期信息
         const cycleCount = document.getElementById('cycle-count');
