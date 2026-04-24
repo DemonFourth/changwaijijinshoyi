@@ -62,6 +62,7 @@ module.exports = {
     'DataService': 'readonly',
     'FundAPI': 'readonly',
     'Calculator': 'readonly',
+    'CalculatorV2': 'readonly',
     'FundManager': 'readonly',
     'TradeManager': 'readonly',
     'Router': 'readonly',

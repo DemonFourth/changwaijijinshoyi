@@ -101,27 +101,27 @@ const Overview = {
         };
 
         // 更新统计卡片
-        const totalInvest = document.getElementById('total-invest');
-        const totalValue = document.getElementById('total-value');
-        const totalProfit = document.getElementById('total-profit');
-        const totalRate = document.getElementById('total-rate');
+        const totalInvestEl = document.getElementById('total-invest');
+        const totalValueEl = document.getElementById('total-value');
+        const totalProfitEl = document.getElementById('total-profit');
+        const totalRateEl = document.getElementById('total-rate');
 
-        if (totalInvest) {
-            totalInvest.textContent = Utils.formatMoney(statsData.totalInvest);
+        if (totalInvestEl) {
+            totalInvestEl.textContent = Utils.formatMoney(statsData.totalInvest);
         }
 
-        if (totalValue) {
-            totalValue.textContent = Utils.formatMoney(statsData.totalValue);
+        if (totalValueEl) {
+            totalValueEl.textContent = Utils.formatMoney(statsData.totalValue);
         }
 
-        if (totalProfit) {
-            totalProfit.textContent = Utils.formatMoney(statsData.totalProfit);
-            totalProfit.className = `stat-value ${Utils.getValueColor(statsData.totalProfit)}`;
+        if (totalProfitEl) {
+            totalProfitEl.textContent = Utils.formatMoney(statsData.totalProfit);
+            totalProfitEl.className = `stat-value ${Utils.getValueColor(statsData.totalProfit)}`;
         }
 
-        if (totalRate) {
-            totalRate.textContent = Utils.formatPercent(statsData.totalProfitRate);
-            totalRate.className = `stat-value ${Utils.getValueColor(statsData.totalProfitRate)}`;
+        if (totalRateEl) {
+            totalRateEl.textContent = Utils.formatPercent(statsData.totalProfitRate);
+            totalRateEl.className = `stat-value ${Utils.getValueColor(statsData.totalProfitRate)}`;
         }
     },
 
