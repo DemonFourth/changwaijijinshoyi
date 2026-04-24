@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基金API测试</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .success {
+            color: #48bb78;
+            font-weight: bold;
+        }
+        .error {
+            color: #f56565;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>基金API编码测试</h1>
+        
+        <div class="test-section">
+            <h3>测试1: 直接加载JS文件</h3>
+            <button onclick="test1()">执行测试</button>
+            <div id="result1" class="result">等待测试...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>测试2: 使用fetch获取</h3>
+            <button onclick="test2()">执行测试</button>
+            <div id="result2" class="result">等待测试...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>测试3: 检查全局变量</h3>
+            <button onclick="test3()">执行测试</button>
+            <div id="result3" class="result">等待测试...</div>
+        </div>
+    </div>
+
+    <script>
+        // 测试1: 直接加载JS文件
+        function test1() {
+            const result = document.getElementById('result1');
+            result.innerHTML = '加载中...';
+            
+            // 创建临时回调
+            window.jsonpgz = function(data) {
+                const output = [];
+                output.push('✅ JSONP回调成功');
+                output.push('');
+                output.push('原始数据:');
+                output.push(JSON.stringify(data, null, 2));
+                output.push('');
+                output.push('基金名称: ' + data.name);
+                output.push('');
+                output.push('字符编码:');
+                for (let i = 0; i < data.name.length; i++) {
+                    const char = data.name[i];
+                    const code = char.charCodeAt(0);
+                    output.push(`  [${i}] "${char}" = ${code} (0x${code.toString(16)})`);
+                }
+                output.push('');
+                output.push('是否包含中文: ' + (/[\u4e00-\u9fa5]/.test(data.name) ? '是' : '否'));
+                
+                result.innerHTML = output.join('\n');
+                result.className = 'result success';
+                
+                delete window.jsonpgz;
+            };
+            
+            // 加载脚本
+            const script = document.createElement('script');
+            script.src = 'http://fundgz.1234567.com.cn/js/519732.js';
+            script.onerror = function() {
+                result.innerHTML = '❌ 加载失败';
+                result.className = 'result error';
+            };
+            document.head.appendChild(script);
+        }
+        
+        // 测试2: 使用fetch获取
+        async function test2() {
+            const result = document.getElementById('result2');
+            result.innerHTML = '加载中...';
+            
+            try {
+                const response = await fetch('http://fundgz.1234567.com.cn/js/519732.js');
+                const text = await response.text();
+                
+                const output = [];
+                output.push('✅ Fetch成功');
+                output.push('');
+                output.push('原始文本:');
+                output.push(text);
+                output.push('');
+                output.push('尝试解析JSONP:');
+                
+                const match = text.match(/jsonpgz\((.+)\)/);
+                if (match) {
+                    const data = JSON.parse(match[1]);
+                    output.push('解析成功:');
+                    output.push(JSON.stringify(data, null, 2));
+                    output.push('');
+                    output.push('基金名称: ' + data.name);
+                }
+                
+                result.innerHTML = output.join('\n');
+                result.className = 'result success';
+            } catch (error) {
+                result.innerHTML = '❌ 错误: ' + error.message;
+                result.className = 'result error';
+            }
+        }
+        
+        // 测试3: 检查编码
+        function test3() {
+            const result = document.getElementById('result3');
+            
+            const testStrings = [
+                '交银定期支付双息平衡混合',
+                '浜ら摱瀹氭湡鏀粯鍙屾伅骞宠　娣峰悎'
+            ];
+            
+            const output = [];
+            output.push('编码测试:');
+            output.push('');
+            
+            testStrings.forEach((str, idx) => {
+                output.push(`字符串${idx + 1}: "${str}"`);
+                output.push('  字符编码:');
+                for (let i = 0; i < Math.min(str.length, 10); i++) {
+                    const char = str[i];
+                    const code = char.charCodeAt(0);
+                    output.push(`    [${i}] "${char}" = ${code} (0x${code.toString(16)})`);
+                }
+                output.push('  是否中文: ' + (/[\u4e00-\u9fa5]/.test(str) ? '是' : '否'));
+                output.push('');
+            });
+            
+            result.innerHTML = output.join('\n');
+        }
+    </script>
+</body>
+</html>

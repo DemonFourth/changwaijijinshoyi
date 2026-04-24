@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>简单测试</title>
+</head>
+<body>
+    <h1>简单对象测试</h1>
+    <pre id="output"></pre>
+    
+    <script>
+        // 创建一个简单的测试对象
+        const TestObject = {
+            methodA() {
+                console.log('methodA called');
+                return TestObject.methodB();
+            },
+            
+            methodB() {
+                console.log('methodB called');
+                return { success: true };
+            }
+        };
+        
+        const output = document.getElementById('output');
+        const logs = [];
+        
+        logs.push('=== 测试1: 直接调用 ===');
+        try {
+            const result = TestObject.methodA();
+            logs.push('成功: ' + JSON.stringify(result));
+        } catch (error) {
+            logs.push('失败: ' + error.message);
+        }
+        
+        logs.push('\n=== 测试2: 检查方法存在 ===');
+        logs.push('methodA类型: ' + typeof TestObject.methodA);
+        logs.push('methodB类型: ' + typeof TestObject.methodB);
+        logs.push('methodA存在: ' + ('methodA' in TestObject));
+        logs.push('methodB存在: ' + ('methodB' in TestObject));
+        
+        output.textContent = logs.join('\n');
+    </script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>场外基金收益计算器</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 应用容器 -->
+    <div id="app">
+        <!-- 标题栏 -->
+        <header class="header">
+            <h1 class="title">场外基金收益计算器</h1>
+            <div class="header-actions">
+                <button id="btn-export" class="btn btn-secondary">导出数据</button>
+                <button id="btn-import" class="btn btn-secondary">导入数据</button>
+                <button id="btn-settings" class="btn btn-icon">⚙️</button>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main id="main-content" class="main-content">
+            <!-- 汇总页 -->
+            <div id="page-overview" class="page active">
+                <!-- 统计卡片区 -->
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-label">总投入</div>
+                        <div class="stat-value" id="total-invest">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">总市值</div>
+                        <div class="stat-value" id="total-value">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">总收益</div>
+                        <div class="stat-value" id="total-profit">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">收益率</div>
+                        <div class="stat-value" id="total-rate">0.00%</div>
+                    </div>
+                </div>
+
+                <!-- 基金列表 -->
+                <div class="fund-list-container">
+                    <div class="list-header">
+                        <h2>我的基金</h2>
+                        <button id="btn-add-fund" class="btn btn-primary">+ 添加基金</button>
+                    </div>
+                    <div id="fund-list" class="fund-list">
+                        <!-- 基金卡片将动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="chart-container">
+                    <div id="chart-profit-trend" class="chart"></div>
+                </div>
+            </div>
+
+            <!-- 详情页 -->
+            <div id="page-detail" class="page">
+                <div class="detail-header">
+                    <button id="btn-back" class="btn btn-back">← 返回</button>
+                    <h2 id="detail-title">基金详情</h2>
+                    <div class="detail-actions">
+                        <button id="btn-edit-fund" class="btn btn-secondary">编辑</button>
+                        <button id="btn-delete-fund" class="btn btn-danger">删除</button>
+                    </div>
+                </div>
+
+                <!-- 基金信息 -->
+                <div class="fund-info">
+                    <div class="info-row">
+                        <span class="label">基金代码：</span>
+                        <span id="info-code" class="value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">基金名称：</span>
+                        <span id="info-name" class="value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">最新净值：</span>
+                        <span id="info-net-value" class="value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">净值日期：</span>
+                        <span id="info-net-date" class="value">-</span>
+                    </div>
+                </div>
+
+                <!-- 持仓信息 -->
+                <div class="holding-info">
+                    <h3>持仓信息</h3>
+                    <div class="holding-stats">
+                        <div class="stat-item">
+                            <span class="label">持有份额：</span>
+                            <span id="holding-shares" class="value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">持仓成本：</span>
+                            <span id="holding-cost" class="value">¥0.00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">每份成本：</span>
+                            <span id="cost-per-share" class="value">¥0.00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">当前市值：</span>
+                            <span id="holding-value" class="value">¥0.00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">浮动盈亏：</span>
+                            <span id="holding-profit" class="value">¥0.00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">收益率：</span>
+                            <span id="holding-rate" class="value">0.00%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 交易记录 -->
+                <div class="trade-records">
+                    <div class="records-header">
+                        <h3>交易记录</h3>
+                        <button id="btn-add-trade" class="btn btn-primary">+ 添加交易</button>
+                    </div>
+                    <table class="trade-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>类型</th>
+                                <th>净值</th>
+                                <th>份额</th>
+                                <th>金额</th>
+                                <th>手续费</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trade-list">
+                            <!-- 交易记录将动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="chart-container">
+                    <div id="chart-detail-trend" class="chart"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 悬浮按钮 -->
+        <div class="fab-container">
+            <button id="fab-refresh" class="fab" title="刷新数据">🔄</button>
+        </div>
+    </div>
+
+    <!-- 弹窗容器 -->
+    <div id="modal-container" class="modal-container hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">弹窗标题</h3>
+                <button class="modal-close">×</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- 弹窗内容将动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loading" class="loading hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">加载中...</div>
+    </div>
+
+    <!-- 提示消息 -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- JavaScript文件 -->
+    <script src="js/namespace.js"></script>
+    <script src="js/moduleRegistry.js"></script>
+    <script src="js/eventBus.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/dataService.js"></script>
+    <script src="js/fundAPI.js"></script>
+    <script src="js/calculator.js"></script>
+    <script src="js/fundManager.js"></script>
+    <script src="js/tradeManager.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/overview.js"></script>
+    <script src="js/detail.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

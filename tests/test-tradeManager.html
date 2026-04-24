@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>TradeManager测试</title>
+</head>
+<body>
+    <h1>TradeManager函数测试</h1>
+    <div id="result"></div>
+    
+    <script src="js/namespace.js"></script>
+    <script src="js/moduleRegistry.js"></script>
+    <script src="js/eventBus.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/dataService.js"></script>
+    <script src="js/tradeManager.js"></script>
+    
+    <script>
+        const result = document.getElementById('result');
+        const output = [];
+        
+        output.push('TradeManager对象: ' + typeof TradeManager);
+        output.push('checkTradeReasonality函数: ' + typeof TradeManager.checkTradeReasonality);
+        output.push('validateTradeData函数: ' + typeof TradeManager.validateTradeData);
+        output.push('addTrade函数: ' + typeof TradeManager.addTrade);
+        
+        // 测试调用
+        try {
+            const testResult = TradeManager.checkTradeReasonality({
+                type: 'buy',
+                fundId: 'test',
+                shares: 100
+            });
+            output.push('测试调用成功: ' + JSON.stringify(testResult));
+        } catch (error) {
+            output.push('测试调用失败: ' + error.message);
+        }
+        
+        result.innerHTML = output.join('<br>');
+        console.log(output.join('\n'));
+    </script>
+</body>
+</html>
