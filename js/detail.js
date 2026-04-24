@@ -209,6 +209,11 @@ const Detail = {
         }
 
         console.log('Stats data:', stats);
+        console.log('Summary:', stats.summary);
+        console.log('Total Profit:', stats.summary.totalProfit);
+        console.log('Profit Rate:', stats.summary.profitRate);
+        console.log('Total Realized:', stats.summary.totalRealizedProfit);
+        console.log('Total Floating:', stats.summary.totalFloatingProfit);
 
         const summary = stats.summary;
         const currentHolding = summary.currentHolding;
