@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>场外基金收益计算器</title>
+    <link rel="stylesheet" href="css/tokens.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- ECharts本地库 -->
+    <script src="lib/echarts.min.js"></script>
     <!-- 应用容器 -->
     <div id="app">
         <!-- 标题栏 -->
@@ -15,6 +18,7 @@
             <div class="header-actions">
                 <button id="btn-export" class="btn btn-secondary">导出数据</button>
                 <button id="btn-import" class="btn btn-secondary">导入数据</button>
+                <button id="btn-theme" class="btn btn-icon" title="切换主题">🌙</button>
                 <button id="btn-settings" class="btn btn-icon">⚙️</button>
             </div>
         </header>
@@ -43,11 +47,27 @@
                     </div>
                 </div>
 
+                <!-- Top5盈亏榜单 -->
+                <div class="top5-container"></div>
+
                 <!-- 基金列表 -->
                 <div class="fund-list-container">
                     <div class="list-header">
                         <h2>我的基金</h2>
-                        <button id="btn-add-fund" class="btn btn-primary">+ 添加基金</button>
+                        <div class="list-controls">
+                            <div class="view-toggle">
+                                <button class="btn-view active" data-view="card" title="卡片视图">▦</button>
+                                <button class="btn-view" data-view="list" title="列表视图">☰</button>
+                            </div>
+                            <select class="sort-select" id="sort-field">
+                                <option value="profitRate">按收益率</option>
+                                <option value="profitAmount">按收益额</option>
+                                <option value="marketValue">按市值</option>
+                                <option value="name">按名称</option>
+                            </select>
+                            <button class="btn-sort-order" id="sort-order" title="降序">↓</button>
+                            <button id="btn-add-fund" class="btn btn-primary">+ 添加基金</button>
+                        </div>
                     </div>
                     <div id="fund-list" class="fund-list">
                         <!-- 基金卡片将动态生成 -->
@@ -64,7 +84,24 @@
             <div id="page-detail" class="page">
                 <div class="detail-header">
                     <button id="btn-back" class="btn btn-back">← 返回</button>
-                    <h2 id="detail-title">基金详情</h2>
+                    <div class="detail-title-area">
+                        <div class="detail-fund-name" id="detail-fund-name">基金详情</div>
+                        <div class="detail-fund-code" id="detail-fund-code"></div>
+                    </div>
+                    <div class="detail-quote-area">
+                        <div class="quote-item">
+                            <span class="quote-label">最新净值</span>
+                            <span class="quote-value" id="quote-net-value">-</span>
+                        </div>
+                        <div class="quote-item">
+                            <span class="quote-label">估算净值</span>
+                            <span class="quote-value" id="quote-estimated-value">-</span>
+                        </div>
+                        <div class="quote-item">
+                            <span class="quote-label">估算涨幅</span>
+                            <span class="quote-value" id="quote-estimated-growth">-</span>
+                        </div>
+                    </div>
                     <div class="detail-actions">
                         <button id="btn-edit-fund" class="btn btn-secondary">编辑</button>
                         <button id="btn-delete-fund" class="btn btn-danger">删除</button>
@@ -143,6 +180,14 @@
                             <span class="label" style="font-weight: bold; color: #1976d2;">总收益率：</span>
                             <span id="detail-total-rate" class="value" style="font-weight: bold;">0.00%</span>
                         </div>
+                        <div class="stat-item" style="border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px;">
+                            <span class="label" style="color: #888; font-size: 13px;">简单差额法收益：</span>
+                            <span id="simple-profit" class="value" style="font-size: 13px;">¥0.00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label" style="color: #888; font-size: 13px;">简单差额法收益率：</span>
+                            <span id="simple-rate" class="value" style="font-size: 13px;">0.00%</span>
+                        </div>
                     </div>
                 </div>
 
@@ -174,6 +219,19 @@
                         <h3>交易记录</h3>
                         <button id="btn-add-trade" class="btn btn-primary">+ 添加交易</button>
                     </div>
+                    <div class="trade-filter-bar">
+                        <select id="filter-trade-type" class="filter-select">
+                            <option value="">全部类型</option>
+                            <option value="buy">买入</option>
+                            <option value="sell">卖出</option>
+                            <option value="dividend">分红</option>
+                        </select>
+                        <input type="date" id="filter-start-date" class="filter-date" title="开始日期">
+                        <span class="filter-sep">~</span>
+                        <input type="date" id="filter-end-date" class="filter-date" title="结束日期">
+                        <button class="btn btn-secondary btn-sm" id="btn-clear-filter">清除筛选</button>
+                        <span class="filter-result-count" id="filter-result-count"></span>
+                    </div>
                     <table class="trade-table">
                         <thead>
                             <tr>
@@ -183,6 +241,7 @@
                                 <th>份额</th>
                                 <th>金额</th>
                                 <th>手续费</th>
+                                <th>备注</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -190,11 +249,23 @@
                             <!-- 交易记录将动态生成 -->
                         </tbody>
                     </table>
+                    <div id="trade-pagination-container" class="pagination-container"></div>
                 </div>
 
                 <!-- 图表区域 -->
-                <div class="chart-container">
-                    <div id="chart-detail-trend" class="chart"></div>
+                <div class="chart-container chart-detail-grid">
+                    <div class="chart-item">
+                        <h4>收益趋势</h4>
+                        <div id="chart-fund-profit-trend" class="chart"></div>
+                    </div>
+                    <div class="chart-item">
+                        <h4>买卖对比</h4>
+                        <div id="chart-buy-sell-compare" class="chart"></div>
+                    </div>
+                    <div class="chart-item">
+                        <h4>收益率变化</h4>
+                        <div id="chart-profit-rate-change" class="chart"></div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -234,12 +305,16 @@
     <script src="js/eventBus.js"></script>
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/themeManager.js"></script>
+    <script src="js/bigNumberFormatter.js"></script>
+    <script src="js/paginator.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/dataService.js"></script>
     <script src="js/fundAPI.js"></script>
     <script src="js/calculatorV2.js"></script>
     <script src="js/fundManager.js"></script>
     <script src="js/tradeManager.js"></script>
+    <script src="js/chartManager.js"></script>
     <script src="js/router.js"></script>
     <script src="js/modal.js"></script>
     <script src="js/overview.js"></script>

@@ -67,7 +67,7 @@ methodA() {
 ```
 
 **适用场景**:
-- 所有模块对象（TradeManager, FundManager, DataService等）
+- 所有模块对象（TradeManager, FundManager, DataService, ThemeManager, ChartManager, BigNumberFormatter, Paginator等）
 - 事件处理器中的方法调用
 - 回调函数中的方法调用
 
@@ -997,6 +997,48 @@ Utils.formatDate(new Date()) // '2024-01-19'
 // 显示提示
 Utils.showToast('操作成功', 'success')
 Utils.showToast('操作失败', 'error')
+
+// 智能格式化金额（大数字自动转万/亿单位）
+Utils.formatMoneySmart(12345.67)  // '<span class="big-number" title="12,345.67">1.23万</span>'
+Utils.formatMoneySmart(123456789) // '<span class="big-number" title="123,456,789.00">1.23亿</span>'
+```
+
+### A2. 新增模块常用方法
+
+```javascript
+// ThemeManager - 主题管理
+ThemeManager.init()              // 初始化（加载保存的主题+监听系统主题）
+ThemeManager.setTheme('dark')    // 设置主题
+ThemeManager.toggleTheme()       // 切换主题
+ThemeManager.getTheme()          // 获取当前主题 'light' | 'dark'
+ThemeManager.getThemeIcon()      // 获取主题图标
+
+// ChartManager - 图表管理
+ChartManager.init()              // 初始化（监听主题变更+窗口resize）
+ChartManager.createChart(containerId, option)  // 创建图表
+ChartManager.disposeChart(containerId)         // 销毁图表
+ChartManager.disposeAll()                      // 销毁所有图表
+ChartManager.buildProfitTrendOption(data)      // 构建收益趋势图配置
+ChartManager.buildBuySellCompareOption(data)   // 构建买卖对比图配置
+ChartManager.buildProfitRateChangeOption(data) // 构建收益率变化图配置
+
+// BigNumberFormatter - 大数字格式化
+BigNumberFormatter.format(12345)           // '1.23万'
+BigNumberFormatter.formatFull(12345)       // '12,345.00'
+BigNumberFormatter.isBigNumber(12345)      // true
+BigNumberFormatter.formatWithTooltip(12345) // '<span class="big-number" title="12,345.00">1.23万</span>'
+
+// Paginator - 分页组件
+const pager = Paginator.create({
+    data: items,
+    pageSize: 10,
+    onPageChange: (pageData) => { /* 渲染当前页 */ },
+    onFilterChange: (instance) => { /* 筛选变更 */ }
+});
+Paginator.applyFilters(pager, { type: 'buy', startDate: '2024-01-01', endDate: null });
+Paginator.goToPage(pager, 2);
+Paginator.getCurrentPageData(pager);
+Paginator.renderControls(pager);  // 返回分页控件HTML
 ```
 
 ### B. 事件类型
@@ -1006,15 +1048,33 @@ Utils.showToast('操作失败', 'error')
 EventType.FUND_ADDED
 EventType.FUND_UPDATED
 EventType.FUND_DELETED
+EventType.FUND_REFRESHED
 
 // 交易相关
 EventType.TRADE_ADDED
 EventType.TRADE_UPDATED
 EventType.TRADE_DELETED
 
+// 计算相关
+EventType.CALCULATION_UPDATED
+
+// UI相关
+EventType.PAGE_CHANGED
+EventType.MODAL_OPENED
+EventType.MODAL_CLOSED
+EventType.THEME_CHANGED      // 主题切换
+EventType.VIEW_CHANGED       // 视图模式切换（卡片/列表）
+EventType.GROUP_TOGGLED      // 持仓分组折叠/展开
+
 // 数据相关
 EventType.DATA_IMPORTED
 EventType.DATA_EXPORTED
+EventType.DATA_CLEARED
+EventType.FILTER_CHANGED     // 筛选条件变更
+EventType.PAGE_SIZE_CHANGED  // 每页条数变更
+
+// 错误事件
+EventType.ERROR_OCCURRED
 ```
 
 ### C. 配置项
@@ -1029,13 +1089,97 @@ Config.get('storage.prefix')
 Config.get('storage.maxSize')
 
 // UI配置
-Config.get('ui.pageSize')
-Config.get('ui.dateFormat')
+Config.get('ui.toastDuration')        // 提示持续时间
+Config.get('ui.defaultViewMode')      // 默认视图模式 'card' | 'list'
+Config.get('ui.defaultSortField')     // 默认排序字段 'profitRate'
+Config.get('ui.defaultSortOrder')     // 默认排序方向 'desc' | 'asc'
+Config.get('ui.defaultPageSize')      // 默认每页条数 10
+Config.get('ui.pageSizeOptions')      // 每页条数选项 [10, 20, 50]
+Config.get('ui.remarkMaxLength')      // 备注最大长度 50
+Config.get('ui.bigNumberThreshold')   // 大数字阈值 10000（万）
+Config.get('ui.bigNumberWanThreshold') // 大数字亿阈值 100000000
+
+// ECharts配置
+Config.get('echarts.enabled')         // 是否启用ECharts
+```
+
+### D. 模块注册表
+
+所有通过 `ModuleRegistry.register()` 注册的模块：
+
+| 模块名 | 文件 | 说明 |
+|--------|------|------|
+| Config | js/config.js | 配置管理 |
+| EventBus | js/eventBus.js | 事件总线 |
+| EventType | js/eventBus.js | 事件类型常量 |
+| Utils | js/utils.js | 工具函数 |
+| Storage | js/storage.js | 本地存储管理 |
+| DataService | js/dataService.js | 数据服务 |
+| FundAPI | js/fundAPI.js | 基金API接口 |
+| CalculatorV2 | js/calculatorV2.js | FIFO计算引擎 |
+| FundManager | js/fundManager.js | 基金管理器 |
+| TradeManager | js/tradeManager.js | 交易管理器 |
+| Router | js/router.js | 路由管理 |
+| Modal | js/modal.js | 弹窗管理 |
+| ThemeManager | js/themeManager.js | 主题管理（深色/浅色切换） |
+| ChartManager | js/chartManager.js | ECharts图表管理 |
+| BigNumberFormatter | js/bigNumberFormatter.js | 大数字格式化（万/亿单位） |
+| Paginator | js/paginator.js | 通用分页组件 |
+
+### E. CSS设计令牌
+
+主题通过 `css/tokens.css` 中的CSS自定义属性管理，切换主题只需修改 `document.documentElement` 的 `data-theme` 属性：
+
+```javascript
+// 切换主题
+ThemeManager.setTheme('dark');   // 深色
+ThemeManager.setTheme('light');  // 浅色
+ThemeManager.toggleTheme();      // 切换
+
+// 获取当前主题
+ThemeManager.getTheme();         // 'light' | 'dark'
+```
+
+**CSS变量分类**（定义在 `css/tokens.css`）：
+
+| 类别 | 前缀 | 示例 |
+|------|------|------|
+| 品牌色 | `--color-brand-*` | `--color-brand-primary`, `--color-brand-secondary` |
+| 语义色 | `--color-success/danger/warning/info` | 盈利绿、亏损红、警告黄、信息蓝 |
+| 背景色 | `--color-bg-*` | `--color-bg-primary`, `--color-bg-card`, `--color-bg-hover` |
+| 文字色 | `--color-text-*` | `--color-text-primary`, `--color-text-secondary`, `--color-text-tertiary` |
+| 边框色 | `--color-border-*` | `--color-border-primary`, `--color-border-secondary` |
+| 阴影 | `--shadow-*` | `--shadow-sm`, `--shadow-md`, `--shadow-lg` |
+| 间距 | `--spacing-*` | `--spacing-xs` ~ `--spacing-3xl` |
+| 字体 | `--font-size-*`, `--font-family-*` | `--font-size-sm`, `--font-family-mono` |
+| 圆角 | `--radius-*` | `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-full` |
+| 过渡 | `--transition-*` | `--transition-fast`, `--transition-normal` |
+
+**使用规范**：所有样式必须使用CSS变量，禁止硬编码颜色值：
+```css
+/* ❌ 错误 */
+color: #333;
+background: #ffffff;
+
+/* ✅ 正确 */
+color: var(--color-text-primary);
+background: var(--color-bg-primary);
 ```
 
 ---
 
 ## 更新日志
+
+### v2.0.0 (2026-04-25)
+- 新增模块：ThemeManager、ChartManager、BigNumberFormatter、Paginator
+- 新增事件类型：THEME_CHANGED、VIEW_CHANGED、GROUP_TOGGLED、FILTER_CHANGED、PAGE_SIZE_CHANGED
+- 新增配置项：ui.defaultViewMode/defaultSortField/defaultSortOrder/defaultPageSize/pageSizeOptions/remarkMaxLength/bigNumberThreshold/bigNumberWanThreshold、echarts.enabled
+- 新增CSS设计令牌体系（css/tokens.css），63个CSS变量
+- 新增模块注册表文档（附录D）
+- 新增CSS设计令牌使用规范（附录E）
+- 新增模块常用方法参考（附录A2）
+- 更新事件类型完整列表（附录B）
+- 更新配置项完整列表（附录C）
 
 ### v1.0.0 (2024-04-24)
 - 初始版本

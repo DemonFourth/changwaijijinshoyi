@@ -154,6 +154,11 @@ const EventType = {
     PAGE_CHANGED: 'page:changed',
     MODAL_OPENED: 'modal:opened',
     MODAL_CLOSED: 'modal:closed',
+    THEME_CHANGED: 'theme:changed',
+    VIEW_CHANGED: 'view:changed',
+    GROUP_TOGGLED: 'group:toggled',
+    FILTER_CHANGED: 'filter:changed',
+    PAGE_SIZE_CHANGED: 'page:sizeChanged',
 
     // 数据相关事件
     DATA_IMPORTED: 'data:imported',

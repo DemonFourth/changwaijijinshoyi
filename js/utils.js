@@ -324,6 +324,16 @@ const Utils = {
         if (loading) {
             loading.classList.add('hidden');
         }
+    },
+
+    /**
+     * 智能金额格式化（大数字自动转万/亿单位）
+     * @param {number} amount - 金额
+     * @param {number} decimals - 小数位
+     * @returns {string}
+     */
+    formatMoneySmart(amount, decimals = 2) {
+        return BigNumberFormatter.formatWithTooltip(amount, decimals);
     }
 };
 

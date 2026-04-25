@@ -69,7 +69,29 @@ const Config = {
         // 加载提示最小显示时长（毫秒）
         loadingMinDuration: 500,
         // 动画时长（毫秒）
-        animationDuration: 300
+        animationDuration: 300,
+        // 默认视图模式（card=卡片视图, list=列表视图）
+        defaultViewMode: 'card',
+        // 默认排序字段（长期持有关注收益率）
+        defaultSortField: 'profitRate',
+        // 默认排序方向
+        defaultSortOrder: 'desc',
+        // 默认每页条数
+        defaultPageSize: 10,
+        // 每页条数选项
+        pageSizeOptions: [10, 20, 50],
+        // 备注最大长度
+        remarkMaxLength: 50,
+        // 大数字转换阈值（超过此值自动转为"万"单位）
+        bigNumberThreshold: 10000,
+        // 亿级阈值
+        bigNumberWanThreshold: 100000000
+    },
+
+    // ECharts配置
+    echarts: {
+        // 是否启用ECharts图表
+        enabled: true
     },
 
     /**

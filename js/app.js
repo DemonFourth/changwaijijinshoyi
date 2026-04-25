@@ -19,11 +19,17 @@ const App = {
             // 初始化数据服务
             DataService.init();
 
+            // 初始化主题管理器
+            ThemeManager.init();
+
             // 初始化基金管理器
             FundManager.init();
 
             // 初始化交易管理器
             TradeManager.init();
+
+            // 初始化图表管理器
+            ChartManager.init();
 
             // 初始化路由
             Router.init();
@@ -31,6 +37,9 @@ const App = {
             // 初始化UI组件
             Overview.init();
             Detail.init();
+
+            // 绑定主题切换按钮
+            this.setupThemeToggle();
 
             // 监听路由变化
             this.setupRouteListener();
@@ -46,6 +55,27 @@ const App = {
             console.error('Application initialization failed:', error);
             Utils.hideLoading();
             Utils.showToast('应用初始化失败', 'error');
+        }
+    },
+
+    /**
+     * 设置主题切换
+     */
+    setupThemeToggle() {
+        const btnTheme = document.getElementById('btn-theme');
+        if (btnTheme) {
+            // 设置初始图标
+            btnTheme.textContent = ThemeManager.getThemeIcon();
+
+            // 点击切换主题
+            btnTheme.addEventListener('click', () => {
+                ThemeManager.toggleTheme();
+            });
+
+            // 监听主题变化事件，更新按钮图标
+            EventBus.on(EventType.THEME_CHANGED, () => {
+                btnTheme.textContent = ThemeManager.getThemeIcon();
+            });
         }
     },
 

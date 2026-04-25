@@ -7,6 +7,12 @@ const Detail = {
     // 当前基金ID
     currentFundId: null,
 
+    // 交易记录分页实例
+    _tradePaginator: null,
+
+    // 当前筛选条件
+    _currentFilters: null,
+
     /**
      * 初始化详情页
      */
@@ -67,6 +73,35 @@ const Detail = {
         EventBus.on(EventType.TRADE_UPDATED, () => this.refresh());
         EventBus.on(EventType.TRADE_DELETED, () => this.refresh());
         EventBus.on(EventType.CALCULATION_UPDATED, () => this.refresh());
+
+        // 交易记录筛选
+        const filterTradeType = document.getElementById('filter-trade-type');
+        if (filterTradeType) {
+            filterTradeType.addEventListener('change', () => {
+                Detail.applyTradeFilters();
+            });
+        }
+
+        const filterStartDate = document.getElementById('filter-start-date');
+        if (filterStartDate) {
+            filterStartDate.addEventListener('change', () => {
+                Detail.applyTradeFilters();
+            });
+        }
+
+        const filterEndDate = document.getElementById('filter-end-date');
+        if (filterEndDate) {
+            filterEndDate.addEventListener('change', () => {
+                Detail.applyTradeFilters();
+            });
+        }
+
+        const btnClearFilter = document.getElementById('btn-clear-filter');
+        if (btnClearFilter) {
+            btnClearFilter.addEventListener('click', () => {
+                Detail.clearTradeFilters();
+            });
+        }
     },
 
     /**
@@ -101,6 +136,40 @@ const Detail = {
      * @param {object} fund - 基金对象
      */
     updateFundInfo(fund) {
+        // 标题栏：基金名称和代码
+        const fundName = document.getElementById('detail-fund-name');
+        const fundCode = document.getElementById('detail-fund-code');
+        if (fundName) fundName.textContent = fund.name;
+        if (fundCode) fundCode.textContent = fund.code;
+        
+        // 标题栏：行情数据
+        const quoteNetValue = document.getElementById('quote-net-value');
+        const quoteEstimatedValue = document.getElementById('quote-estimated-value');
+        const quoteEstimatedGrowth = document.getElementById('quote-estimated-growth');
+        
+        if (quoteNetValue) {
+            quoteNetValue.textContent = fund.netValue || '-';
+        }
+        
+        if (quoteEstimatedValue) {
+            quoteEstimatedValue.textContent = fund.estimatedValue || '-';
+        }
+        
+        if (quoteEstimatedGrowth) {
+            if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
+                const rate = parseFloat(fund.estimatedGrowth);
+                const color = rate >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
+                quoteEstimatedGrowth.textContent = `${rate >= 0 ? '+' : ''}${rate}%`;
+                quoteEstimatedGrowth.style.color = color;
+                quoteEstimatedGrowth.style.fontWeight = 'bold';
+            } else {
+                quoteEstimatedGrowth.textContent = '-';
+                quoteEstimatedGrowth.style.color = '';
+                quoteEstimatedGrowth.style.fontWeight = '';
+            }
+        }
+        
+        // 基金信息区域（保留原有字段）
         const title = document.getElementById('detail-title');
         const code = document.getElementById('info-code');
         const name = document.getElementById('info-name');
@@ -109,46 +178,35 @@ const Detail = {
         const estimatedValue = document.getElementById('info-estimated-value');
         const estimatedGrowth = document.getElementById('info-estimated-growth');
         const updateTime = document.getElementById('info-update-time');
-
+        
         if (title) title.textContent = fund.name;
         if (code) code.textContent = fund.code;
         if (name) name.textContent = fund.name;
-
-        // 净值显示 - 保持API返回的精度
+        
         if (netValue) {
-            if (fund.netValue) {
-                // 直接显示，不格式化，保持原始精度
-                netValue.textContent = fund.netValue;
-            } else {
-                netValue.textContent = '-';
-            }
+            netValue.textContent = fund.netValue || '-';
         }
-
+        
         if (netDate) netDate.textContent = fund.netValueDate || '-';
-
-        // 估算净值
+        
         if (estimatedValue) {
-            if (fund.estimatedValue) {
-                estimatedValue.textContent = fund.estimatedValue;
-            } else {
-                estimatedValue.textContent = '-';
-            }
+            estimatedValue.textContent = fund.estimatedValue || '-';
         }
-
-        // 估算涨幅
+        
         if (estimatedGrowth) {
             if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
                 const rate = parseFloat(fund.estimatedGrowth);
-                const color = rate >= 0 ? '#4caf50' : '#f44336';
+                const color = rate >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
                 estimatedGrowth.textContent = `${rate >= 0 ? '+' : ''}${rate}%`;
                 estimatedGrowth.style.color = color;
                 estimatedGrowth.style.fontWeight = 'bold';
             } else {
                 estimatedGrowth.textContent = '-';
+                estimatedGrowth.style.color = '';
+                estimatedGrowth.style.fontWeight = '';
             }
         }
-
-        // 更新时间
+        
         if (updateTime) {
             if (fund.updateTime) {
                 const updateDate = new Date(fund.updateTime);
@@ -177,10 +235,13 @@ const Detail = {
         console.log('Total Realized:', stats.summary.totalRealizedProfit);
         console.log('Total Floating:', stats.summary.totalFloatingProfit);
         console.log('Current Holding:', stats.summary.currentHolding);
-        console.log('Holding Profit Rate:', (stats.summary.currentHolding.floatingProfit / stats.summary.currentHolding.cost * 100).toFixed(2) + '%');
 
         const summary = stats.summary;
         const currentHolding = summary.currentHolding;
+
+        // 判断是否已清仓
+        const EPSILON = 0.0001;
+        const isCleared = currentHolding.shares <= EPSILON;
 
         // 基础持仓信息
         const shares = document.getElementById('holding-shares');
@@ -203,34 +264,40 @@ const Detail = {
 
         // 显示基础持仓
         if (shares) shares.textContent = Utils.formatNumber(currentHolding.shares || 0);
-        if (cost) cost.textContent = Utils.formatMoney(currentHolding.cost || 0);
-        if (costPerShare) costPerShare.textContent = Utils.formatMoney(
-            currentHolding.shares > 0 ? currentHolding.cost / currentHolding.shares : 0
+        if (cost) cost.innerHTML = Utils.formatMoneySmart(currentHolding.cost || 0);
+        if (costPerShare) costPerShare.innerHTML = Utils.formatMoneySmart(
+            isCleared ? 0 : (currentHolding.shares > 0 ? currentHolding.cost / currentHolding.shares : 0)
         );
-        if (value) value.textContent = Utils.formatMoney(currentHolding.value || 0);
+        if (value) value.innerHTML = Utils.formatMoneySmart(currentHolding.value || 0);
 
         if (profit) {
-            profit.textContent = Utils.formatMoney(currentHolding.floatingProfit || 0);
-            profit.className = `value ${Utils.getValueColor(currentHolding.floatingProfit || 0)}`;
+            const displayProfit = isCleared ? 0 : (currentHolding.floatingProfit || 0);
+            profit.innerHTML = Utils.formatMoneySmart(displayProfit);
+            profit.className = `value ${Utils.getValueColor(displayProfit)}`;
         }
 
         if (rate) {
-            const holdingRate = currentHolding.cost > 0
-                ? (currentHolding.floatingProfit / currentHolding.cost * 100)
-                : 0;
-            rate.textContent = Utils.formatPercent(holdingRate);
-            rate.className = `value ${Utils.getValueColor(holdingRate)}`;
+            if (isCleared) {
+                rate.textContent = '-';
+                rate.className = 'value';
+            } else {
+                const holdingRate = currentHolding.cost > 0
+                    ? (currentHolding.floatingProfit / currentHolding.cost * 100)
+                    : 0;
+                rate.textContent = Utils.formatPercent(holdingRate);
+                rate.className = `value ${Utils.getValueColor(holdingRate)}`;
+            }
         }
 
         // 显示已实现收益
         if (realizedProfit) {
-            realizedProfit.textContent = Utils.formatMoney(summary.totalRealizedProfit || 0);
+            realizedProfit.innerHTML = Utils.formatMoneySmart(summary.totalRealizedProfit || 0);
             realizedProfit.className = `value ${Utils.getValueColor(summary.totalRealizedProfit || 0)}`;
         }
 
         // 显示总收益
         if (totalProfit) {
-            totalProfit.textContent = Utils.formatMoney(summary.totalProfit || 0);
+            totalProfit.innerHTML = Utils.formatMoneySmart(summary.totalProfit || 0);
             totalProfit.className = `value ${Utils.getValueColor(summary.totalProfit || 0)}`;
         }
 
@@ -240,6 +307,18 @@ const Detail = {
             totalRate.className = `value ${Utils.getValueColor(summary.profitRate || 0)}`;
         }
 
+        // 显示简单差额法收益
+        const simpleProfitEl = document.getElementById('simple-profit');
+        const simpleRateEl = document.getElementById('simple-rate');
+        if (simpleProfitEl) {
+            simpleProfitEl.innerHTML = Utils.formatMoneySmart(summary.simpleProfit || 0);
+            simpleProfitEl.className = `value ${Utils.getValueColor(summary.simpleProfit || 0)}`;
+        }
+        if (simpleRateEl) {
+            simpleRateEl.textContent = Utils.formatPercent(summary.simpleProfitRate || 0);
+            simpleRateEl.className = `value ${Utils.getValueColor(summary.simpleProfitRate || 0)}`;
+        }
+
         // 显示持仓周期统计
         if (cycleCount) cycleCount.textContent = summary.totalCycles;
         if (closedCycles) closedCycles.textContent = summary.closedCycles;
@@ -247,7 +326,7 @@ const Detail = {
 
         // 显示周期列表
         if (cycleList) {
-            this.renderCycleList(stats.cycles);
+            this.renderCycleList(stats.cycles, summary);
         }
 
         // 更新图表区域
@@ -260,73 +339,60 @@ const Detail = {
      * @param {object} stats - 统计数据
      */
     updateChart(fund, stats) {
-        const chartContainer = document.getElementById('chart-detail-trend');
-        if (!chartContainer) return;
-
-        const summary = stats.summary;
-
-        // 没有交易记录
-        if (summary.totalCycles === 0) {
-            chartContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">暂无交易记录</p>';
-            return;
+        if (ChartManager.isEChartsAvailable()) {
+            const summary = stats.summary;
+            
+            if (summary.totalCycles === 0) {
+                const container = document.getElementById('chart-detail-trend');
+                if (container) container.innerHTML = '<p style="text-align: center; color: var(--color-text-tertiary); padding: 40px;">暂无交易记录</p>';
+                return;
+            }
+            
+            // 渲染收益趋势图
+            const trendContainer = document.getElementById('chart-fund-profit-trend');
+            if (trendContainer) {
+                ChartManager.createChart('chart-fund-profit-trend', ChartManager.buildFundProfitTrendOption(fund, stats));
+            }
+            
+            // 渲染买卖对比图
+            const compareContainer = document.getElementById('chart-buy-sell-compare');
+            if (compareContainer) {
+                ChartManager.createChart('chart-buy-sell-compare', ChartManager.buildBuySellCompareOption(stats));
+            }
+            
+            // 渲染收益率变化图
+            const rateContainer = document.getElementById('chart-profit-rate-change');
+            if (rateContainer) {
+                ChartManager.createChart('chart-profit-rate-change', ChartManager.buildProfitRateChangeOption(stats.cycles));
+            }
+        } else {
+            // Fallback: 简单统计
+            const container = document.getElementById('chart-detail-trend');
+            if (container) {
+                const summary = stats.summary;
+                let html = '<div style="padding: 20px;">';
+                html += '<h4 style="margin-bottom: 15px;">收益情况</h4>';
+                html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">';
+                html += '<div style="padding: 10px; background: var(--color-bg-tertiary); border-radius: 4px;">';
+                html += '<div style="color: var(--color-text-secondary); font-size: 12px;">已实现收益</div>';
+                html += `<div style="font-weight: bold;">${Utils.formatMoneySmart(summary.totalRealizedProfit || 0)}</div>`;
+                html += '</div>';
+                html += '<div style="padding: 10px; background: var(--color-bg-tertiary); border-radius: 4px;">';
+                html += '<div style="color: var(--color-text-secondary); font-size: 12px;">浮动收益</div>';
+                html += `<div style="font-weight: bold;">${Utils.formatMoneySmart(summary.totalFloatingProfit || 0)}</div>`;
+                html += '</div>';
+                html += '</div></div>';
+                container.innerHTML = html;
+            }
         }
-
-        // 使用stats中的数据，不重复计算
-        const buyAmount = summary.totalBuyAmount;
-        const sellAmount = summary.totalSellAmount;
-        const totalAmount = buyAmount + sellAmount;
-        const buyPercent = totalAmount > 0 ? (buyAmount / totalAmount * 100) : 0;
-        const sellPercent = totalAmount > 0 ? (sellAmount / totalAmount * 100) : 0;
-
-        // 买入/卖出笔数从周期数据中统计
-        let buyCount = 0, sellCount = 0;
-        stats.cycles.forEach(cycle => {
-            cycle.trades.forEach(t => {
-                if (t.type === 'buy') buyCount++;
-                else if (t.type === 'sell') sellCount++;
-            });
-        });
-
-        // 简单的统计图表（使用HTML/CSS实现）
-        let html = '<div style="padding: 20px;">';
-        html += '<h4 style="margin-bottom: 15px;">交易统计</h4>';
-
-        html += '<div style="margin-bottom: 20px;">';
-        html += `<div style="margin-bottom: 10px;"><span style="color: #4caf50;">买入 ${buyCount}笔</span> vs <span style="color: #f44336;">卖出 ${sellCount}笔</span></div>`;
-        html += '<div style="display: flex; height: 30px; border-radius: 4px; overflow: hidden;">';
-        html += `<div style="width: ${buyPercent}%; background: #4caf50; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">${buyPercent > 10 ? '买入' : ''}</div>`;
-        html += `<div style="width: ${sellPercent}%; background: #f44336; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">${sellPercent > 10 ? '卖出' : ''}</div>`;
-        html += '</div>';
-        html += '<div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px; color: #666;">';
-        html += `<span>¥${buyAmount.toFixed(2)}</span>`;
-        html += `<span>¥${sellAmount.toFixed(2)}</span>`;
-        html += '</div>';
-        html += '</div>';
-
-        // 收益趋势 - 直接使用stats数据
-        html += '<div style="border-top: 1px solid #eee; padding-top: 15px;">';
-        html += '<h4 style="margin-bottom: 10px;">收益情况</h4>';
-        html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">';
-        html += '<div style="padding: 10px; background: #f9f9f9; border-radius: 4px;">';
-        html += '<div style="color: #666; font-size: 12px;">已实现收益</div>';
-        html += `<div style="font-weight: bold; color: ${summary.totalRealizedProfit >= 0 ? '#4caf50' : '#f44336'};">¥${summary.totalRealizedProfit.toFixed(2)}</div>`;
-        html += '</div>';
-        html += '<div style="padding: 10px; background: #f9f9f9; border-radius: 4px;">';
-        html += '<div style="color: #666; font-size: 12px;">浮动收益</div>';
-        html += `<div style="font-weight: bold; color: ${(summary.totalFloatingProfit || 0) >= 0 ? '#4caf50' : '#f44336'};">¥${(summary.totalFloatingProfit || 0).toFixed(2)}</div>`;
-        html += '</div>';
-        html += '</div>';
-        html += '</div>';
-
-        html += '</div>';
-        chartContainer.innerHTML = html;
     },
 
     /**
      * 渲染持仓周期列表
      * @param {array} cycles - 持仓周期数组
+     * @param {object} summary - 汇总数据
      */
-    renderCycleList(cycles) {
+    renderCycleList(cycles, summary) {
         const cycleList = document.getElementById('cycle-list');
         if (!cycleList) return;
 
@@ -340,13 +406,19 @@ const Detail = {
             const statusText = cycle.status === 'closed' ? '已结束' : '进行中';
             const statusColor = cycle.status === 'closed' ? '#4caf50' : '#ff9800';
 
+            // 简单差额法: 收益 = (已卖出到手 + 持仓市值) - 买入成本
+            const cycleHoldingValue = cycle.holdingValue || 0;
+            const cycleSimpleProfit = (cycle.totalSellAmount + cycleHoldingValue) - cycle.totalBuyAmount;
+            const cycleSimpleRate = cycle.totalBuyAmount > 0 ? (cycleSimpleProfit / cycle.totalBuyAmount * 100) : 0;
+
             html += `
                 <div class="cycle-item" style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 8px; border-left: 4px solid ${statusColor};">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <span style="font-weight: bold; color: ${statusColor};">周期${cycle.id} (${statusText})</span>
                         <span style="color: #666; font-size: 14px;">${cycle.startDate} ~ ${cycle.endDate || '至今'}</span>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 14px;">
+                    <div style="margin-bottom: 8px; font-size: 13px; color: #888; border-bottom: 1px dashed #ddd; padding-bottom: 4px;">FIFO成本法</div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 14px; margin-bottom: 10px;">
                         <div>
                             <span style="color: #666;">投入：</span>
                             <span style="font-weight: bold;">¥${cycle.totalInvest.toFixed(2)}</span>
@@ -364,6 +436,25 @@ const Detail = {
                             <span style="font-weight: bold;">${cycle.holdingDays || 0}天</span>
                         </div>
                     </div>
+                    <div style="font-size: 13px; color: #888; border-bottom: 1px dashed #ddd; padding-bottom: 4px;">简单差额法</div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 14px;">
+                        <div>
+                            <span style="color: #666;">购买：</span>
+                            <span style="font-weight: bold;">¥${cycle.totalBuyAmount.toFixed(2)}</span>
+                        </div>
+                        <div>
+                            <span style="color: #666;">收益：</span>
+                            <span style="font-weight: bold; color: ${cycleSimpleProfit >= 0 ? '#4caf50' : '#f44336'};">¥${cycleSimpleProfit.toFixed(2)}</span>
+                        </div>
+                        <div>
+                            <span style="color: #666;">收益率：</span>
+                            <span style="font-weight: bold; color: ${cycleSimpleRate >= 0 ? '#4caf50' : '#f44336'};">${cycleSimpleRate.toFixed(2)}%</span>
+                        </div>
+                        <div>
+                            <span style="color: #666;">手续费：</span>
+                            <span style="font-weight: bold;">¥${((cycle.totalBuyFee || 0) + (cycle.totalSellFee || 0)).toFixed(2)}</span>
+                        </div>
+                    </div>
                 </div>
             `;
         });
@@ -378,31 +469,56 @@ const Detail = {
     updateTradeList(fund) {
         const trades = TradeManager.getTradesByFund(fund.id);
         const tradeList = document.getElementById('trade-list');
+        const paginationContainer = document.getElementById('trade-pagination-container');
 
         if (!tradeList) return;
 
-        if (trades.length === 0) {
-            tradeList.innerHTML = `
-                <tr>
-                    <td colspan="6" style="text-align: center; color: #999;">
-                        还没有交易记录
-                    </td>
-                </tr>
-            `;
-            return;
+        // 按日期倒序排列
+        const sortedTrades = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // 创建或更新分页实例
+        Detail._tradePaginator = Paginator.create({
+            data: sortedTrades,
+            pageSize: Config.get('ui.defaultPageSize', 10),
+            onPageChange: (pageData) => {
+                Detail.renderTradePage(pageData);
+            },
+            onFilterChange: (inst) => {
+                const pageData = Paginator.getCurrentPageData(inst);
+                Detail.renderTradePage(pageData);
+                // 更新分页控件
+                if (paginationContainer) {
+                    paginationContainer.innerHTML = Paginator.renderControls(inst);
+                    Detail.bindPaginationEvents();
+                }
+                // 更新筛选结果数量
+                const filterCount = document.getElementById('filter-result-count');
+                if (filterCount) {
+                    filterCount.textContent = `共 ${inst.filteredData.length} 条记录`;
+                }
+            }
+        });
+
+        // 应用当前筛选条件
+        if (Detail._currentFilters) {
+            Paginator.applyFilters(Detail._tradePaginator, Detail._currentFilters);
         }
 
-        // 按日期倒序排列
-        const sortedTrades = [...trades].sort((a, b) =>
-            new Date(b.date) - new Date(a.date)
-        );
+        // 渲染第一页
+        const pageData = Paginator.getCurrentPageData(Detail._tradePaginator);
+        Detail.renderTradePage(pageData);
 
-        // 生成交易记录行
-        const rows = sortedTrades.map(trade => this.renderTradeRow(trade));
-        tradeList.innerHTML = rows.join('');
+        // 渲染分页控件
+        if (paginationContainer) {
+            paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
+            Detail.bindPaginationEvents();
+        }
 
-        // 绑定操作按钮事件
-        this.bindTradeActions();
+        // 更新筛选结果数量
+        const filterCount = document.getElementById('filter-result-count');
+        if (filterCount) {
+            filterCount.textContent = `共 ${Detail._tradePaginator.filteredData.length} 条记录`;
+        }
     },
 
     /**
@@ -425,6 +541,9 @@ const Detail = {
 
         const netValueDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
 
+        const remarkDisplay = trade.remark ? (trade.remark.length > 20 ? trade.remark.substring(0, 20) + '...' : trade.remark) : '-';
+        const remarkTitle = trade.remark || '';
+
         return `
             <tr data-trade-id="${trade.id}">
                 <td>${trade.date}</td>
@@ -433,12 +552,116 @@ const Detail = {
                 <td>${Utils.formatNumber(trade.shares)}</td>
                 <td>${Utils.formatMoney(trade.amount)}</td>
                 <td>${Utils.formatMoney(trade.fee)}</td>
+                <td class="trade-remark" title="${remarkTitle}">${remarkDisplay}</td>
                 <td>
                     <button class="btn btn-secondary btn-edit-trade" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">编辑</button>
                     <button class="btn btn-danger btn-delete-trade" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">删除</button>
                 </td>
             </tr>
         `;
+    },
+
+    /**
+     * 渲染当前页交易记录
+     * @param {Array} pageData - 当前页数据
+     */
+    renderTradePage(pageData) {
+        const tradeList = document.getElementById('trade-list');
+        if (!tradeList) return;
+
+        if (pageData.length === 0) {
+            tradeList.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--color-text-tertiary);">没有匹配的交易记录</td></tr>';
+            return;
+        }
+
+        const rows = pageData.map(trade => Detail.renderTradeRow(trade));
+        tradeList.innerHTML = rows.join('');
+        Detail.bindTradeActions();
+    },
+
+    /**
+     * 绑定分页控件事件
+     */
+    bindPaginationEvents() {
+        const paginationContainer = document.getElementById('trade-pagination-container');
+        if (!paginationContainer || !Detail._tradePaginator) return;
+
+        // 页码按钮
+        paginationContainer.querySelectorAll('.page-btn[data-page]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const page = parseInt(btn.dataset.page);
+                Paginator.goToPage(Detail._tradePaginator, page);
+                paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
+                Detail.bindPaginationEvents();
+            });
+        });
+
+        // 上一页/下一页
+        paginationContainer.querySelectorAll('.page-btn[data-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                if (action === 'prev') {
+                    Paginator.goToPage(Detail._tradePaginator, Detail._tradePaginator.currentPage - 1);
+                } else if (action === 'next') {
+                    Paginator.goToPage(Detail._tradePaginator, Detail._tradePaginator.currentPage + 1);
+                }
+                paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
+                Detail.bindPaginationEvents();
+            });
+        });
+
+        // 每页条数
+        paginationContainer.querySelectorAll('.page-size-select').forEach(select => {
+            select.addEventListener('change', () => {
+                Paginator.setPageSize(Detail._tradePaginator, parseInt(select.value));
+                paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
+                Detail.bindPaginationEvents();
+            });
+        });
+    },
+
+    /**
+     * 应用交易记录筛选
+     */
+    applyTradeFilters() {
+        const type = document.getElementById('filter-trade-type')?.value || null;
+        const startDate = document.getElementById('filter-start-date')?.value || null;
+        const endDate = document.getElementById('filter-end-date')?.value || null;
+
+        Detail._currentFilters = { type: type || null, startDate: startDate || null, endDate: endDate || null };
+
+        if (Detail._tradePaginator) {
+            Paginator.applyFilters(Detail._tradePaginator, Detail._currentFilters);
+            const paginationContainer = document.getElementById('trade-pagination-container');
+            if (paginationContainer) {
+                paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
+                Detail.bindPaginationEvents();
+            }
+        }
+    },
+
+    /**
+     * 清除交易记录筛选
+     */
+    clearTradeFilters() {
+        Detail._currentFilters = null;
+
+        const filterTradeType = document.getElementById('filter-trade-type');
+        const filterStartDate = document.getElementById('filter-start-date');
+        const filterEndDate = document.getElementById('filter-end-date');
+
+        if (filterTradeType) filterTradeType.value = '';
+        if (filterStartDate) filterStartDate.value = '';
+        if (filterEndDate) filterEndDate.value = '';
+
+        if (Detail._tradePaginator) {
+            Paginator.clearFilters(Detail._tradePaginator);
+            const paginationContainer = document.getElementById('trade-pagination-container');
+            if (paginationContainer) {
+                paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
+                Detail.bindPaginationEvents();
+            }
+        }
     },
 
     /**

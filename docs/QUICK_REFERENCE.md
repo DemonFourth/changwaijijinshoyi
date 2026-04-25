@@ -14,7 +14,7 @@ this.methodName()
 ObjectName.methodName()
 ```
 
-**适用所有模块**: TradeManager, FundManager, DataService, Calculator等
+**适用所有模块**: TradeManager, FundManager, DataService, ThemeManager, ChartManager, BigNumberFormatter, Paginator等
 
 ### 2. 开发后必须测试
 
@@ -134,6 +134,36 @@ try {
 
 ---
 
+## 模块注册表
+
+| 模块 | 文件 | 说明 |
+|------|------|------|
+| Config | config.js | 配置管理 |
+| EventBus | eventBus.js | 事件总线 |
+| Utils | utils.js | 工具函数 |
+| Storage | storage.js | 本地存储 |
+| FundManager | fundManager.js | 基金管理 |
+| TradeManager | tradeManager.js | 交易管理 |
+| ThemeManager | themeManager.js | 主题切换 |
+| ChartManager | chartManager.js | ECharts图表 |
+| BigNumberFormatter | bigNumberFormatter.js | 大数字格式化 |
+| Paginator | paginator.js | 分页组件 |
+
+---
+
+## CSS设计令牌
+
+```css
+/* 使用CSS变量，禁止硬编码颜色 */
+color: var(--color-text-primary);
+background: var(--color-bg-card);
+border: 1px solid var(--color-border-secondary);
+```
+
+主题切换：`ThemeManager.setTheme('dark')` / `ThemeManager.toggleTheme()`
+
+---
+
 ## Git提交
 
 ```bash
@@ -153,6 +183,7 @@ refactor # 重构
 
 提交前检查：
 - [ ] 无`this.`调用
+- [ ] CSS使用变量，无硬编码颜色
 - [ ] ESLint通过
 - [ ] 功能测试通过
 - [ ] 文档已更新
@@ -165,3 +196,4 @@ refactor # 重构
 - **问题诊断**: `docs/DIAGNOSIS.md`
 - **解决方案**: `docs/SOLUTION.md`
 - **项目说明**: `README.md`
+- **SDD设计文档**: `.sdd/fund-calculator-enhancement/`

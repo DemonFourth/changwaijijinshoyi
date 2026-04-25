@@ -204,6 +204,27 @@ const Storage = {
     },
 
     /**
+     * 保存视图偏好设置
+     * @param {object} prefs - 视图偏好 {viewMode, sortField, sortOrder}
+     * @returns {boolean}
+     */
+    saveViewPrefs(prefs) {
+        return this.save('fund_calculator_view_prefs', prefs);
+    },
+
+    /**
+     * 加载视图偏好设置
+     * @returns {object} 视图偏好
+     */
+    loadViewPrefs() {
+        return this.load('fund_calculator_view_prefs') || {
+            viewMode: Config.get('ui.defaultViewMode', 'card'),
+            sortField: Config.get('ui.defaultSortField', 'profitRate'),
+            sortOrder: Config.get('ui.defaultSortOrder', 'desc')
+        };
+    },
+
+    /**
      * 导出所有数据
      * @returns {object}
      */

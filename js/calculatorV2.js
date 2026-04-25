@@ -4,6 +4,9 @@
  */
 
 const CalculatorV2 = {
+    // 精度阈值，用于浮点数比较
+    EPSILON: 0.0001,
+
     /**
      * 计算基金的收益情况（支持多轮持仓）
      * @param {array} trades - 交易记录数组
@@ -46,7 +49,7 @@ const CalculatorV2 = {
         for (const trade of trades) {
             if (trade.type === 'buy') {
                 // 买入
-                if (holdingShares === 0) {
+                if (holdingShares <= CalculatorV2.EPSILON) {
                     // 开始新的持仓周期
                     currentCycle = {
                         id: cycleId++,
@@ -68,14 +71,14 @@ const CalculatorV2 = {
                     currentCycle.trades.push(trade);
                 }
 
-                if (holdingShares <= 0) {
+                if (holdingShares <= CalculatorV2.EPSILON) {
                     // 清仓，结束当前周期
                     if (currentCycle) {
                         currentCycle.endDate = trade.date;
                         currentCycle.status = 'closed';
                     }
                     currentCycle = null;
-                    holdingShares = 0; // 确保不为负数
+                    holdingShares = 0; // 强制归零
                 }
             } else if (trade.type === 'dividend') {
                 // 分红归入当前周期
@@ -95,14 +98,14 @@ const CalculatorV2 = {
      * @returns {object} 周期收益对象
      */
     calculateCycleProfit(cycle, currentNetValue) {
-        let totalInvest = 0; // 总投入(买入金额+手续费)
-        let totalBuyAmount = 0; // 总买入金额
-        let totalSellAmount = 0; // 总卖出金额
+        let totalInvest = 0; // 总投入(净值×份额+手续费)
+        let totalBuyAmount = 0; // 总买入金额(净值×份额，不含手续费)
+        let totalSellAmount = 0; // 总卖出金额(到手金额，已扣手续费)
         let totalBuyFee = 0; // 总买入手续费
         let totalSellFee = 0; // 总卖出手续费
         let totalShares = 0; // 总买入份额
         let holdingShares = 0; // 持有份额
-        let holdingCost = 0; // 持仓成本
+        let holdingCost = 0; // 持仓成本(净值×份额)
         let realizedProfit = 0; // 已实现收益
         const realizedDetails = []; // 已实现收益明细
         const tradeDetails = []; // 交易明细
@@ -114,21 +117,26 @@ const CalculatorV2 = {
             const shares = parseFloat(trade.shares);
             const amount = parseFloat(trade.amount);
             const fee = parseFloat(trade.fee || 0);
+            const netValue = parseFloat(trade.netValue || 0);
 
             if (trade.type === 'buy') {
-                const cost = amount + fee;
-                totalInvest += cost;
-                totalBuyAmount += amount;
+                // 场外基金买入：
+                // 总投入 = 净值×份额 + 手续费（用户实际支付的总金额）
+                // 持仓成本 = 净值×份额（实际入市的金额）
+                // amount字段：自动计算为 净值×份额+手续费，用户可手动修改
+                const buyCost = netValue > 0 ? netValue * shares : amount - fee;
+                totalInvest += buyCost + fee;     // 总投入 = 净值×份额 + 手续费
+                totalBuyAmount += buyCost;        // 总买入金额 = 净值×份额
                 totalBuyFee += fee;
                 totalShares += shares;
                 holdingShares += shares;
-                holdingCost += cost;
+                holdingCost += buyCost;           // 持仓成本 = 净值×份额
 
                 holdingQueue.push({
                     shares: shares,
                     remainingShares: shares,
-                    cost: cost,
-                    pricePerShare: cost / shares
+                    cost: buyCost,
+                    pricePerShare: buyCost / shares
                 });
 
                 tradeDetails.push({
@@ -141,6 +149,9 @@ const CalculatorV2 = {
                 });
 
             } else if (trade.type === 'sell') {
+                // 场外基金卖出：
+                // amount是到手金额(=净值×份额-手续费)，手续费已扣除，无需重复扣除
+                // 卖出总额 = amount + fee (= 净值×份额)
                 totalSellAmount += amount;
                 totalSellFee += fee;
                 holdingShares -= shares;
@@ -165,8 +176,9 @@ const CalculatorV2 = {
 
                 holdingCost -= costAmount;
 
-                // 计算已实现收益
-                const profit = amount - costAmount - fee;
+                // 已实现收益 = 到手金额 - FIFO成本
+                // amount已经是扣了手续费的到手金额，不需要再减fee
+                const profit = amount - costAmount;
                 realizedProfit += profit;
 
                 realizedDetails.push({
@@ -211,8 +223,19 @@ const CalculatorV2 = {
         }
 
         // 计算浮动收益
-        const holdingValue = holdingShares * currentNetValue;
-        const floatingProfit = holdingValue - holdingCost;
+        let holdingValue = holdingShares * currentNetValue;
+        let floatingProfit = holdingValue - holdingCost;
+
+        // 确保已清仓周期的持仓信息正确归零
+        if (holdingShares <= CalculatorV2.EPSILON) {
+            holdingShares = 0;
+            holdingCost = 0;
+            holdingValue = 0;
+            floatingProfit = 0;
+        }
+
+        // 确保持仓成本不为负数
+        holdingCost = Math.max(0, holdingCost);
 
         // 周期总收益
         const totalProfit = realizedProfit + floatingProfit;
@@ -314,6 +337,23 @@ const CalculatorV2 = {
         const profitRate = totalInvest > 0 ? (totalProfit / totalInvest * 100) : 0;
         const totalFee = totalBuyFee + totalSellFee;
 
+        // 最终校验：确保持仓数据合法
+        if (currentHolding.shares <= CalculatorV2.EPSILON) {
+            currentHolding.shares = 0;
+            currentHolding.cost = 0;
+            currentHolding.value = 0;
+            currentHolding.floatingProfit = 0;
+        }
+
+        // 简单差额法计算
+        // 场外基金: 买入totalBuyAmount=净值×份额(不含手续费), 卖出amount是到手金额(已扣手续费)
+        // 收益 = (已卖出到手 + 持仓市值) - 买入成本(净值×份额)
+        // 收益率 = 收益 / 买入成本
+        // 注意：持仓中的基金也需计入市值，否则收益必然为负
+        const holdingValue = currentHolding.value || 0;
+        const simpleProfit = (totalSellAmount + holdingValue) - totalBuyAmount;
+        const simpleProfitRate = totalBuyAmount > 0 ? (simpleProfit / totalBuyAmount * 100) : 0;
+
         // 兼容旧版本的返回格式
         return {
             // 新格式：持仓周期
@@ -333,11 +373,15 @@ const CalculatorV2 = {
                 totalSellFee,
                 totalFee,
 
-                // 收益统计
+                // 收益统计(FIFO)
                 totalProfit,
                 totalRealizedProfit,
                 totalFloatingProfit,
                 profitRate,
+
+                // 简单差额法
+                simpleProfit,
+                simpleProfitRate,
 
                 // 当前持仓
                 currentHolding
@@ -375,9 +419,17 @@ const CalculatorV2 = {
                 closedCycles: 0,
                 activeCycles: 0,
                 totalInvest: 0,
+                totalBuyAmount: 0,
+                totalSellAmount: 0,
+                totalBuyFee: 0,
+                totalSellFee: 0,
+                totalFee: 0,
                 totalProfit: 0,
                 profitRate: 0,
                 totalRealizedProfit: 0,
+                totalFloatingProfit: 0,
+                simpleProfit: 0,
+                simpleProfitRate: 0,
                 currentHolding: {
                     shares: 0,
                     cost: 0,

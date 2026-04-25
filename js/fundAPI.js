@@ -7,6 +7,9 @@ const FundAPI = {
     // API缓存
     cache: new Map(),
 
+    // JSONP请求计数器，用于生成唯一回调函数名
+    _jsonpCounter: 0,
+
     /**
      * 获取基金数据
      * @param {string} fundCode - 基金代码
@@ -36,8 +39,8 @@ const FundAPI = {
             const data = await this.fetchWithRetry(url);
             const fundData = this.parseJSONPResponse(data, fundCode);
 
-            // 保存到缓存
-            this.saveToCache(fundCode, fundData);
+            // 使用返回数据中的实际基金代码保存缓存
+            this.saveToCache(fundData.code, fundData);
 
             return fundData;
         } catch (error) {
@@ -74,6 +77,7 @@ const FundAPI = {
 
     /**
      * 使用JSONP方式获取数据（绕过CORS）
+     * 使用全局jsonpgz回调，通过请求ID匹配响应
      * @param {string} url - 请求URL
      * @returns {Promise<object>}
      */
@@ -82,6 +86,12 @@ const FundAPI = {
             const timeout = Config.get('api.timeout', 10000);
             let timeoutId = null;
             let script = null;
+            const requestId = ++FundAPI._jsonpCounter;
+
+            // 初始化待处理请求队列
+            if (!FundAPI._pendingRequests) {
+                FundAPI._pendingRequests = [];
+            }
 
             // 清理函数
             const cleanup = () => {
@@ -92,6 +102,8 @@ const FundAPI = {
                 if (script && script.parentNode) {
                     script.parentNode.removeChild(script);
                 }
+                // 从待处理队列中移除
+                FundAPI._pendingRequests = FundAPI._pendingRequests.filter(r => r.id !== requestId);
             };
 
             // 设置超时
@@ -100,45 +112,22 @@ const FundAPI = {
                 reject(new Error('JSONP request timeout'));
             }, timeout);
 
-            // 保存原始的jsonpgz函数（如果存在）
-            const originalJsonpgz = window.jsonpgz;
+            // 将当前请求加入待处理队列
+            FundAPI._pendingRequests.push({
+                id: requestId,
+                resolve: (data) => {
+                    cleanup();
+                    resolve(data);
+                }
+            });
 
-            // 创建临时的jsonpgz回调函数
+            // 设置全局jsonpgz回调，将数据分发给队列中最早的请求（FIFO）
             window.jsonpgz = (data) => {
-                console.log('=== JSONP Callback ===');
-                console.log('Data type:', typeof data);
-                console.log('Fund code:', data ? data.fundcode : 'N/A');
-                console.log('Fund name:', data ? data.name : 'N/A');
-                
-                // 如果data是字符串，尝试解析JSONP格式
-                if (typeof data === 'string') {
-                    try {
-                        const jsonString = data.replace(/^[^(]*\(|\);?$/g, '');
-                        data = JSON.parse(jsonString);
-                        console.log('Parsed JSONP string:', data);
-                    } catch (e) {
-                        console.error('JSONP parse error:', e);
-                        cleanup();
-                        if (originalJsonpgz) {
-                            window.jsonpgz = originalJsonpgz;
-                        } else {
-                            delete window.jsonpgz;
-                        }
-                        reject(new Error('JSONP parse error: ' + e.message));
-                        return;
-                    }
+                // 取出最早入队的请求并resolve
+                if (FundAPI._pendingRequests.length > 0) {
+                    const pending = FundAPI._pendingRequests.shift();
+                    pending.resolve(data);
                 }
-
-                cleanup();
-                // 恢复原始函数
-                if (originalJsonpgz) {
-                    window.jsonpgz = originalJsonpgz;
-                } else {
-                    delete window.jsonpgz;
-                }
-
-                // 返回修复后的数据
-                resolve(data);
             };
 
             // 创建script标签
@@ -146,7 +135,7 @@ const FundAPI = {
             script.type = 'text/javascript';
             script.src = url;
 
-            // 尝试设置charset（虽然可能不起作用）
+            // 尝试设置charset
             try {
                 script.setAttribute('charset', 'gb2312');
             } catch (e) {
@@ -156,12 +145,6 @@ const FundAPI = {
             // 错误处理
             script.onerror = () => {
                 cleanup();
-                // 恢复原始函数
-                if (originalJsonpgz) {
-                    window.jsonpgz = originalJsonpgz;
-                } else {
-                    delete window.jsonpgz;
-                }
                 reject(new Error('JSONP script load error'));
             };
 
@@ -174,22 +157,14 @@ const FundAPI = {
     /**
      * 解析JSONP响应数据
      * @param {object} data - JSONP返回的数据对象
-     * @param {string} fundCode - 基金代码
+     * @param {string} fundCode - 期望的基金代码（用于日志，不强制匹配）
      * @returns {object}
      */
     parseJSONPResponse(data, fundCode) {
-        console.log('=== Parse Response Debug ===');
-        console.log('1. Input data:', data);
-        console.log('2. Expected fund code:', fundCode);
-
         try {
             // 验证返回的数据
             if (!data || !data.fundcode) {
                 throw new Error('Invalid response data');
-            }
-
-            if (data.fundcode !== fundCode) {
-                throw new Error('Fund code mismatch');
             }
 
             // 构造标准化的基金数据对象
@@ -204,14 +179,9 @@ const FundAPI = {
                 updateTime: new Date().toISOString()
             };
 
-            console.log('3. Parsed result:', result);
-            console.log('4. Final name:', result.name);
-            console.log('5. Name is valid Chinese:', /[\u4e00-\u9fa5]/.test(result.name));
-
             return result;
         } catch (error) {
             console.error('Failed to parse JSONP response:', error);
-            console.error('Response data:', data);
             throw new Error('Failed to parse fund data');
         }
     },

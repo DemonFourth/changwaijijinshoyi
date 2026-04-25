@@ -153,9 +153,9 @@ const Modal = {
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">净值</label>
+                <label class="form-label">净值 *</label>
                 <input type="number" id="input-trade-net-value" class="form-input" 
-                       placeholder="买入时的净值（可选）" step="0.0001" min="0">
+                       placeholder="请输入净值" step="0.0001" min="0">
             </div>
             <div class="form-group">
                 <label class="form-label">份额 *</label>
@@ -163,19 +163,20 @@ const Modal = {
                        placeholder="请输入份额" step="0.01" min="0">
             </div>
             <div class="form-group">
-                <label class="form-label">金额 *</label>
-                <input type="number" id="input-trade-amount" class="form-input" 
-                       placeholder="请输入金额" step="0.01" min="0">
-            </div>
-            <div class="form-group">
-                <label class="form-label">手续费</label>
+                <label class="form-label">手续费 *</label>
                 <input type="number" id="input-trade-fee" class="form-input" 
                        placeholder="请输入手续费" step="0.01" min="0" value="0">
             </div>
             <div class="form-group">
+                <label class="form-label">金额</label>
+                <input type="number" id="input-trade-amount" class="form-input" 
+                       placeholder="自动计算，可手动修改" step="0.01" min="0">
+                <div class="form-hint" id="hint-amount"></div>
+            </div>
+            <div class="form-group">
                 <label class="form-label">备注</label>
                 <input type="text" id="input-trade-remark" class="form-input" 
-                       placeholder="备注信息（可选）">
+                       placeholder="备注信息（可选）" maxlength="50">
             </div>
             <div class="form-actions">
                 <button class="btn btn-secondary" onclick="Modal.hide()">取消</button>
@@ -189,23 +190,103 @@ const Modal = {
      */
     bindAddTradeEvents(data) {
         const btnConfirm = document.getElementById('btn-confirm-add-trade');
+        const tradeType = document.getElementById('input-trade-type');
+        const netValue = document.getElementById('input-trade-net-value');
+        const shares = document.getElementById('input-trade-shares');
+        const fee = document.getElementById('input-trade-fee');
+        const amount = document.getElementById('input-trade-amount');
+        const hintAmount = document.getElementById('hint-amount');
+
+        // 记录自动计算值，用于不一致检测
+        let autoCalcAmount = null;
+
+        // 根据交易类型计算金额
+        // 买入：金额 = 净值 × 份额 + 手续费（总支付）
+        // 卖出：金额 = 净值 × 份额 - 手续费（到手金额）
+        const calcAmount = () => {
+            const nv = parseFloat(netValue.value);
+            const s = parseFloat(shares.value);
+            const f = parseFloat(fee.value) || 0;
+            const type = tradeType.value;
+
+            if (nv > 0 && s > 0) {
+                if (type === 'buy') {
+                    autoCalcAmount = nv * s + f;
+                } else if (type === 'sell') {
+                    autoCalcAmount = nv * s - f;
+                } else {
+                    autoCalcAmount = nv * s;
+                }
+                // 默认填入自动计算值
+                amount.value = autoCalcAmount.toFixed(2);
+                hintAmount.textContent = type === 'buy'
+                    ? `自动计算：净值×份额+手续费 = ${autoCalcAmount.toFixed(2)}`
+                    : type === 'sell'
+                    ? `自动计算：净值×份额-手续费 = ${autoCalcAmount.toFixed(2)}`
+                    : `自动计算：净值×份额 = ${autoCalcAmount.toFixed(2)}`;
+                hintAmount.classList.remove('form-hint-warn');
+                amount.classList.remove('form-input-mismatch');
+            } else {
+                autoCalcAmount = null;
+                amount.value = '';
+                hintAmount.textContent = '';
+            }
+        };
+
+        // 检查金额是否与自动计算不一致
+        const checkMismatch = () => {
+            if (autoCalcAmount === null) return;
+            const currentAmount = parseFloat(amount.value);
+            if (isNaN(currentAmount)) return;
+
+            const diff = Math.abs(currentAmount - autoCalcAmount);
+            if (diff > 0.01) {
+                hintAmount.textContent = `与自动计算值 ${autoCalcAmount.toFixed(2)} 不一致，请确认`;
+                hintAmount.classList.add('form-hint-warn');
+                amount.classList.add('form-input-mismatch');
+            } else {
+                const type = tradeType.value;
+                hintAmount.textContent = type === 'buy'
+                    ? `自动计算：净值×份额+手续费 = ${autoCalcAmount.toFixed(2)}`
+                    : type === 'sell'
+                    ? `自动计算：净值×份额-手续费 = ${autoCalcAmount.toFixed(2)}`
+                    : `自动计算：净值×份额 = ${autoCalcAmount.toFixed(2)}`;
+                hintAmount.classList.remove('form-hint-warn');
+                amount.classList.remove('form-input-mismatch');
+            }
+        };
+
+        // 净值/份额/手续费变化时自动计算金额
+        netValue.addEventListener('input', calcAmount);
+        shares.addEventListener('input', calcAmount);
+        fee.addEventListener('input', calcAmount);
+        tradeType.addEventListener('change', calcAmount);
+
+        // 用户点击金额输入框时清空，让用户手动输入
+        amount.addEventListener('focus', () => {
+            if (autoCalcAmount !== null) {
+                amount.value = '';
+            }
+        });
+
+        // 用户手动修改金额后检查不一致
+        amount.addEventListener('input', checkMismatch);
 
         btnConfirm.addEventListener('click', () => {
             const tradeData = {
                 fundId: data.fundId,
                 date: document.getElementById('input-trade-date').value,
-                type: document.getElementById('input-trade-type').value,
-                netValue: document.getElementById('input-trade-net-value').value,
-                shares: document.getElementById('input-trade-shares').value,
-                amount: document.getElementById('input-trade-amount').value,
-                fee: document.getElementById('input-trade-fee').value,
+                type: tradeType.value,
+                netValue: netValue.value,
+                shares: shares.value,
+                amount: amount.value,
+                fee: fee.value,
                 remark: document.getElementById('input-trade-remark').value
             };
 
             const trade = TradeManager.addTrade(tradeData);
             if (trade) {
                 this.hide();
-                // 刷新详情页
                 if (typeof Detail !== 'undefined') {
                     Detail.refresh();
                 }
@@ -233,24 +314,30 @@ const Modal = {
                 </select>
             </div>
             <div class="form-group">
+                <label class="form-label">净值 *</label>
+                <input type="number" id="input-trade-net-value" class="form-input" 
+                       value="${trade.netValue || ''}" placeholder="请输入净值" step="0.0001" min="0">
+            </div>
+            <div class="form-group">
                 <label class="form-label">份额 *</label>
                 <input type="number" id="input-trade-shares" class="form-input" 
-                       value="${trade.shares}" step="0.01" min="0">
+                       value="${trade.shares}" placeholder="请输入份额" step="0.01" min="0">
             </div>
             <div class="form-group">
-                <label class="form-label">金额 *</label>
-                <input type="number" id="input-trade-amount" class="form-input" 
-                       value="${trade.amount}" step="0.01" min="0">
-            </div>
-            <div class="form-group">
-                <label class="form-label">手续费</label>
+                <label class="form-label">手续费 *</label>
                 <input type="number" id="input-trade-fee" class="form-input" 
-                       value="${trade.fee}" step="0.01" min="0">
+                       value="${trade.fee}" placeholder="请输入手续费" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">金额</label>
+                <input type="number" id="input-trade-amount" class="form-input" 
+                       value="${trade.amount}" placeholder="自动计算，可手动修改" step="0.01" min="0">
+                <div class="form-hint" id="hint-amount"></div>
             </div>
             <div class="form-group">
                 <label class="form-label">备注</label>
                 <input type="text" id="input-trade-remark" class="form-input" 
-                       value="${trade.remark || ''}">
+                       value="${trade.remark || ''}" maxlength="50">
             </div>
             <div class="form-actions">
                 <button class="btn btn-secondary" onclick="Modal.hide()">取消</button>
@@ -264,21 +351,91 @@ const Modal = {
      */
     bindEditTradeEvents(data) {
         const btnConfirm = document.getElementById('btn-confirm-edit-trade');
+        const tradeType = document.getElementById('input-trade-type');
+        const netValue = document.getElementById('input-trade-net-value');
+        const shares = document.getElementById('input-trade-shares');
+        const fee = document.getElementById('input-trade-fee');
+        const amount = document.getElementById('input-trade-amount');
+        const hintAmount = document.getElementById('hint-amount');
+
+        let autoCalcAmount = null;
+
+        const calcAmount = () => {
+            const nv = parseFloat(netValue.value);
+            const s = parseFloat(shares.value);
+            const f = parseFloat(fee.value) || 0;
+            const type = tradeType.value;
+
+            if (nv > 0 && s > 0) {
+                if (type === 'buy') {
+                    autoCalcAmount = nv * s + f;
+                } else if (type === 'sell') {
+                    autoCalcAmount = nv * s - f;
+                } else {
+                    autoCalcAmount = nv * s;
+                }
+                amount.value = autoCalcAmount.toFixed(2);
+                hintAmount.textContent = type === 'buy'
+                    ? `自动计算：净值×份额+手续费 = ${autoCalcAmount.toFixed(2)}`
+                    : type === 'sell'
+                    ? `自动计算：净值×份额-手续费 = ${autoCalcAmount.toFixed(2)}`
+                    : `自动计算：净值×份额 = ${autoCalcAmount.toFixed(2)}`;
+                hintAmount.classList.remove('form-hint-warn');
+                amount.classList.remove('form-input-mismatch');
+            } else {
+                autoCalcAmount = null;
+                hintAmount.textContent = '';
+            }
+        };
+
+        const checkMismatch = () => {
+            if (autoCalcAmount === null) return;
+            const currentAmount = parseFloat(amount.value);
+            if (isNaN(currentAmount)) return;
+
+            const diff = Math.abs(currentAmount - autoCalcAmount);
+            if (diff > 0.01) {
+                hintAmount.textContent = `与自动计算值 ${autoCalcAmount.toFixed(2)} 不一致，请确认`;
+                hintAmount.classList.add('form-hint-warn');
+                amount.classList.add('form-input-mismatch');
+            } else {
+                const type = tradeType.value;
+                hintAmount.textContent = type === 'buy'
+                    ? `自动计算：净值×份额+手续费 = ${autoCalcAmount.toFixed(2)}`
+                    : type === 'sell'
+                    ? `自动计算：净值×份额-手续费 = ${autoCalcAmount.toFixed(2)}`
+                    : `自动计算：净值×份额 = ${autoCalcAmount.toFixed(2)}`;
+                hintAmount.classList.remove('form-hint-warn');
+                amount.classList.remove('form-input-mismatch');
+            }
+        };
+
+        netValue.addEventListener('input', calcAmount);
+        shares.addEventListener('input', calcAmount);
+        fee.addEventListener('input', calcAmount);
+        tradeType.addEventListener('change', calcAmount);
+
+        amount.addEventListener('focus', () => {
+            if (autoCalcAmount !== null) {
+                amount.value = '';
+            }
+        });
+        amount.addEventListener('input', checkMismatch);
 
         btnConfirm.addEventListener('click', () => {
             const updates = {
                 date: document.getElementById('input-trade-date').value,
-                type: document.getElementById('input-trade-type').value,
-                shares: document.getElementById('input-trade-shares').value,
-                amount: document.getElementById('input-trade-amount').value,
-                fee: document.getElementById('input-trade-fee').value,
+                type: tradeType.value,
+                netValue: netValue.value,
+                shares: shares.value,
+                amount: amount.value,
+                fee: fee.value,
                 remark: document.getElementById('input-trade-remark').value
             };
 
             const success = TradeManager.updateTrade(data.trade.id, updates);
             if (success) {
                 this.hide();
-                // 刷新详情页
                 if (typeof Detail !== 'undefined') {
                     Detail.refresh();
                 }
