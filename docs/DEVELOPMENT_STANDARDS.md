@@ -901,10 +901,10 @@ function calculateReturn(fund, trades) {
 
 **复杂逻辑注释**:
 ```javascript
-// 使用FIFO算法计算成本
-// 1. 按买入时间排序
-// 2. 从最早的买入开始匹配卖出
-// 3. 计算每笔卖出的成本和收益
+// 使用加权平均成本法计算
+// 1. 买入: 持仓总成本 += amount(含手续费)
+// 2. 卖出: 成本价不变, 持仓总成本 -= 卖出份额×成本价
+// 3. 已实现收益 = 到手金额 - 卖出份额×成本价
 const sortedTrades = trades.sort((a, b) => 
     new Date(a.date) - new Date(b.date)
 );
@@ -1116,7 +1116,7 @@ Config.get('echarts.enabled')         // 是否启用ECharts
 | Storage | js/storage.js | 本地存储管理 |
 | DataService | js/dataService.js | 数据服务 |
 | FundAPI | js/fundAPI.js | 基金API接口 |
-| CalculatorV2 | js/calculatorV2.js | FIFO计算引擎 |
+| CalculatorV2 | js/calculatorV2.js | 加权平均成本法计算引擎 |
 | FundManager | js/fundManager.js | 基金管理器 |
 | TradeManager | js/tradeManager.js | 交易管理器 |
 | Router | js/router.js | 路由管理 |
@@ -1146,6 +1146,7 @@ ThemeManager.getTheme();         // 'light' | 'dark'
 |------|------|------|
 | 品牌色 | `--color-brand-*` | `--color-brand-primary`, `--color-brand-secondary` |
 | 语义色 | `--color-success/danger/warning/info` | 盈利绿、亏损红、警告黄、信息蓝 |
+| 涨跌色 | `--color-rise/fall` | `--color-rise`(上涨红)、`--color-fall`(下跌绿) |
 | 背景色 | `--color-bg-*` | `--color-bg-primary`, `--color-bg-card`, `--color-bg-hover` |
 | 文字色 | `--color-text-*` | `--color-text-primary`, `--color-text-secondary`, `--color-text-tertiary` |
 | 边框色 | `--color-border-*` | `--color-border-primary`, `--color-border-secondary` |
@@ -1169,6 +1170,17 @@ background: var(--color-bg-primary);
 ---
 
 ## 更新日志
+
+### v2.1.0 (2026-04-27)
+- 新增涨跌颜色CSS变量：--color-rise/--color-fall/--color-rise-bg/--color-fall-bg
+- 新增交易类型Badge样式：.trade-type-buy/.trade-type-sell/.trade-type-dividend
+- 新增多轮持仓分组模块：cycleGroupRenderer.js、cycleTradeDisplay.js
+- 新增分红再投资支持：交易类型新增dividendReinvest模式
+- 新增基金名称硬编码管理：nameValidator.js、nameCache.js
+- 更新CSS涨跌颜色类：.fund-stat-value.positive/negative、.top5-rate.positive/negative、.stat-value/.value/.td的positive/negative
+- 修复浅色主题涨跌颜色缺失问题
+- 修复分红类型样式类名错误（trade-type-buy→trade-type-dividend）
+- 修复分红再投资金额为空时NaN问题
 
 ### v2.0.0 (2026-04-25)
 - 新增模块：ThemeManager、ChartManager、BigNumberFormatter、Paginator
