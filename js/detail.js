@@ -532,7 +532,7 @@ const Detail = {
         const typeClass = {
             buy: 'trade-type-buy',
             sell: 'trade-type-sell',
-            dividend: 'trade-type-buy'
+            dividend: 'trade-type-dividend'
         };
 
         const netValueDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';

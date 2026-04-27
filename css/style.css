@@ -207,6 +207,26 @@ body {
     font-family: var(--font-family-mono);
 }
 
+.stat-value.positive,
+.value.positive {
+    color: var(--color-rise);
+}
+
+.stat-value.negative,
+.value.negative {
+    color: var(--color-fall);
+}
+
+td.positive {
+    color: var(--color-rise);
+    font-weight: 600;
+}
+
+td.negative {
+    color: var(--color-fall);
+    font-weight: 600;
+}
+
 /* 基金列表 */
 .fund-list-container {
     background: var(--color-bg-card);
@@ -332,11 +352,11 @@ body {
 }
 
 .fund-stat-value.positive {
-    color: var(--color-success);
+    color: var(--color-rise);
 }
 
 .fund-stat-value.negative {
-    color: var(--color-danger);
+    color: var(--color-fall);
 }
 
 /* 图表区域 */
@@ -743,11 +763,11 @@ body {
 }
 
 .top5-rate.positive {
-    color: var(--color-danger);
+    color: var(--color-rise);
 }
 
 .top5-rate.negative {
-    color: var(--color-success);
+    color: var(--color-fall);
 }
 
 .top5-empty {
@@ -1091,25 +1111,36 @@ body {
     background: var(--color-fall-bg);
 }
 
-.trade-type-buy {
-    color: var(--color-success);
-    background: rgba(39, 174, 96, 0.1);
-    padding: 2px 8px;
+.trade-type-buy,
+.trade-type-sell,
+.trade-type-dividend {
+    display: inline-block;
+    padding: 3px 10px;
     border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.trade-type-buy {
+    color: var(--color-rise);
+    background: var(--color-rise-bg);
 }
 
 .trade-type-sell {
-    color: var(--color-danger);
-    background: rgba(231, 76, 60, 0.1);
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
+    color: var(--color-fall);
+    background: var(--color-fall-bg);
 }
 
 .trade-type-dividend {
     color: var(--color-brand-primary);
     background: rgba(102, 126, 234, 0.1);
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
+}
+
+[data-theme="dark"] .trade-type-dividend {
+    background: rgba(139, 156, 247, 0.15);
 }
 
 .chart-section {
