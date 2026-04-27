@@ -560,16 +560,6 @@ td.negative {
     font-size: 0.875rem;
 }
 
-.trade-type-buy {
-    color: var(--color-success);
-    font-weight: 600;
-}
-
-.trade-type-sell {
-    color: var(--color-danger);
-    font-weight: 600;
-}
-
 /* 交易备注 */
 .trade-remark {
     max-width: 120px;
@@ -1120,32 +1110,51 @@ td.negative {
 .trade-type-sell,
 .trade-type-dividend {
     display: inline-block;
-    padding: 3px 10px;
-    border-radius: var(--radius-sm);
+    padding: 4px 12px;
+    border-radius: 12px;
     font-size: 0.8125rem;
     font-weight: 600;
     line-height: 1.2;
     text-align: center;
     white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid transparent;
+    transition: all var(--transition-fast);
 }
 
 .trade-type-buy {
-    color: var(--color-rise);
-    background: var(--color-rise-bg);
+    color: #c53030;
+    background: linear-gradient(135deg, rgba(245, 101, 101, 0.2), rgba(245, 101, 101, 0.1));
+    border-color: rgba(245, 101, 101, 0.3);
 }
 
 .trade-type-sell {
-    color: var(--color-fall);
-    background: var(--color-fall-bg);
+    color: #276749;
+    background: linear-gradient(135deg, rgba(72, 187, 120, 0.2), rgba(72, 187, 120, 0.1));
+    border-color: rgba(72, 187, 120, 0.3);
 }
 
 .trade-type-dividend {
     color: var(--color-brand-primary);
-    background: rgba(102, 126, 234, 0.1);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(102, 126, 234, 0.08));
+    border-color: rgba(102, 126, 234, 0.25);
+}
+
+[data-theme="dark"] .trade-type-buy {
+    color: #fc8181;
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.25), rgba(255, 107, 107, 0.15));
+    border-color: rgba(255, 107, 107, 0.4);
+}
+
+[data-theme="dark"] .trade-type-sell {
+    color: #68d391;
+    background: linear-gradient(135deg, rgba(81, 207, 102, 0.25), rgba(81, 207, 102, 0.15));
+    border-color: rgba(81, 207, 102, 0.4);
 }
 
 [data-theme="dark"] .trade-type-dividend {
-    background: rgba(139, 156, 247, 0.15);
+    background: linear-gradient(135deg, rgba(139, 156, 247, 0.2), rgba(139, 156, 247, 0.1));
+    border-color: rgba(139, 156, 247, 0.35);
 }
 
 .chart-section {
