@@ -67,6 +67,12 @@
     --color-cycle-bg-even: var(--color-bg-tertiary);
     --color-cycle-bg-odd: var(--color-bg-secondary);
 
+    /* 涨跌颜色 */
+    --color-rise: #f56565;
+    --color-fall: #48bb78;
+    --color-rise-bg: rgba(245, 101, 101, 0.15);
+    --color-fall-bg: rgba(72, 187, 120, 0.15);
+
     /* 动画 */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.3s ease;
