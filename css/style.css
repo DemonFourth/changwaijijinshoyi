@@ -1109,41 +1109,47 @@ td.negative {
 .trade-type-buy,
 .trade-type-sell,
 .trade-type-dividend {
-    display: inline;
-    padding: 0 4px;
-    border-radius: 2px;
-    font-size: inherit;
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
     font-weight: 500;
+    border: 1px solid;
+    border-radius: 6px;
+    cursor: default;
+    transition: all 0.3s ease;
 }
 
 .trade-type-buy {
     color: #3182ce;
-    background: rgba(49, 130, 206, 0.1);
+    background: var(--color-bg-card);
+    border-color: #3182ce;
 }
 
 .trade-type-sell {
     color: #dd6b20;
-    background: rgba(221, 107, 32, 0.1);
+    background: var(--color-bg-card);
+    border-color: #dd6b20;
 }
 
 .trade-type-dividend {
     color: #805ad5;
-    background: rgba(128, 90, 213, 0.1);
+    background: var(--color-bg-card);
+    border-color: #805ad5;
 }
 
 [data-theme="dark"] .trade-type-buy {
     color: #63b3ed;
-    background: rgba(99, 179, 237, 0.15);
+    border-color: #63b3ed;
 }
 
 [data-theme="dark"] .trade-type-sell {
     color: #ed8936;
-    background: rgba(237, 137, 54, 0.15);
+    border-color: #ed8936;
 }
 
 [data-theme="dark"] .trade-type-dividend {
     color: #b794f4;
-    background: rgba(183, 148, 244, 0.15);
+    border-color: #b794f4;
 }
 
 .chart-section {
