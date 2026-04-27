@@ -108,4 +108,9 @@
     --color-cycle-4: var(--color-danger);
     --color-cycle-bg-even: var(--color-bg-tertiary);
     --color-cycle-bg-odd: var(--color-bg-secondary);
+
+    --color-rise: #ff6b6b;
+    --color-fall: #51cf66;
+    --color-rise-bg: rgba(255, 107, 107, 0.15);
+    --color-fall-bg: rgba(81, 207, 102, 0.15);
 }

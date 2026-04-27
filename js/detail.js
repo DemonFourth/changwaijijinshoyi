@@ -38,7 +38,7 @@ const Detail = {
         const btnEditFund = document.getElementById('btn-edit-fund');
         if (btnEditFund) {
             btnEditFund.addEventListener('click', () => {
-                Utils.showToast('编辑功能开发中', 'info');
+                Detail.showEditMenu();
             });
         }
 
@@ -54,20 +54,6 @@ const Detail = {
                         }
                     }
                 });
-            });
-        }
-
-        const btnEditFundName = document.getElementById('btn-edit-fund-name');
-        if (btnEditFundName) {
-            btnEditFundName.addEventListener('click', () => {
-                Detail.showNameEditUI();
-            });
-        }
-
-        const btnRefreshFundName = document.getElementById('btn-refresh-fund-name');
-        if (btnRefreshFundName) {
-            btnRefreshFundName.addEventListener('click', async () => {
-                await Detail.refreshFundName();
             });
         }
 
@@ -191,7 +177,7 @@ const Detail = {
         if (quoteEstimatedGrowth) {
             if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
                 const rate = parseFloat(fund.estimatedGrowth);
-                const color = rate >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
+                const color = rate >= 0 ? 'var(--color-rise)' : 'var(--color-fall)';
                 quoteEstimatedGrowth.textContent = `${rate >= 0 ? '+' : ''}${rate}%`;
                 quoteEstimatedGrowth.style.color = color;
                 quoteEstimatedGrowth.style.fontWeight = 'bold';
@@ -229,7 +215,7 @@ const Detail = {
         if (estimatedGrowth) {
             if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
                 const rate = parseFloat(fund.estimatedGrowth);
-                const color = rate >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
+                const color = rate >= 0 ? 'var(--color-rise)' : 'var(--color-fall)';
                 estimatedGrowth.textContent = `${rate >= 0 ? '+' : ''}${rate}%`;
                 estimatedGrowth.style.color = color;
                 estimatedGrowth.style.fontWeight = 'bold';
@@ -441,15 +427,15 @@ const Detail = {
                             <span style="font-weight: bold;">¥${cycle.totalInvest.toFixed(2)}</span>
                         </div>
                         <div>
-                            <span style="color: #666;">收益：</span>
-                            <span style="font-weight: bold; color: ${cycle.totalProfit >= 0 ? '#4caf50' : '#f44336'};">¥${cycle.totalProfit.toFixed(2)}</span>
+                            <span style="color: var(--color-text-tertiary);">收益：</span>
+                            <span style="font-weight: bold; color: var(--color-rise);">¥${cycle.totalProfit.toFixed(2)}</span>
                         </div>
                         <div>
-                            <span style="color: #666;">收益率：</span>
-                            <span style="font-weight: bold; color: ${cycle.profitRate >= 0 ? '#4caf50' : '#f44336'};">${cycle.profitRate.toFixed(2)}%</span>
+                            <span style="color: var(--color-text-tertiary);">收益率：</span>
+                            <span style="font-weight: bold; color: var(--color-rise);">${cycle.profitRate.toFixed(2)}%</span>
                         </div>
                         <div>
-                            <span style="color: #666;">持仓天数：</span>
+                            <span style="color: var(--color-text-tertiary);">持仓天数：</span>
                             <span style="font-weight: bold;">${cycle.holdingDays || 0}天</span>
                         </div>
                     </div>
@@ -752,6 +738,47 @@ const Detail = {
         if (btnCancel) {
             btnCancel.addEventListener('click', () => {
                 Detail.cancelNameEdit();
+            });
+        }
+    },
+
+    showEditMenu() {
+        var menuHtml = '<div class="edit-menu-overlay" id="edit-menu-overlay">' +
+            '<div class="edit-menu">' +
+            '<div class="edit-menu-item" id="menu-edit-name">✏️ 编辑名称</div>' +
+            '<div class="edit-menu-item" id="menu-refresh-name">🔄 刷新名称</div>' +
+            '</div></div>';
+
+        var actionsEl = document.querySelector('.detail-actions');
+        if (!actionsEl) return;
+
+        actionsEl.insertAdjacentHTML('beforeend', menuHtml);
+
+        var overlay = document.getElementById('edit-menu-overlay');
+        var menuEditName = document.getElementById('menu-edit-name');
+        var menuRefreshName = document.getElementById('menu-refresh-name');
+
+        var closeMenu = function() {
+            if (overlay) overlay.remove();
+        };
+
+        if (overlay) {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) closeMenu();
+            });
+        }
+
+        if (menuEditName) {
+            menuEditName.addEventListener('click', function() {
+                closeMenu();
+                Detail.showNameEditUI();
+            });
+        }
+
+        if (menuRefreshName) {
+            menuRefreshName.addEventListener('click', async function() {
+                closeMenu();
+                await Detail.refreshFundName();
             });
         }
     },

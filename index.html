@@ -85,11 +85,7 @@
                 <div class="detail-header">
                     <button id="btn-back" class="btn btn-back">← 返回</button>
                     <div class="detail-title-area">
-                        <div class="detail-fund-name-row">
-                            <div class="detail-fund-name" id="detail-fund-name">基金详情</div>
-                            <button class="btn btn-icon-sm" id="btn-edit-fund-name" title="编辑名称">✏️</button>
-                            <button class="btn btn-icon-sm" id="btn-refresh-fund-name" title="刷新名称">🔄</button>
-                        </div>
+                        <div class="detail-fund-name" id="detail-fund-name">基金详情</div>
                         <div class="detail-fund-code" id="detail-fund-code"></div>
                     </div>
                     <div class="detail-quote-area">
@@ -258,18 +254,21 @@
                 </div>
 
                 <!-- 图表区域 -->
-                <div class="chart-container chart-detail-grid">
-                    <div class="chart-item">
-                        <h4>收益趋势</h4>
-                        <div id="chart-fund-profit-trend" class="chart"></div>
-                    </div>
-                    <div class="chart-item">
-                        <h4>买卖对比</h4>
-                        <div id="chart-buy-sell-compare" class="chart"></div>
-                    </div>
-                    <div class="chart-item">
-                        <h4>收益率变化</h4>
-                        <div id="chart-profit-rate-change" class="chart"></div>
+                <div class="chart-section">
+                    <h3>图表分析</h3>
+                    <div class="chart-container chart-detail-grid">
+                        <div class="chart-item">
+                            <h4>收益趋势</h4>
+                            <div id="chart-fund-profit-trend" class="chart"></div>
+                        </div>
+                        <div class="chart-item">
+                            <h4>买卖对比</h4>
+                            <div id="chart-buy-sell-compare" class="chart"></div>
+                        </div>
+                        <div class="chart-item">
+                            <h4>收益率变化</h4>
+                            <div id="chart-profit-rate-change" class="chart"></div>
+                        </div>
                     </div>
                 </div>
             </div>
