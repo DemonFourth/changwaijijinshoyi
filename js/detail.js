@@ -428,11 +428,11 @@ const Detail = {
                         </div>
                         <div>
                             <span style="color: var(--color-text-tertiary);">收益：</span>
-                            <span style="font-weight: bold; color: var(--color-rise);">¥${cycle.totalProfit.toFixed(2)}</span>
+                            <span class="${cycle.totalProfit >= 0 ? 'text-rise' : 'text-fall'}" style="font-weight: bold;">¥${isNaN(cycle.totalProfit) ? '0.00' : cycle.totalProfit.toFixed(2)}</span>
                         </div>
                         <div>
                             <span style="color: var(--color-text-tertiary);">收益率：</span>
-                            <span style="font-weight: bold; color: var(--color-rise);">${cycle.profitRate.toFixed(2)}%</span>
+                            <span class="${cycle.profitRate >= 0 ? 'text-rise' : 'text-fall'}" style="font-weight: bold;">${isNaN(cycle.profitRate) ? '0.00' : cycle.profitRate.toFixed(2)}%</span>
                         </div>
                         <div>
                             <span style="color: var(--color-text-tertiary);">持仓天数：</span>

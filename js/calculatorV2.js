@@ -115,7 +115,7 @@ const CalculatorV2 = {
 
         for (const trade of cycle.trades) {
             const shares = parseFloat(trade.shares);
-            const amount = parseFloat(trade.amount);
+            const amount = parseFloat(trade.amount) || 0;
             const fee = parseFloat(trade.fee || 0);
             const netValue = parseFloat(trade.netValue || 0);
 
