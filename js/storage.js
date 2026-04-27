@@ -217,10 +217,13 @@ const Storage = {
      * @returns {object} 视图偏好
      */
     loadViewPrefs() {
-        return this.load('fund_calculator_view_prefs') || {
-            viewMode: Config.get('ui.defaultViewMode', 'card'),
-            sortField: Config.get('ui.defaultSortField', 'profitRate'),
-            sortOrder: Config.get('ui.defaultSortOrder', 'desc')
+        const saved = this.load('fund_calculator_view_prefs');
+        return {
+            viewMode: (saved && saved.viewMode) || Config.get('ui.defaultViewMode', 'card'),
+            sortField: (saved && saved.sortField) || Config.get('ui.defaultSortField', 'profitRate'),
+            sortOrder: (saved && saved.sortOrder) || Config.get('ui.defaultSortOrder', 'desc'),
+            tradeDisplayMode: (saved && saved.tradeDisplayMode) || null,
+            cycleExpandState: (saved && saved.cycleExpandState) || {}
         };
     },
 

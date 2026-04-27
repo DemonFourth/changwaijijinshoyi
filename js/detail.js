@@ -38,12 +38,10 @@ const Detail = {
         const btnEditFund = document.getElementById('btn-edit-fund');
         if (btnEditFund) {
             btnEditFund.addEventListener('click', () => {
-                // TODO: 实现编辑基金功能
                 Utils.showToast('编辑功能开发中', 'info');
             });
         }
 
-        // 删除基金按钮
         const btnDeleteFund = document.getElementById('btn-delete-fund');
         if (btnDeleteFund) {
             btnDeleteFund.addEventListener('click', () => {
@@ -56,6 +54,20 @@ const Detail = {
                         }
                     }
                 });
+            });
+        }
+
+        const btnEditFundName = document.getElementById('btn-edit-fund-name');
+        if (btnEditFundName) {
+            btnEditFundName.addEventListener('click', () => {
+                Detail.showNameEditUI();
+            });
+        }
+
+        const btnRefreshFundName = document.getElementById('btn-refresh-fund-name');
+        if (btnRefreshFundName) {
+            btnRefreshFundName.addEventListener('click', async () => {
+                await Detail.refreshFundName();
             });
         }
 
@@ -100,6 +112,27 @@ const Detail = {
         if (btnClearFilter) {
             btnClearFilter.addEventListener('click', () => {
                 Detail.clearTradeFilters();
+            });
+        }
+
+        // 展示模式切换按钮（事件委托）
+        const filterBar = document.querySelector('.trade-filter-bar');
+        if (filterBar) {
+            filterBar.addEventListener('click', (e) => {
+                const modeBtn = e.target.closest('.display-mode-btn');
+                if (modeBtn) {
+                    const mode = modeBtn.dataset.mode;
+                    if (mode && mode !== CycleTradeDisplay.getDisplayMode()) {
+                        CycleTradeDisplay.toggleDisplayMode();
+                    }
+                }
+            });
+
+            filterBar.addEventListener('change', (e) => {
+                if (e.target.id === 'filter-cycle') {
+                    const cycleId = e.target.value ? parseInt(e.target.value) : null;
+                    CycleTradeDisplay.applyFilters({ cycleId: cycleId });
+                }
             });
         }
     },
@@ -265,9 +298,10 @@ const Detail = {
         // 显示基础持仓
         if (shares) shares.textContent = Utils.formatNumber(currentHolding.shares || 0);
         if (cost) cost.innerHTML = Utils.formatMoneySmart(currentHolding.cost || 0);
-        if (costPerShare) costPerShare.innerHTML = Utils.formatMoneySmart(
-            isCleared ? 0 : (currentHolding.shares > 0 ? currentHolding.cost / currentHolding.shares : 0)
-        );
+        if (costPerShare) {
+            const costPrice = isCleared ? 0 : (currentHolding.shares > 0 ? currentHolding.cost / currentHolding.shares : 0);
+            costPerShare.textContent = costPrice > 0 ? `¥${Utils.formatNumber(costPrice, 4)}` : '¥0.0000';
+        }
         if (value) value.innerHTML = Utils.formatMoneySmart(currentHolding.value || 0);
 
         if (profit) {
@@ -305,18 +339,6 @@ const Detail = {
         if (totalRate) {
             totalRate.textContent = Utils.formatPercent(summary.profitRate || 0);
             totalRate.className = `value ${Utils.getValueColor(summary.profitRate || 0)}`;
-        }
-
-        // 显示简单差额法收益
-        const simpleProfitEl = document.getElementById('simple-profit');
-        const simpleRateEl = document.getElementById('simple-rate');
-        if (simpleProfitEl) {
-            simpleProfitEl.innerHTML = Utils.formatMoneySmart(summary.simpleProfit || 0);
-            simpleProfitEl.className = `value ${Utils.getValueColor(summary.simpleProfit || 0)}`;
-        }
-        if (simpleRateEl) {
-            simpleRateEl.textContent = Utils.formatPercent(summary.simpleProfitRate || 0);
-            simpleRateEl.className = `value ${Utils.getValueColor(summary.simpleProfitRate || 0)}`;
         }
 
         // 显示持仓周期统计
@@ -405,11 +427,7 @@ const Detail = {
         cycles.forEach(cycle => {
             const statusText = cycle.status === 'closed' ? '已结束' : '进行中';
             const statusColor = cycle.status === 'closed' ? '#4caf50' : '#ff9800';
-
-            // 简单差额法: 收益 = (已卖出到手 + 持仓市值) - 买入成本
-            const cycleHoldingValue = cycle.holdingValue || 0;
-            const cycleSimpleProfit = (cycle.totalSellAmount + cycleHoldingValue) - cycle.totalBuyAmount;
-            const cycleSimpleRate = cycle.totalBuyAmount > 0 ? (cycleSimpleProfit / cycle.totalBuyAmount * 100) : 0;
+            const totalFee = ((cycle.totalBuyFee || 0) + (cycle.totalSellFee || 0));
 
             html += `
                 <div class="cycle-item" style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 8px; border-left: 4px solid ${statusColor};">
@@ -417,8 +435,7 @@ const Detail = {
                         <span style="font-weight: bold; color: ${statusColor};">周期${cycle.id} (${statusText})</span>
                         <span style="color: #666; font-size: 14px;">${cycle.startDate} ~ ${cycle.endDate || '至今'}</span>
                     </div>
-                    <div style="margin-bottom: 8px; font-size: 13px; color: #888; border-bottom: 1px dashed #ddd; padding-bottom: 4px;">FIFO成本法</div>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 14px; margin-bottom: 10px;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 14px;">
                         <div>
                             <span style="color: #666;">投入：</span>
                             <span style="font-weight: bold;">¥${cycle.totalInvest.toFixed(2)}</span>
@@ -434,25 +451,6 @@ const Detail = {
                         <div>
                             <span style="color: #666;">持仓天数：</span>
                             <span style="font-weight: bold;">${cycle.holdingDays || 0}天</span>
-                        </div>
-                    </div>
-                    <div style="font-size: 13px; color: #888; border-bottom: 1px dashed #ddd; padding-bottom: 4px;">简单差额法</div>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 14px;">
-                        <div>
-                            <span style="color: #666;">购买：</span>
-                            <span style="font-weight: bold;">¥${cycle.totalBuyAmount.toFixed(2)}</span>
-                        </div>
-                        <div>
-                            <span style="color: #666;">收益：</span>
-                            <span style="font-weight: bold; color: ${cycleSimpleProfit >= 0 ? '#4caf50' : '#f44336'};">¥${cycleSimpleProfit.toFixed(2)}</span>
-                        </div>
-                        <div>
-                            <span style="color: #666;">收益率：</span>
-                            <span style="font-weight: bold; color: ${cycleSimpleRate >= 0 ? '#4caf50' : '#f44336'};">${cycleSimpleRate.toFixed(2)}%</span>
-                        </div>
-                        <div>
-                            <span style="color: #666;">手续费：</span>
-                            <span style="font-weight: bold;">¥${((cycle.totalBuyFee || 0) + (cycle.totalSellFee || 0)).toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
@@ -472,6 +470,18 @@ const Detail = {
         const paginationContainer = document.getElementById('trade-pagination-container');
 
         if (!tradeList) return;
+
+        const sortedAsc = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const cycles = CalculatorV2.identifyHoldingCycles(sortedAsc);
+
+        CycleTradeDisplay.init(fund.id, tradeList);
+
+        if (cycles.length >= 2 || CycleTradeDisplay.getDisplayMode() === 'grouped') {
+            CycleTradeDisplay.renderTradeSection();
+            return;
+        }
+
+        CycleTradeDisplay.renderFlatMode();
 
         // 按日期倒序排列
         const sortedTrades = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -630,6 +640,15 @@ const Detail = {
 
         Detail._currentFilters = { type: type || null, startDate: startDate || null, endDate: endDate || null };
 
+        if (CycleTradeDisplay.getDisplayMode() === 'grouped' && CycleTradeDisplay._initialized) {
+            CycleTradeDisplay.applyFilters({
+                type: type || null,
+                startDate: startDate || null,
+                endDate: endDate || null
+            });
+            return;
+        }
+
         if (Detail._tradePaginator) {
             Paginator.applyFilters(Detail._tradePaginator, Detail._currentFilters);
             const paginationContainer = document.getElementById('trade-pagination-container');
@@ -654,6 +673,11 @@ const Detail = {
         if (filterStartDate) filterStartDate.value = '';
         if (filterEndDate) filterEndDate.value = '';
 
+        if (CycleTradeDisplay.getDisplayMode() === 'grouped' && CycleTradeDisplay._initialized) {
+            CycleTradeDisplay.clearFilters();
+            return;
+        }
+
         if (Detail._tradePaginator) {
             Paginator.clearFilters(Detail._tradePaginator);
             const paginationContainer = document.getElementById('trade-pagination-container');
@@ -671,7 +695,6 @@ const Detail = {
         const tradeList = document.getElementById('trade-list');
         if (!tradeList) return;
 
-        // 编辑按钮
         tradeList.querySelectorAll('.btn-edit-trade').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -685,7 +708,6 @@ const Detail = {
             });
         });
 
-        // 删除按钮
         tradeList.querySelectorAll('.btn-delete-trade').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -700,6 +722,116 @@ const Detail = {
                 });
             });
         });
+    },
+
+    showNameEditUI() {
+        var fund = FundManager.getFund(Detail.currentFundId);
+        if (!fund) return;
+
+        var nameEl = document.getElementById('detail-fund-name');
+        if (!nameEl) return;
+
+        var currentName = fund.name || '';
+
+        nameEl.innerHTML = '<input type="text" id="input-edit-fund-name" class="form-input" value="' + currentName + '" style="font-size:inherit;font-weight:inherit;width:300px;">' +
+            '<button class="btn btn-primary btn-sm" id="btn-save-fund-name">保存</button>' +
+            '<button class="btn btn-secondary btn-sm" id="btn-cancel-fund-name">取消</button>';
+
+        var input = document.getElementById('input-edit-fund-name');
+        var btnSave = document.getElementById('btn-save-fund-name');
+        var btnCancel = document.getElementById('btn-cancel-fund-name');
+
+        if (input) input.focus();
+
+        if (btnSave) {
+            btnSave.addEventListener('click', () => {
+                Detail.saveFundName();
+            });
+        }
+
+        if (btnCancel) {
+            btnCancel.addEventListener('click', () => {
+                Detail.cancelNameEdit();
+            });
+        }
+    },
+
+    saveFundName() {
+        var input = document.getElementById('input-edit-fund-name');
+        if (!input) return;
+
+        var newName = input.value.trim();
+        if (!newName) {
+            Utils.showToast('基金名称不能为空', 'error');
+            return;
+        }
+
+        var success = FundManager.updateFund(Detail.currentFundId, {
+            name: newName,
+            nameSource: 'manual',
+            nameUpdateTime: new Date().toISOString()
+        });
+
+        if (success) {
+            NameCache.set(FundManager.getFund(Detail.currentFundId).code, newName, 'manual');
+            Detail.refresh();
+            Utils.showToast('基金名称已更新', 'success');
+        }
+    },
+
+    cancelNameEdit() {
+        var fund = FundManager.getFund(Detail.currentFundId);
+        if (!fund) return;
+
+        var nameEl = document.getElementById('detail-fund-name');
+        if (nameEl) {
+            nameEl.textContent = fund.name;
+        }
+    },
+
+    async refreshFundName() {
+        var fund = FundManager.getFund(Detail.currentFundId);
+        if (!fund) return;
+
+        var btn = document.getElementById('btn-refresh-fund-name');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '...';
+        }
+
+        try {
+            FundAPI.clearCacheForFund(fund.code);
+            NameCache.remove(fund.code);
+
+            var name = await FundAPI.fetchNameOnly(fund.code);
+            var validation = NameValidator.detectGarbled(name);
+
+            if (validation.isGarbled) {
+                Utils.showToast('获取的名称可能存在乱码，请手动编辑', 'warning');
+                Detail.cancelNameEdit();
+                var nameEl = document.getElementById('detail-fund-name');
+                if (nameEl) nameEl.textContent = name;
+            } else {
+                var success = FundManager.updateFund(Detail.currentFundId, {
+                    name: name,
+                    nameSource: 'api',
+                    nameUpdateTime: new Date().toISOString()
+                });
+
+                if (success) {
+                    NameCache.set(fund.code, name, 'api');
+                    Detail.refresh();
+                    Utils.showToast('基金名称已刷新', 'success');
+                }
+            }
+        } catch (error) {
+            Utils.showToast('刷新失败: ' + error.message, 'error');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '🔄';
+            }
+        }
     }
 };
 

@@ -57,6 +57,16 @@
     --radius-lg: 8px;
     --radius-full: 50%;
 
+    /* 持仓轮次配色（4种循环使用） */
+    --color-cycle-1: var(--color-brand-primary);
+    --color-cycle-2: var(--color-success);
+    --color-cycle-3: var(--color-warning);
+    --color-cycle-4: var(--color-danger);
+
+    /* 轮次分组背景交替 */
+    --color-cycle-bg-even: var(--color-bg-tertiary);
+    --color-cycle-bg-odd: var(--color-bg-secondary);
+
     /* 动画 */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.3s ease;
@@ -91,4 +101,11 @@
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.5);
+
+    --color-cycle-1: var(--color-brand-primary);
+    --color-cycle-2: var(--color-success);
+    --color-cycle-3: var(--color-warning);
+    --color-cycle-4: var(--color-danger);
+    --color-cycle-bg-even: var(--color-bg-tertiary);
+    --color-cycle-bg-odd: var(--color-bg-secondary);
 }

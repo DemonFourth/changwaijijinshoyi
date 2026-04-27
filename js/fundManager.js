@@ -62,31 +62,51 @@ const FundManager = {
             console.log('=== Add Fund Debug ===');
             console.log('1. Input fund data:', fundData);
 
-            // 验证基金代码
             if (!Utils.isValidFundCode(fundData.code)) {
                 throw new Error('基金代码格式不正确');
             }
 
-            // 检查是否已存在
             const existingFunds = this.getAllFunds();
             if (existingFunds.find(f => f.code === fundData.code)) {
                 throw new Error('该基金已存在');
             }
 
-            // 获取基金信息
-            const apiData = await FundAPI.getFundData(fundData.code);
-            console.log('2. API data received:', apiData);
-            console.log('3. API fund name:', apiData.name);
+            var fundName = fundData.name;
+            var nameSource = fundData.nameSource || 'manual';
+            var apiData = null;
 
-            // 构造基金对象
+            if (!fundName) {
+                apiData = await FundAPI.getFundData(fundData.code);
+                console.log('2. API data received:', apiData);
+                console.log('3. API fund name:', apiData.name);
+                fundName = apiData.name;
+                nameSource = 'api';
+            }
+
+            if (!apiData) {
+                apiData = await FundAPI.getFundData(fundData.code);
+            }
+
+            var validation = NameValidator.detectGarbled(fundName);
+            if (validation.isGarbled) {
+                console.warn('Name appears garbled:', fundName, validation);
+                var cachedEntry = NameCache.get(fundData.code);
+                if (cachedEntry && !NameValidator.detectGarbled(cachedEntry.name).isGarbled) {
+                    fundName = cachedEntry.name;
+                    nameSource = 'cache';
+                }
+            }
+
             const fund = {
                 id: Utils.generateId(),
                 code: fundData.code,
-                name: apiData.name,
-                netValue: apiData.netValue,
-                netValueDate: apiData.netValueDate,
-                estimatedValue: apiData.estimatedValue,
-                estimatedGrowth: apiData.estimatedGrowth,
+                name: fundName,
+                nameSource: nameSource,
+                nameUpdateTime: new Date().toISOString(),
+                netValue: apiData ? apiData.netValue : 0,
+                netValueDate: apiData ? apiData.netValueDate : '',
+                estimatedValue: apiData ? apiData.estimatedValue : 0,
+                estimatedGrowth: apiData ? apiData.estimatedGrowth : 0,
                 createTime: new Date().toISOString(),
                 updateTime: new Date().toISOString()
             };
@@ -94,7 +114,10 @@ const FundManager = {
             console.log('4. Final fund object:', fund);
             console.log('5. Final fund name:', fund.name);
 
-            // 保存基金
+            if (!NameValidator.detectGarbled(fundName).isGarbled) {
+                NameCache.set(fundData.code, fundName, nameSource);
+            }
+
             const success = DataService.addFund(fund);
 
             if (!success) {
@@ -164,12 +187,9 @@ const FundManager = {
 
             Utils.showLoading();
 
-            // 获取最新数据
             const apiData = await FundAPI.refreshFundData(fund.code);
 
-            // 更新基金信息
-            const updates = {
-                name: apiData.name,
+            var updates = {
                 netValue: apiData.netValue,
                 netValueDate: apiData.netValueDate,
                 estimatedValue: apiData.estimatedValue,
@@ -205,20 +225,20 @@ const FundManager = {
             const funds = this.getAllFunds();
             const fundCodes = funds.map(f => f.code);
 
-            // 批量获取最新数据
             const apiResults = await FundAPI.batchGetFundData(fundCodes);
 
-            // 更新基金信息
             for (const apiData of apiResults) {
                 const fund = funds.find(f => f.code === apiData.code);
                 if (fund) {
-                    this.updateFund(fund.id, {
-                        name: apiData.name,
+                    var updates = {
                         netValue: apiData.netValue,
                         netValueDate: apiData.netValueDate,
                         estimatedValue: apiData.estimatedValue,
-                        estimatedGrowth: apiData.estimatedGrowth
-                    });
+                        estimatedGrowth: apiData.estimatedGrowth,
+                        updateTime: new Date().toISOString()
+                    };
+
+                    this.updateFund(fund.id, updates);
                 }
             }
 

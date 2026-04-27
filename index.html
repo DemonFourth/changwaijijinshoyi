@@ -85,7 +85,11 @@
                 <div class="detail-header">
                     <button id="btn-back" class="btn btn-back">← 返回</button>
                     <div class="detail-title-area">
-                        <div class="detail-fund-name" id="detail-fund-name">基金详情</div>
+                        <div class="detail-fund-name-row">
+                            <div class="detail-fund-name" id="detail-fund-name">基金详情</div>
+                            <button class="btn btn-icon-sm" id="btn-edit-fund-name" title="编辑名称">✏️</button>
+                            <button class="btn btn-icon-sm" id="btn-refresh-fund-name" title="刷新名称">🔄</button>
+                        </div>
                         <div class="detail-fund-code" id="detail-fund-code"></div>
                     </div>
                     <div class="detail-quote-area">
@@ -144,49 +148,50 @@
                 <div class="holding-info">
                     <h3>持仓信息</h3>
                     <div class="holding-stats">
-                        <div class="stat-item">
-                            <span class="label">持有份额：</span>
-                            <span id="holding-shares" class="value">0</span>
+                        <div class="holding-group">
+                            <div class="holding-group-title">持仓概况</div>
+                            <div class="stat-item">
+                                <span class="label">持有份额</span>
+                                <span id="holding-shares" class="value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="label">持有成本价</span>
+                                <span id="cost-per-share" class="value">¥0.0000</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="label">持有成本</span>
+                                <span id="holding-cost" class="value">¥0.00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="label">当前市值</span>
+                                <span id="holding-value" class="value">¥0.00</span>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <span class="label">持仓成本：</span>
-                            <span id="holding-cost" class="value">¥0.00</span>
+                        <div class="holding-group">
+                            <div class="holding-group-title">持有收益</div>
+                            <div class="stat-item">
+                                <span class="label">浮动盈亏</span>
+                                <span id="holding-profit" class="value">¥0.00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="label">持仓收益率</span>
+                                <span id="holding-rate" class="value">0.00%</span>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <span class="label">每份成本：</span>
-                            <span id="cost-per-share" class="value">¥0.00</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="label">当前市值：</span>
-                            <span id="holding-value" class="value">¥0.00</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="label">浮动盈亏：</span>
-                            <span id="holding-profit" class="value">¥0.00</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="label">持仓收益率：</span>
-                            <span id="holding-rate" class="value">0.00%</span>
-                        </div>
-                        <div class="stat-item" style="border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px;">
-                            <span class="label">已实现收益：</span>
-                            <span id="realized-profit" class="value">¥0.00</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="label">总收益：</span>
-                            <span id="detail-total-profit" class="value">¥0.00</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="label" style="font-weight: bold; color: #1976d2;">总收益率：</span>
-                            <span id="detail-total-rate" class="value" style="font-weight: bold;">0.00%</span>
-                        </div>
-                        <div class="stat-item" style="border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px;">
-                            <span class="label" style="color: #888; font-size: 13px;">简单差额法收益：</span>
-                            <span id="simple-profit" class="value" style="font-size: 13px;">¥0.00</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="label" style="color: #888; font-size: 13px;">简单差额法收益率：</span>
-                            <span id="simple-rate" class="value" style="font-size: 13px;">0.00%</span>
+                        <div class="holding-group">
+                            <div class="holding-group-title">总收益</div>
+                            <div class="stat-item">
+                                <span class="label">已实现收益</span>
+                                <span id="realized-profit" class="value">¥0.00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="label">总收益</span>
+                                <span id="detail-total-profit" class="value">¥0.00</span>
+                            </div>
+                            <div class="stat-item stat-highlight">
+                                <span class="label">总收益率</span>
+                                <span id="detail-total-rate" class="value">0.00%</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -287,6 +292,9 @@
             <div class="modal-body" id="modal-body">
                 <!-- 弹窗内容将动态生成 -->
             </div>
+            <div class="modal-footer" id="modal-footer">
+                <!-- 弹窗操作按钮将动态生成 -->
+            </div>
         </div>
     </div>
 
@@ -317,6 +325,10 @@
     <script src="js/chartManager.js"></script>
     <script src="js/router.js"></script>
     <script src="js/modal.js"></script>
+    <script src="js/nameValidator.js"></script>
+    <script src="js/nameCache.js"></script>
+    <script src="js/cycleGroupRenderer.js"></script>
+    <script src="js/cycleTradeDisplay.js"></script>
     <script src="js/overview.js"></script>
     <script src="js/detail.js"></script>
     <script src="js/app.js"></script>

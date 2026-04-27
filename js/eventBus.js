@@ -165,6 +165,13 @@ const EventType = {
     DATA_EXPORTED: 'data:exported',
     DATA_CLEARED: 'data:cleared',
 
+    // 名称相关事件
+    NAME_FETCHED: 'name:fetched',
+    NAME_VALIDATED: 'name:validated',
+    NAME_CACHE_HIT: 'name:cacheHit',
+    NAME_REFRESH_REQUESTED: 'name:refreshRequested',
+    NAME_MANUAL_EDIT: 'name:manualEdit',
+
     // 错误事件
     ERROR_OCCURRED: 'error:occurred'
 };

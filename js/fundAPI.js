@@ -237,6 +237,16 @@ const FundAPI = {
         console.log('API cache cleared');
     },
 
+    clearCacheForFund(fundCode) {
+        this.cache.delete(fundCode);
+        console.log('API cache cleared for fund:', fundCode);
+    },
+
+    async fetchNameOnly(fundCode) {
+        var data = await FundAPI.getFundData(fundCode, false);
+        return data.name;
+    },
+
     /**
      * 批量获取基金数据
      * @param {string[]} fundCodes - 基金代码数组
