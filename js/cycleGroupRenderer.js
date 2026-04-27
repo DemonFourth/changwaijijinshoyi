@@ -29,7 +29,7 @@ const CycleGroupRenderer = {
 
     renderCycleGroupHeaderRow(cycle, isExpanded, color, summary, cycleIndex) {
         var statusText = cycle.status === 'active' ? '进行中' : '已结束';
-        var statusBg = cycle.status === 'active' ? 'var(--color-warning)' : 'var(--color-success)';
+        var statusClass = cycle.status === 'active' ? 'cycle-group-status--active' : 'cycle-group-status--closed';
         var periodEnd = cycle.endDate || '至今';
         var bgColor = (cycleIndex % 2 === 0) ? 'var(--color-cycle-bg-odd)' : 'var(--color-cycle-bg-even)';
         var expandClass = isExpanded ? 'cycle-group--expanded' : 'cycle-group--collapsed';
@@ -40,7 +40,7 @@ const CycleGroupRenderer = {
             '<div class="cycle-group-header" data-cycle-id="' + cycle.id + '">' +
             '<span class="cycle-toggle-indicator"></span>' +
             '<span class="cycle-group-label" style="color: ' + color + ';">第' + cycle.id + '轮持仓</span>' +
-            '<span class="cycle-group-status" style="background: ' + statusBg + '; color: #fff;">' + statusText + '</span>' +
+            '<span class="cycle-group-status ' + statusClass + '">' + statusText + '</span>' +
             '<span class="cycle-group-period">' + cycle.startDate + ' ~ ' + periodEnd + '</span>' +
             '</div>' +
             '</td>' +
@@ -68,7 +68,7 @@ const CycleGroupRenderer = {
 
     renderTradeRow(trade, cycleColor, isExpanded, cycleId, cycleIndex) {
         var typeText = { buy: '买入', sell: '卖出', dividend: '分红' };
-        var typeClass = { buy: 'trade-type-buy', sell: 'trade-type-sell', dividend: 'trade-type-buy' };
+        var typeClass = { buy: 'trade-type-buy', sell: 'trade-type-sell', dividend: 'trade-type-dividend' };
         var netValueDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
         var remarkDisplay = trade.remark ? (trade.remark.length > 20 ? trade.remark.substring(0, 20) + '...' : trade.remark) : '-';
         var remarkTitle = trade.remark || '';
