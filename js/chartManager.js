@@ -439,54 +439,140 @@ const ChartManager = {
     buildCostTrendOption(fund, trades, stats) {
         var themeConfig = ChartManager.getThemeConfig();
 
-        var buyTrades = (trades || []).filter(function(t) {
-            return t.type === 'buy';
-        }).sort(function(a, b) {
+        var allTrades = (trades || []).slice().sort(function(a, b) {
             return new Date(a.date) - new Date(b.date);
+        });
+
+        var buyTrades = allTrades.filter(function(t) {
+            return t.type === 'buy';
         });
 
         if (buyTrades.length === 0) {
             return ChartManager.buildEmptyOption('暂无买入交易数据');
         }
 
-        var cumulativeShares = 0;
-        var cumulativeCost = 0;
-        var dates = [];
-        var netValueData = [];
-        var costPriceData = [];
+        var cycles = CalculatorV2.identifyHoldingCycles(allTrades);
+        if (!cycles || cycles.length === 0) {
+            cycles = [{
+                id: 1,
+                status: 'active',
+                startDate: allTrades[0].date,
+                endDate: null,
+                trades: allTrades
+            }];
+        }
+
+        var allDates = [];
+        var allNetValues = [];
+        var allCostPrices = [];
+        var cycleLines = [];
         var detailData = [];
+        var minNetValue = Infinity;
+        var maxNetValue = -Infinity;
 
-        for (var i = 0; i < buyTrades.length; i++) {
-            var trade = buyTrades[i];
-            var shares = parseFloat(trade.shares) || 0;
-            var amount = parseFloat(trade.amount) || 0;
-            var netValue = parseFloat(trade.netValue) || 0;
-
-            cumulativeShares += shares;
-            cumulativeCost += amount;
-
-            var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
-
-            dates.push(trade.date);
-            netValueData.push({
-                value: netValue,
-                itemStyle: { color: themeConfig.itemColor[1] }
+        for (var c = 0; c < cycles.length; c++) {
+            var cycle = cycles[c];
+            var cycleBuyTrades = (cycle.trades || []).filter(function(t) {
+                return t.type === 'buy';
             });
-            costPriceData.push(parseFloat(costPrice.toFixed(4)));
-            detailData.push({
-                shares: shares,
-                amount: amount,
-                netValue: netValue,
-                cumulativeShares: cumulativeShares,
-                cumulativeCost: cumulativeCost,
-                costPrice: costPrice
+
+            if (cycleBuyTrades.length === 0) continue;
+
+            var cumulativeShares = 0;
+            var cumulativeCost = 0;
+            var cycleDates = [];
+            var cycleNetValues = [];
+            var cycleCostPrices = [];
+
+            for (var i = 0; i < cycleBuyTrades.length; i++) {
+                var trade = cycleBuyTrades[i];
+                var shares = parseFloat(trade.shares) || 0;
+                var amount = parseFloat(trade.amount) || 0;
+                var netValue = parseFloat(trade.netValue) || 0;
+
+                cumulativeShares += shares;
+                cumulativeCost += amount;
+
+                var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+
+                allDates.push(trade.date);
+                cycleDates.push(trade.date);
+                allNetValues.push(netValue);
+                allCostPrices.push(parseFloat(costPrice.toFixed(4)));
+                cycleNetValues.push(netValue);
+                cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
+
+                if (netValue < minNetValue) minNetValue = netValue;
+                if (netValue > maxNetValue) maxNetValue = netValue;
+                if (costPrice < minNetValue) minNetValue = costPrice;
+                if (costPrice > maxNetValue) maxNetValue = costPrice;
+
+                detailData.push({
+                    shares: shares,
+                    amount: amount,
+                    netValue: netValue,
+                    cumulativeShares: cumulativeShares,
+                    cumulativeCost: cumulativeCost,
+                    costPrice: costPrice,
+                    cycleId: cycle.id
+                });
+            }
+
+            cycleLines.push({
+                cycleId: cycle.id,
+                dates: cycleDates,
+                netValues: cycleNetValues,
+                costPrices: cycleCostPrices
             });
         }
 
         var latestNetValue = parseFloat(fund.netValue) || parseFloat(fund.estimatedValue) || 0;
-        var latestNetValueLine = [];
-        for (var j = 0; j < dates.length; j++) {
-            latestNetValueLine.push(latestNetValue);
+        if (latestNetValue > 0) {
+            if (latestNetValue < minNetValue) minNetValue = latestNetValue;
+            if (latestNetValue > maxNetValue) maxNetValue = latestNetValue;
+        }
+
+        var valueRange = maxNetValue - minNetValue;
+        var yAxisMin = Math.max(0, minNetValue - valueRange * 0.1);
+        var yAxisMax = maxNetValue + valueRange * 0.1;
+
+        var series = [];
+
+        series.push({
+            name: '买入净值',
+            type: 'line',
+            data: allNetValues,
+            lineStyle: { color: themeConfig.itemColor[1], width: 2 },
+            itemStyle: { color: themeConfig.itemColor[1] },
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 8
+        });
+
+        series.push({
+            name: '持仓成本价',
+            type: 'line',
+            data: allCostPrices,
+            lineStyle: { color: themeConfig.itemColor[0], width: 2 },
+            itemStyle: { color: themeConfig.itemColor[0] },
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 6
+        });
+
+        if (latestNetValue > 0) {
+            var latestNetValueLine = [];
+            for (var j = 0; j < allDates.length; j++) {
+                latestNetValueLine.push(latestNetValue);
+            }
+            series.push({
+                name: '最新净值',
+                type: 'line',
+                data: latestNetValueLine,
+                lineStyle: { color: themeConfig.profitColor, width: 2, type: 'dashed' },
+                itemStyle: { color: themeConfig.profitColor },
+                symbol: 'none'
+            });
         }
 
         return {
@@ -496,6 +582,7 @@ const ChartManager = {
                     var idx = params[0].dataIndex;
                     var detail = detailData[idx];
                     var result = params[0].axisValue + '<br/>';
+                    result += '持仓周期: 第' + detail.cycleId + '轮<br/>';
                     result += '买入净值: ' + detail.netValue.toFixed(4) + '<br/>';
                     result += '持仓成本价: ' + detail.costPrice.toFixed(4) + '<br/>';
                     result += '本次买入: ' + detail.shares.toFixed(2) + '份<br/>';
@@ -504,7 +591,7 @@ const ChartManager = {
                 }
             },
             legend: {
-                data: ['买入净值', '持仓成本价', '最新净值'],
+                data: latestNetValue > 0 ? ['买入净值', '持仓成本价', '最新净值'] : ['买入净值', '持仓成本价'],
                 textStyle: { color: themeConfig.textColor },
                 top: 10
             },
@@ -517,7 +604,7 @@ const ChartManager = {
             },
             xAxis: {
                 type: 'category',
-                data: dates,
+                data: allDates,
                 axisLabel: {
                     color: themeConfig.textColor,
                     rotate: 30
@@ -530,6 +617,8 @@ const ChartManager = {
                 type: 'value',
                 name: '净值/成本价',
                 nameTextStyle: { color: themeConfig.textColor },
+                min: yAxisMin,
+                max: yAxisMax,
                 axisLabel: { color: themeConfig.textColor },
                 axisLine: {
                     lineStyle: { color: themeConfig.borderColor }
@@ -538,31 +627,7 @@ const ChartManager = {
                     lineStyle: { color: themeConfig.borderColor, type: 'dashed' }
                 }
             },
-            series: [
-                {
-                    name: '买入净值',
-                    type: 'scatter',
-                    data: netValueData,
-                    symbolSize: 10,
-                    itemStyle: { color: themeConfig.itemColor[1] }
-                },
-                {
-                    name: '持仓成本价',
-                    type: 'line',
-                    data: costPriceData,
-                    lineStyle: { color: themeConfig.itemColor[0], width: 2 },
-                    itemStyle: { color: themeConfig.itemColor[0] },
-                    smooth: true
-                },
-                {
-                    name: '最新净值',
-                    type: 'line',
-                    data: latestNetValueLine,
-                    lineStyle: { color: themeConfig.profitColor, width: 2, type: 'dashed' },
-                    itemStyle: { color: themeConfig.profitColor },
-                    symbol: 'none'
-                }
-            ]
+            series: series
         };
     },
 
