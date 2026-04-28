@@ -25,20 +25,24 @@ const Detail = {
      * 绑定事件
      */
     bindEvents() {
-        // 返回按钮
         const btnBack = document.getElementById('btn-back');
         if (btnBack) {
             btnBack.addEventListener('click', () => {
-                // 直接导航到汇总页，而不是使用back()
                 Router.navigate('overview');
             });
         }
 
-        // 编辑基金按钮
         const btnEditFund = document.getElementById('btn-edit-fund');
         if (btnEditFund) {
             btnEditFund.addEventListener('click', () => {
                 Detail.showEditMenu();
+            });
+        }
+
+        const btnFifoVerify = document.getElementById('btn-fifo-verify');
+        if (btnFifoVerify) {
+            btnFifoVerify.addEventListener('click', () => {
+                Detail.verifyCalculation();
             });
         }
 
@@ -866,6 +870,36 @@ const Detail = {
                 btn.disabled = false;
                 btn.textContent = '🔄';
             }
+        }
+    },
+
+    verifyCalculation() {
+        if (!Detail.currentFundId) {
+            Utils.showToast('请先选择基金', 'warning');
+            return;
+        }
+
+        var result = FIFOValidator.verifyFund(Detail.currentFundId);
+        var resultEl = document.getElementById('fifo-verify-result');
+        if (!resultEl) return;
+
+        resultEl.style.display = 'inline-block';
+        resultEl.className = 'fifo-verify-result';
+
+        if (result.success && result.consistent) {
+            resultEl.classList.add('fifo-verify-success');
+            resultEl.textContent = '✅ 验证通过';
+            setTimeout(function() {
+                resultEl.style.display = 'none';
+            }, 3000);
+        } else if (result.success && !result.consistent) {
+            resultEl.classList.add('fifo-verify-fail');
+            resultEl.textContent = '❌ 结果不一致';
+            var message = FIFOValidator.formatResult(result);
+            alert(message);
+        } else {
+            resultEl.classList.add('fifo-verify-fail');
+            resultEl.textContent = '❌ ' + result.error;
         }
     }
 };

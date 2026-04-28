@@ -1098,6 +1098,24 @@ td.negative {
     color: var(--color-fall);
 }
 
+.fifo-verify-result {
+    margin-left: 10px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.fifo-verify-success {
+    color: var(--color-fall);
+    background: rgba(72, 187, 120, 0.15);
+}
+
+.fifo-verify-fail {
+    color: var(--color-rise);
+    background: rgba(245, 101, 101, 0.15);
+}
+
 .trade-profit--positive {
     color: var(--color-rise);
     font-weight: 500;
