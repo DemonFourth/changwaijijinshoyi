@@ -561,7 +561,7 @@ const ChartManager = {
             }
 
             series.push({
-                name: '第' + cycleData.cycleId + '轮净值',
+                name: ci === 0 ? '买入净值' : '买入净值_' + cycleData.cycleId,
                 type: 'line',
                 data: cycleNetValueData,
                 lineStyle: { color: themeConfig.itemColor[1], width: 2 },
@@ -573,7 +573,7 @@ const ChartManager = {
             });
 
             series.push({
-                name: '第' + cycleData.cycleId + '轮成本',
+                name: ci === 0 ? '持仓成本' : '持仓成本_' + cycleData.cycleId,
                 type: 'line',
                 data: cycleCostData,
                 lineStyle: { color: cycleColor, width: 2 },
@@ -600,11 +600,7 @@ const ChartManager = {
             });
         }
 
-        var legendData = [];
-        for (var li = 0; li < cycleDataList.length; li++) {
-            legendData.push('第' + cycleDataList[li].cycleId + '轮净值');
-            legendData.push('第' + cycleDataList[li].cycleId + '轮成本');
-        }
+        var legendData = ['买入净值', '持仓成本'];
         if (latestNetValue > 0) {
             legendData.push('最新净值');
         }
