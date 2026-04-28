@@ -7,7 +7,7 @@ const FIFOValidator = {
     TOLERANCE: 0.01,
 
     verifyFund(fundId) {
-        var fund = FundManager.getFundById(fundId);
+        var fund = FundManager.getFund(fundId);
         if (!fund) {
             return {
                 success: false,
