@@ -443,12 +443,8 @@ const ChartManager = {
             return new Date(a.date) - new Date(b.date);
         });
 
-        var buyTrades = allTrades.filter(function(t) {
-            return t.type === 'buy' || (t.type === 'dividend' && t.dividendMode === 'reinvest');
-        });
-
-        if (buyTrades.length === 0) {
-            return ChartManager.buildEmptyOption('暂无买入交易数据');
+        if (allTrades.length === 0) {
+            return ChartManager.buildEmptyOption('暂无交易数据');
         }
 
         var cycles = CalculatorV2.identifyHoldingCycles(allTrades);
@@ -473,11 +469,11 @@ const ChartManager = {
 
         for (var c = 0; c < cycles.length; c++) {
             var cycle = cycles[c];
-            var cycleBuyTrades = (cycle.trades || []).filter(function(t) {
-                return t.type === 'buy' || (t.type === 'dividend' && t.dividendMode === 'reinvest');
+            var cycleTrades = (cycle.trades || []).slice().sort(function(a, b) {
+                return new Date(a.date) - new Date(b.date);
             });
 
-            if (cycleBuyTrades.length === 0) continue;
+            if (cycleTrades.length === 0) continue;
 
             var cumulativeShares = 0;
             var cumulativeCost = 0;
@@ -485,53 +481,74 @@ const ChartManager = {
             var cycleNetValues = [];
             var cycleCostPrices = [];
 
-            for (var i = 0; i < cycleBuyTrades.length; i++) {
-                var trade = cycleBuyTrades[i];
+            for (var i = 0; i < cycleTrades.length; i++) {
+                var trade = cycleTrades[i];
                 var shares = parseFloat(trade.shares) || 0;
                 var amount = parseFloat(trade.amount) || 0;
                 var netValue = parseFloat(trade.netValue) || 0;
-                var isDividendReinvest = trade.type === 'dividend' && trade.dividendMode === 'reinvest';
+                var tradeType = trade.type;
+                var isDividendReinvest = tradeType === 'dividend' && trade.dividendMode === 'reinvest';
 
-                if (isDividendReinvest) {
-                    shares = parseFloat(trade.reinvestShares) || shares;
-                }
-
-                cumulativeShares += shares;
-                if (!isDividendReinvest) {
+                if (tradeType === 'buy') {
+                    cumulativeShares += shares;
                     cumulativeCost += amount;
-                }
 
-                var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
-
-                cycleDates.push(trade.date);
-                allDates.push(trade.date);
-
-                if (isDividendReinvest) {
-                    cycleNetValues.push(null);
-                    allNetValues.push(null);
-                } else {
+                    cycleDates.push(trade.date);
+                    allDates.push(trade.date);
                     cycleNetValues.push(netValue);
                     allNetValues.push(netValue);
                     if (netValue < minNetValue) minNetValue = netValue;
                     if (netValue > maxNetValue) maxNetValue = netValue;
+
+                    var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                    cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
+                    allCostPrices.push(parseFloat(costPrice.toFixed(4)));
+                    if (costPrice < minNetValue) minNetValue = costPrice;
+                    if (costPrice > maxNetValue) maxNetValue = costPrice;
+
+                    detailData.push({
+                        shares: shares,
+                        amount: amount,
+                        netValue: netValue,
+                        cumulativeShares: cumulativeShares,
+                        cumulativeCost: cumulativeCost,
+                        costPrice: costPrice,
+                        cycleId: cycle.id,
+                        isDividendReinvest: false,
+                        isSell: false
+                    });
+                } else if (tradeType === 'sell') {
+                    var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                    var sellCost = shares * costPrice;
+                    cumulativeShares -= shares;
+                    cumulativeCost -= sellCost;
+                } else if (isDividendReinvest) {
+                    var reinvestShares = parseFloat(trade.reinvestShares) || shares;
+                    cumulativeShares += reinvestShares;
+
+                    cycleDates.push(trade.date);
+                    allDates.push(trade.date);
+                    cycleNetValues.push(null);
+                    allNetValues.push(null);
+
+                    var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                    cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
+                    allCostPrices.push(parseFloat(costPrice.toFixed(4)));
+                    if (costPrice < minNetValue) minNetValue = costPrice;
+                    if (costPrice > maxNetValue) maxNetValue = costPrice;
+
+                    detailData.push({
+                        shares: reinvestShares,
+                        amount: 0,
+                        netValue: 0,
+                        cumulativeShares: cumulativeShares,
+                        cumulativeCost: cumulativeCost,
+                        costPrice: costPrice,
+                        cycleId: cycle.id,
+                        isDividendReinvest: true,
+                        isSell: false
+                    });
                 }
-
-                cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
-                allCostPrices.push(parseFloat(costPrice.toFixed(4)));
-
-                if (costPrice < minNetValue) minNetValue = costPrice;
-                if (costPrice > maxNetValue) maxNetValue = costPrice;
-
-                detailData.push({
-                    shares: shares,
-                    amount: amount,
-                    netValue: netValue,
-                    cumulativeShares: cumulativeShares,
-                    cumulativeCost: cumulativeCost,
-                    costPrice: costPrice,
-                    cycleId: cycle.id,
-                    isDividendReinvest: isDividendReinvest
-                });
             }
 
             cycleDataList.push({
