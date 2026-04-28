@@ -540,33 +540,37 @@ const ChartManager = {
 
         var series = [];
 
-        series.push({
-            name: '买入净值',
-            type: 'line',
-            data: allNetValues,
-            lineStyle: { color: themeConfig.itemColor[1], width: 2 },
-            itemStyle: { color: themeConfig.itemColor[1] },
-            smooth: true,
-            symbol: 'circle',
-            symbolSize: 8
-        });
-
         var colors = [themeConfig.itemColor[0], '#ed8936', '#9f7aea', '#38b2ac', '#f56565', '#66d9ef'];
 
         for (var ci = 0; ci < cycleDataList.length; ci++) {
             var cycleData = cycleDataList[ci];
             var cycleColor = colors[ci % colors.length];
 
+            var cycleNetValueData = [];
             var cycleCostData = [];
             var dateIdx = 0;
             for (var di = 0; di < allDates.length; di++) {
                 if (dateIdx < cycleData.dates.length && allDates[di] === cycleData.dates[dateIdx]) {
+                    cycleNetValueData.push(cycleData.netValues[dateIdx]);
                     cycleCostData.push(cycleData.costPrices[dateIdx]);
                     dateIdx++;
                 } else {
+                    cycleNetValueData.push(null);
                     cycleCostData.push(null);
                 }
             }
+
+            series.push({
+                name: '第' + cycleData.cycleId + '轮净值',
+                type: 'line',
+                data: cycleNetValueData,
+                lineStyle: { color: themeConfig.itemColor[1], width: 2 },
+                itemStyle: { color: themeConfig.itemColor[1] },
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 8,
+                connectNulls: false
+            });
 
             series.push({
                 name: '第' + cycleData.cycleId + '轮成本',
@@ -596,8 +600,9 @@ const ChartManager = {
             });
         }
 
-        var legendData = ['买入净值'];
+        var legendData = [];
         for (var li = 0; li < cycleDataList.length; li++) {
+            legendData.push('第' + cycleDataList[li].cycleId + '轮净值');
             legendData.push('第' + cycleDataList[li].cycleId + '轮成本');
         }
         if (latestNetValue > 0) {
