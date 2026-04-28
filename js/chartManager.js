@@ -504,15 +504,21 @@ const ChartManager = {
                 var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
 
                 cycleDates.push(trade.date);
-                cycleNetValues.push(netValue);
-                cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
-
                 allDates.push(trade.date);
-                allNetValues.push(netValue);
+
+                if (isDividendReinvest) {
+                    cycleNetValues.push(null);
+                    allNetValues.push(null);
+                } else {
+                    cycleNetValues.push(netValue);
+                    allNetValues.push(netValue);
+                    if (netValue < minNetValue) minNetValue = netValue;
+                    if (netValue > maxNetValue) maxNetValue = netValue;
+                }
+
+                cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
                 allCostPrices.push(parseFloat(costPrice.toFixed(4)));
 
-                if (netValue < minNetValue) minNetValue = netValue;
-                if (netValue > maxNetValue) maxNetValue = netValue;
                 if (costPrice < minNetValue) minNetValue = costPrice;
                 if (costPrice > maxNetValue) maxNetValue = costPrice;
 
