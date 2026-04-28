@@ -1171,6 +1171,17 @@ background: var(--color-bg-primary);
 
 ## 更新日志
 
+### v2.2.0 (2026-04-28)
+- 新增FIFO计算引擎：fifoCalculator.js（先进先出法）
+- 新增FIFO验证控制器：fifoValidator.js
+- 新增计算验证功能：详情页"验证计算"按钮
+- 新增交易记录表格持仓周期列
+- 更新交易类型Badge样式：与目标项目保持一致
+- 更新交易记录表格列顺序：日期、操作、价格、份额、手续费、金额、收益、持仓周期、操作
+- 移除备注列（备注数据通过行title属性显示）
+- 修复FIFO验证器方法名错误（getFundById→getFund）
+- 修复分红类型样式类名错误
+
 ### v2.1.0 (2026-04-27)
 - 新增涨跌颜色CSS变量：--color-rise/--color-fall/--color-rise-bg/--color-fall-bg
 - 新增交易类型Badge样式：.trade-type-buy/.trade-type-sell/.trade-type-dividend
