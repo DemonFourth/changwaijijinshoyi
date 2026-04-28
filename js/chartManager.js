@@ -444,7 +444,7 @@ const ChartManager = {
         });
 
         var buyTrades = allTrades.filter(function(t) {
-            return t.type === 'buy';
+            return t.type === 'buy' || (t.type === 'dividend' && t.dividendMode === 'reinvest');
         });
 
         if (buyTrades.length === 0) {
@@ -474,7 +474,7 @@ const ChartManager = {
         for (var c = 0; c < cycles.length; c++) {
             var cycle = cycles[c];
             var cycleBuyTrades = (cycle.trades || []).filter(function(t) {
-                return t.type === 'buy';
+                return t.type === 'buy' || (t.type === 'dividend' && t.dividendMode === 'reinvest');
             });
 
             if (cycleBuyTrades.length === 0) continue;
@@ -490,9 +490,16 @@ const ChartManager = {
                 var shares = parseFloat(trade.shares) || 0;
                 var amount = parseFloat(trade.amount) || 0;
                 var netValue = parseFloat(trade.netValue) || 0;
+                var isDividendReinvest = trade.type === 'dividend' && trade.dividendMode === 'reinvest';
+
+                if (isDividendReinvest) {
+                    shares = parseFloat(trade.reinvestShares) || shares;
+                }
 
                 cumulativeShares += shares;
-                cumulativeCost += amount;
+                if (!isDividendReinvest) {
+                    cumulativeCost += amount;
+                }
 
                 var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
 
@@ -516,7 +523,8 @@ const ChartManager = {
                     cumulativeShares: cumulativeShares,
                     cumulativeCost: cumulativeCost,
                     costPrice: costPrice,
-                    cycleId: cycle.id
+                    cycleId: cycle.id,
+                    isDividendReinvest: isDividendReinvest
                 });
             }
 
@@ -617,7 +625,11 @@ const ChartManager = {
                     result += '持仓周期: 第' + detail.cycleId + '轮<br/>';
                     result += '买入净值: ' + detail.netValue.toFixed(4) + '<br/>';
                     result += '持仓成本价: ' + detail.costPrice.toFixed(4) + '<br/>';
-                    result += '本次买入: ' + detail.shares.toFixed(2) + '份<br/>';
+                    if (detail.isDividendReinvest) {
+                        result += '分红再投资: ' + detail.shares.toFixed(2) + '份<br/>';
+                    } else {
+                        result += '本次买入: ' + detail.shares.toFixed(2) + '份<br/>';
+                    }
                     result += '累计份额: ' + detail.cumulativeShares.toFixed(2) + '份';
                     return result;
                 }
