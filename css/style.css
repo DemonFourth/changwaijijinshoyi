@@ -1098,6 +1098,17 @@ td.negative {
     color: var(--color-fall);
 }
 
+.trade-cycle-column {
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.trade-cycle-column span {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+}
+
 .bg-rise {
     background: var(--color-rise-bg);
 }

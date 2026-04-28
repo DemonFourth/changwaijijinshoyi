@@ -28,42 +28,11 @@ const CycleGroupRenderer = {
     },
 
     renderCycleGroupHeaderRow(cycle, isExpanded, color, summary, cycleIndex) {
-        var statusText = cycle.status === 'active' ? '进行中' : '已结束';
-        var statusClass = cycle.status === 'active' ? 'cycle-group-status--active' : 'cycle-group-status--closed';
-        var periodEnd = cycle.endDate || '至今';
-        var bgColor = (cycleIndex % 2 === 0) ? 'var(--color-cycle-bg-odd)' : 'var(--color-cycle-bg-even)';
-        var expandClass = isExpanded ? 'cycle-group--expanded' : 'cycle-group--collapsed';
-
-        var html = '<tr class="cycle-group-header-row ' + expandClass + '" data-cycle-id="' + cycle.id + '" ' +
-            'style="border-left: 3px solid ' + color + '; background: ' + bgColor + '; cursor: pointer;">' +
-            '<td colspan="8" style="padding: 0;">' +
-            '<div class="cycle-group-header" data-cycle-id="' + cycle.id + '">' +
-            '<span class="cycle-toggle-indicator"></span>' +
-            '<span class="cycle-group-label" style="color: ' + color + ';">第' + cycle.id + '轮持仓</span>' +
-            '<span class="cycle-group-status ' + statusClass + '">' + statusText + '</span>' +
-            '<span class="cycle-group-period">' + cycle.startDate + ' ~ ' + periodEnd + '</span>' +
-            '</div>' +
-            '</td>' +
-            '</tr>';
-
-        html += '<tr class="cycle-group-summary-row ' + expandClass + '" data-cycle-id="' + cycle.id + '" ' +
-            'style="border-left: 3px solid ' + color + '; background: ' + bgColor + ';">' +
-            '<td colspan="8">' +
-            CycleGroupRenderer.renderCycleSummary(summary) +
-            '</td>' +
-            '</tr>';
-
-        return html;
+        return '';
     },
 
     renderCycleSummary(summary) {
-        var profitClass = summary.realizedProfit >= 0 ? 'summary-profit--positive' : 'summary-profit--negative';
-        var profitSign = summary.realizedProfit >= 0 ? '+' : '';
-        return '<div class="cycle-group-summary">' +
-            summary.tradeCount + '笔交易 | ' +
-            '投入 ' + Utils.formatMoneySmart(summary.totalInvest) + ' | ' +
-            '收益 <span class="' + profitClass + '">' + profitSign + Utils.formatMoneySmart(summary.realizedProfit) + '</span>' +
-            '</div>';
+        return '';
     },
 
     renderTradeRow(trade, cycleColor, isExpanded, cycleId, cycleIndex) {
@@ -74,10 +43,13 @@ const CycleGroupRenderer = {
         var remarkTitle = trade.remark || '';
         var bgColor = (cycleIndex % 2 === 0) ? 'var(--color-cycle-bg-odd)' : 'var(--color-cycle-bg-even)';
         var displayStyle = isExpanded ? '' : 'display:none;';
+        var cycleLabel = cycleId > 0 ? '第' + cycleId + '轮' : '-';
+        var labelColor = cycleId > 0 ? cycleColor : 'var(--color-text-tertiary)';
 
         return '<tr class="cycle-group-trade-row" data-trade-id="' + trade.id + '" data-cycle-id="' + cycleId + '" ' +
             'style="border-left: 3px solid ' + cycleColor + '; background: ' + bgColor + '; ' + displayStyle + '">' +
-            '<td><span class="trade-row-cycle-bar" style="background: ' + cycleColor + ';"></span>' + trade.date + '</td>' +
+            '<td class="trade-cycle-column"><span style="color: ' + labelColor + '; font-weight: 500;">' + cycleLabel + '</span></td>' +
+            '<td>' + trade.date + '</td>' +
             '<td class="' + typeClass[trade.type] + '">' + typeText[trade.type] + '</td>' +
             '<td>' + netValueDisplay + '</td>' +
             '<td>' + Utils.formatNumber(trade.shares) + '</td>' +
@@ -113,7 +85,7 @@ const CycleGroupRenderer = {
     },
 
     renderEmptyState(message) {
-        return '<tr><td colspan="8" style="text-align: center; color: var(--color-text-tertiary); padding: 20px;">' + message + '</td></tr>';
+        return '<tr><td colspan="9" style="text-align: center; color: var(--color-text-tertiary); padding: 20px;">' + message + '</td></tr>';
     },
 
     renderUncategorizedGroup(trades) {

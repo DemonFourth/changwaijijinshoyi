@@ -566,7 +566,7 @@ const Detail = {
         if (!tradeList) return;
 
         if (pageData.length === 0) {
-            tradeList.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--color-text-tertiary);">没有匹配的交易记录</td></tr>';
+            tradeList.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--color-text-tertiary);">没有匹配的交易记录</td></tr>';
             return;
         }
 
