@@ -1131,46 +1131,40 @@ td.negative {
 .trade-type-sell,
 .trade-type-dividend {
     display: inline-block;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border: 1px solid;
-    border-radius: 6px;
-    cursor: default;
-    transition: all 0.3s ease;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
 }
 
 .trade-type-buy {
-    color: #3182ce;
-    background: var(--color-bg-card);
-    border-color: #3182ce;
+    color: rgb(25, 118, 210);
+    background: rgb(227, 242, 253);
 }
 
 .trade-type-sell {
-    color: #dd6b20;
-    background: var(--color-bg-card);
-    border-color: #dd6b20;
+    color: rgb(230, 81, 0);
+    background: rgb(255, 243, 224);
 }
 
 .trade-type-dividend {
-    color: #805ad5;
-    background: var(--color-bg-card);
-    border-color: #805ad5;
+    color: rgb(94, 53, 177);
+    background: rgb(237, 231, 246);
 }
 
 [data-theme="dark"] .trade-type-buy {
-    color: #63b3ed;
-    border-color: #63b3ed;
+    color: rgb(144, 202, 249);
+    background: rgba(25, 118, 210, 0.2);
 }
 
 [data-theme="dark"] .trade-type-sell {
-    color: #ed8936;
-    border-color: #ed8936;
+    color: rgb(255, 183, 77);
+    background: rgba(230, 81, 0, 0.2);
 }
 
 [data-theme="dark"] .trade-type-dividend {
-    color: #b794f4;
-    border-color: #b794f4;
+    color: rgb(179, 136, 255);
+    background: rgba(94, 53, 177, 0.2);
 }
 
 .chart-section {
