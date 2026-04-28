@@ -341,7 +341,7 @@ const ChartManager = {
         }
         
         const summary = stats.summary;
-        const buyAmount = summary.totalBuyAmount || 0;
+        const buyAmount = summary.totalInvest || 0;
         const sellAmount = summary.totalSellAmount || 0;
         
         return {
@@ -436,11 +436,136 @@ const ChartManager = {
         };
     },
 
-    /**
-     * 生成空状态图表配置
-     * @param {string} message - 提示信息
-     * @returns {Object}
-     */
+    buildCostTrendOption(fund, trades, stats) {
+        var themeConfig = ChartManager.getThemeConfig();
+
+        var buyTrades = (trades || []).filter(function(t) {
+            return t.type === 'buy';
+        }).sort(function(a, b) {
+            return new Date(a.date) - new Date(b.date);
+        });
+
+        if (buyTrades.length === 0) {
+            return ChartManager.buildEmptyOption('暂无买入交易数据');
+        }
+
+        var cumulativeShares = 0;
+        var cumulativeCost = 0;
+        var dates = [];
+        var netValueData = [];
+        var costPriceData = [];
+        var detailData = [];
+
+        for (var i = 0; i < buyTrades.length; i++) {
+            var trade = buyTrades[i];
+            var shares = parseFloat(trade.shares) || 0;
+            var amount = parseFloat(trade.amount) || 0;
+            var netValue = parseFloat(trade.netValue) || 0;
+
+            cumulativeShares += shares;
+            cumulativeCost += amount;
+
+            var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+
+            dates.push(trade.date);
+            netValueData.push({
+                value: netValue,
+                itemStyle: { color: themeConfig.itemColor[1] }
+            });
+            costPriceData.push(parseFloat(costPrice.toFixed(4)));
+            detailData.push({
+                shares: shares,
+                amount: amount,
+                netValue: netValue,
+                cumulativeShares: cumulativeShares,
+                cumulativeCost: cumulativeCost,
+                costPrice: costPrice
+            });
+        }
+
+        var latestNetValue = parseFloat(fund.netValue) || parseFloat(fund.estimatedValue) || 0;
+        var latestNetValueLine = [];
+        for (var j = 0; j < dates.length; j++) {
+            latestNetValueLine.push(latestNetValue);
+        }
+
+        return {
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    var idx = params[0].dataIndex;
+                    var detail = detailData[idx];
+                    var result = params[0].axisValue + '<br/>';
+                    result += '买入净值: ' + detail.netValue.toFixed(4) + '<br/>';
+                    result += '持仓成本价: ' + detail.costPrice.toFixed(4) + '<br/>';
+                    result += '本次买入: ' + detail.shares.toFixed(2) + '份<br/>';
+                    result += '累计份额: ' + detail.cumulativeShares.toFixed(2) + '份';
+                    return result;
+                }
+            },
+            legend: {
+                data: ['买入净值', '持仓成本价', '最新净值'],
+                textStyle: { color: themeConfig.textColor },
+                top: 10
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                top: 60,
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: dates,
+                axisLabel: {
+                    color: themeConfig.textColor,
+                    rotate: 30
+                },
+                axisLine: {
+                    lineStyle: { color: themeConfig.borderColor }
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '净值/成本价',
+                nameTextStyle: { color: themeConfig.textColor },
+                axisLabel: { color: themeConfig.textColor },
+                axisLine: {
+                    lineStyle: { color: themeConfig.borderColor }
+                },
+                splitLine: {
+                    lineStyle: { color: themeConfig.borderColor, type: 'dashed' }
+                }
+            },
+            series: [
+                {
+                    name: '买入净值',
+                    type: 'scatter',
+                    data: netValueData,
+                    symbolSize: 10,
+                    itemStyle: { color: themeConfig.itemColor[1] }
+                },
+                {
+                    name: '持仓成本价',
+                    type: 'line',
+                    data: costPriceData,
+                    lineStyle: { color: themeConfig.itemColor[0], width: 2 },
+                    itemStyle: { color: themeConfig.itemColor[0] },
+                    smooth: true
+                },
+                {
+                    name: '最新净值',
+                    type: 'line',
+                    data: latestNetValueLine,
+                    lineStyle: { color: themeConfig.profitColor, width: 2, type: 'dashed' },
+                    itemStyle: { color: themeConfig.profitColor },
+                    symbol: 'none'
+                }
+            ]
+        };
+    },
+
     buildEmptyOption(message) {
         return {
             title: {

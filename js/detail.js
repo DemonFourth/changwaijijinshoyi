@@ -377,6 +377,12 @@ const Detail = {
             if (rateContainer) {
                 ChartManager.createChart('chart-profit-rate-change', ChartManager.buildProfitRateChangeOption(stats.cycles));
             }
+
+            const costTrendContainer = document.getElementById('chart-cost-trend');
+            if (costTrendContainer) {
+                const trades = TradeManager.getTradesByFund(fund.id);
+                ChartManager.createChart('chart-cost-trend', ChartManager.buildCostTrendOption(fund, trades, stats));
+            }
         } else {
             // Fallback: 简单统计
             const container = document.getElementById('chart-detail-trend');
