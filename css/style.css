@@ -1098,6 +1098,16 @@ td.negative {
     color: var(--color-fall);
 }
 
+.trade-profit--positive {
+    color: var(--color-rise);
+    font-weight: 500;
+}
+
+.trade-profit--negative {
+    color: var(--color-fall);
+    font-weight: 500;
+}
+
 .trade-cycle-column {
     font-size: var(--font-size-sm);
     white-space: nowrap;

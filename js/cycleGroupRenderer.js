@@ -38,24 +38,31 @@ const CycleGroupRenderer = {
     renderTradeRow(trade, cycleColor, isExpanded, cycleId, cycleIndex) {
         var typeText = { buy: '买入', sell: '卖出', dividend: '分红' };
         var typeClass = { buy: 'trade-type-buy', sell: 'trade-type-sell', dividend: 'trade-type-dividend' };
-        var netValueDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
-        var remarkDisplay = trade.remark ? (trade.remark.length > 20 ? trade.remark.substring(0, 20) + '...' : trade.remark) : '-';
+        var priceDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
         var remarkTitle = trade.remark || '';
         var bgColor = (cycleIndex % 2 === 0) ? 'var(--color-cycle-bg-odd)' : 'var(--color-cycle-bg-even)';
         var displayStyle = isExpanded ? '' : 'display:none;';
         var cycleLabel = cycleId > 0 ? '第' + cycleId + '轮' : '-';
         var labelColor = cycleId > 0 ? cycleColor : 'var(--color-text-tertiary)';
+        var profitDisplay = '-';
+        var profitClass = '';
+        if (trade.type === 'sell' && trade.profitAmount !== undefined) {
+            var profitSign = trade.profitAmount >= 0 ? '+' : '';
+            var rateSign = trade.profitRate >= 0 ? '+' : '';
+            profitDisplay = profitSign + Utils.formatMoneySmart(trade.profitAmount) + ' / ' + rateSign + Utils.formatNumber(trade.profitRate, 2) + '%';
+            profitClass = trade.profitAmount >= 0 ? 'trade-profit--positive' : 'trade-profit--negative';
+        }
 
         return '<tr class="cycle-group-trade-row" data-trade-id="' + trade.id + '" data-cycle-id="' + cycleId + '" ' +
-            'style="border-left: 3px solid ' + cycleColor + '; background: ' + bgColor + '; ' + displayStyle + '">' +
-            '<td class="trade-cycle-column"><span style="color: ' + labelColor + '; font-weight: 500;">' + cycleLabel + '</span></td>' +
+            'title="' + remarkTitle + '" style="border-left: 3px solid ' + cycleColor + '; background: ' + bgColor + '; ' + displayStyle + '">' +
             '<td>' + trade.date + '</td>' +
             '<td class="' + typeClass[trade.type] + '">' + typeText[trade.type] + '</td>' +
-            '<td>' + netValueDisplay + '</td>' +
+            '<td>' + priceDisplay + '</td>' +
             '<td>' + Utils.formatNumber(trade.shares) + '</td>' +
-            '<td>' + Utils.formatMoney(trade.amount) + '</td>' +
             '<td>' + Utils.formatMoney(trade.fee) + '</td>' +
-            '<td class="trade-remark" title="' + remarkTitle + '">' + remarkDisplay + '</td>' +
+            '<td>' + Utils.formatMoney(trade.amount) + '</td>' +
+            '<td class="' + profitClass + '">' + profitDisplay + '</td>' +
+            '<td class="trade-cycle-column"><span style="color: ' + labelColor + '; font-weight: 500;">' + cycleLabel + '</span></td>' +
             '<td>' +
             '<button class="btn btn-secondary btn-edit-trade" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">编辑</button>' +
             '<button class="btn btn-danger btn-delete-trade" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">删除</button>' +

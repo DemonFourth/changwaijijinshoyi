@@ -535,20 +535,28 @@ const Detail = {
             dividend: 'trade-type-dividend'
         };
 
-        const netValueDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
-
-        const remarkDisplay = trade.remark ? (trade.remark.length > 20 ? trade.remark.substring(0, 20) + '...' : trade.remark) : '-';
+        const priceDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
         const remarkTitle = trade.remark || '';
+        let profitDisplay = '-';
+        let profitClass = '';
+        if (trade.type === 'sell' && trade.profitAmount !== undefined) {
+            const profitSign = trade.profitAmount >= 0 ? '+' : '';
+            const rateSign = trade.profitRate >= 0 ? '+' : '';
+            profitDisplay = profitSign + Utils.formatMoneySmart(trade.profitAmount) + ' / ' + rateSign + Utils.formatNumber(trade.profitRate, 2) + '%';
+            profitClass = trade.profitAmount >= 0 ? 'trade-profit--positive' : 'trade-profit--negative';
+        }
+        const cycleLabel = trade.cycleId > 0 ? '第' + trade.cycleId + '轮' : '-';
 
         return `
-            <tr data-trade-id="${trade.id}">
+            <tr data-trade-id="${trade.id}" title="${remarkTitle}">
                 <td>${trade.date}</td>
                 <td class="${typeClass[trade.type]}">${typeText[trade.type]}</td>
-                <td>${netValueDisplay}</td>
+                <td>${priceDisplay}</td>
                 <td>${Utils.formatNumber(trade.shares)}</td>
-                <td>${Utils.formatMoney(trade.amount)}</td>
                 <td>${Utils.formatMoney(trade.fee)}</td>
-                <td class="trade-remark" title="${remarkTitle}">${remarkDisplay}</td>
+                <td>${Utils.formatMoney(trade.amount)}</td>
+                <td class="${profitClass}">${profitDisplay}</td>
+                <td>${cycleLabel}</td>
                 <td>
                     <button class="btn btn-secondary btn-edit-trade" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">编辑</button>
                     <button class="btn btn-danger btn-delete-trade" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">删除</button>
