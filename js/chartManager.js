@@ -465,10 +465,11 @@ const ChartManager = {
         var allDates = [];
         var allNetValues = [];
         var allCostPrices = [];
-        var cycleLines = [];
         var detailData = [];
         var minNetValue = Infinity;
         var maxNetValue = -Infinity;
+
+        var cycleDataList = [];
 
         for (var c = 0; c < cycles.length; c++) {
             var cycle = cycles[c];
@@ -495,12 +496,13 @@ const ChartManager = {
 
                 var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
 
-                allDates.push(trade.date);
                 cycleDates.push(trade.date);
-                allNetValues.push(netValue);
-                allCostPrices.push(parseFloat(costPrice.toFixed(4)));
                 cycleNetValues.push(netValue);
                 cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
+
+                allDates.push(trade.date);
+                allNetValues.push(netValue);
+                allCostPrices.push(parseFloat(costPrice.toFixed(4)));
 
                 if (netValue < minNetValue) minNetValue = netValue;
                 if (netValue > maxNetValue) maxNetValue = netValue;
@@ -518,7 +520,7 @@ const ChartManager = {
                 });
             }
 
-            cycleLines.push({
+            cycleDataList.push({
                 cycleId: cycle.id,
                 dates: cycleDates,
                 netValues: cycleNetValues,
@@ -549,16 +551,35 @@ const ChartManager = {
             symbolSize: 8
         });
 
-        series.push({
-            name: '持仓成本价',
-            type: 'line',
-            data: allCostPrices,
-            lineStyle: { color: themeConfig.itemColor[0], width: 2 },
-            itemStyle: { color: themeConfig.itemColor[0] },
-            smooth: true,
-            symbol: 'circle',
-            symbolSize: 6
-        });
+        var colors = [themeConfig.itemColor[0], '#ed8936', '#9f7aea', '#38b2ac', '#f56565', '#66d9ef'];
+
+        for (var ci = 0; ci < cycleDataList.length; ci++) {
+            var cycleData = cycleDataList[ci];
+            var cycleColor = colors[ci % colors.length];
+
+            var cycleCostData = [];
+            var dateIdx = 0;
+            for (var di = 0; di < allDates.length; di++) {
+                if (dateIdx < cycleData.dates.length && allDates[di] === cycleData.dates[dateIdx]) {
+                    cycleCostData.push(cycleData.costPrices[dateIdx]);
+                    dateIdx++;
+                } else {
+                    cycleCostData.push(null);
+                }
+            }
+
+            series.push({
+                name: '第' + cycleData.cycleId + '轮成本',
+                type: 'line',
+                data: cycleCostData,
+                lineStyle: { color: cycleColor, width: 2 },
+                itemStyle: { color: cycleColor },
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                connectNulls: false
+            });
+        }
 
         if (latestNetValue > 0) {
             var latestNetValueLine = [];
@@ -575,13 +596,23 @@ const ChartManager = {
             });
         }
 
+        var legendData = ['买入净值'];
+        for (var li = 0; li < cycleDataList.length; li++) {
+            legendData.push('第' + cycleDataList[li].cycleId + '轮成本');
+        }
+        if (latestNetValue > 0) {
+            legendData.push('最新净值');
+        }
+
         return {
             tooltip: {
                 trigger: 'axis',
                 formatter: function(params) {
-                    var idx = params[0].dataIndex;
+                    var validParams = params.filter(function(p) { return p.value !== null; });
+                    if (validParams.length === 0) return '';
+                    var idx = validParams[0].dataIndex;
                     var detail = detailData[idx];
-                    var result = params[0].axisValue + '<br/>';
+                    var result = validParams[0].axisValue + '<br/>';
                     result += '持仓周期: 第' + detail.cycleId + '轮<br/>';
                     result += '买入净值: ' + detail.netValue.toFixed(4) + '<br/>';
                     result += '持仓成本价: ' + detail.costPrice.toFixed(4) + '<br/>';
@@ -591,7 +622,7 @@ const ChartManager = {
                 }
             },
             legend: {
-                data: latestNetValue > 0 ? ['买入净值', '持仓成本价', '最新净值'] : ['买入净值', '持仓成本价'],
+                data: legendData,
                 textStyle: { color: themeConfig.textColor },
                 top: 10
             },
