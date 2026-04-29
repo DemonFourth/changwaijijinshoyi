@@ -384,13 +384,26 @@ td.negative {
     color: var(--color-fall);
 }
 
-/* 图表区域 */
+/* 图表区域 - 清新现代风 */
 .chart-container {
     background: var(--color-bg-card);
     padding: 1.5rem;
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: var(--shadow-sm);
     margin-bottom: 2rem;
+    border: 1px solid var(--color-border-primary);
+    position: relative;
+    overflow: hidden;
+}
+
+.chart-container::before {
+    content: '';
+    position: absolute;
+    top:0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-info), var(--color-success));
 }
 
 .chart {
@@ -1036,12 +1049,12 @@ td.negative {
 }
 
 .top5-profit h3 {
-    border-left: 3px solid var(--color-danger);
+    border-left: 3px solid var(--color-loss);
     padding-left: var(--spacing-sm);
 }
 
 .top5-loss h3 {
-    border-left: 3px solid var(--color-success);
+    border-left: 3px solid var(--color-profit);
     padding-left: var(--spacing-sm);
 }
 
