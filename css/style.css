@@ -399,11 +399,20 @@ td.negative {
 .chart-container::before {
     content: '';
     position: absolute;
-    top:0;
+    top: 0;
     left: 0;
     right: 0;
     height: 3px;
     background: linear-gradient(90deg, var(--color-info), var(--color-success));
+}
+
+.chart-section-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border-primary);
 }
 
 .chart {
@@ -1032,7 +1041,7 @@ td.negative {
 .top5-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
+    gap: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
 }
 
@@ -1041,6 +1050,7 @@ td.negative {
     padding: var(--spacing-lg);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-md);
 }
 
 .top5-board h3 {
@@ -1080,17 +1090,18 @@ td.negative {
 }
 
 .top5-rank {
-    width: 20px;
-    height: 20px;
-    border-radius: var(--radius-full);
-    background: var(--color-brand-primary);
-    color: var(--color-text-inverse);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-success), #2f855a);
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: var(--font-size-xs);
     font-weight: 600;
     flex-shrink: 0;
+    margin-right: 8px;
 }
 
 .top5-name {
@@ -1623,7 +1634,11 @@ td.negative {
 .list-controls {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
+}
+
+#btn-add-fund {
+    margin-left: var(--spacing-xs);
 }
 
 .view-toggle {
