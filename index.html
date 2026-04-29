@@ -137,16 +137,68 @@
                     </div>
                 </div>
 
-                <!-- 持仓信息 -->
+                <!-- 持仓信息 - 优化为卡片风格 -->
                 <div class="holding-info">
                     <h3>持仓信息</h3>
-                    <div class="holding-stats">
-                        <div class="holding-group">
-                            <div class="holding-group-title">持仓概况</div>
-                            <div class="stat-item">
-                                <span class="label">持有份额</span>
-                                <span id="holding-shares" class="value">0</span>
+                    <div class="holding-cards">
+                        <!-- 持仓概况卡片 -->
+                        <div class="holding-card">
+                            <div class="holding-card-title">持仓概况</div>
+                            <div class="holding-card-body">
+                                <div class="holding-stat">
+                                    <span class="stat-label">持有份额</span>
+                                    <span class="stat-value" id="holding-shares">0</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">持有成本价</span>
+                                    <span class="stat-value" id="cost-per-share">¥0.0000</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">持有成本</span>
+                                    <span class="stat-value" id="holding-cost">¥0.00</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">当前市值</span>
+                                    <span class="stat-value" id="holding-value">¥0.00</span>
+                                </div>
                             </div>
+                        </div>
+                    
+                        <!-- 持有收益卡片 -->
+                        <div class="holding-card">
+                            <div class="holding-card-title">持有收益</div>
+                            <div class="holding-card-body">
+                                <div class="holding-stat highlight">
+                                    <span class="stat-label">浮动盈亏</span>
+                                    <span class="stat-value" id="holding-profit">¥0.00</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">持仓收益率</span>
+                                    <span class="stat-value" id="holding-rate">0.00%</span>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <!-- 总收益卡片 -->
+                        <div class="holding-card">
+                            <div class="holding-card-title">总收益</div>
+                            <div class="holding-card-body">
+                                <div class="holding-stat">
+                                    <span class="stat-label">已实现收益</span>
+                                    <span class="stat-value" id="realized-profit">¥0.00</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">总收益</span>
+                                    <span class="stat-value" id="detail-total-profit">¥0.00</span>
+                                </div>
+                                <div class="holding-stat highlight">
+                                    <span class="stat-label">总收益率</span>
+                                    <span class="stat-value" id="detail-total-rate">0.00%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                             <div class="stat-item">
                                 <span class="label">持有成本价</span>
                                 <span id="cost-per-share" class="value">¥0.0000</span>

@@ -122,14 +122,22 @@ body {
     border-radius: 50%;
 }
 
+/* 返回按钮 - 主题适配 */
 .btn-back {
     background: transparent;
-    color: var(--color-text-inverse);
-    border: 1px solid var(--color-text-inverse);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-primary);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: var(--font-size-md);
+    transition: all 0.2s ease;
 }
 
 .btn-back:hover {
-    background: rgb(255 255 255 / 10%);
+    background: var(--color-bg-hover);
+    border-color: var(--color-brand-primary);
+    color: var(--color-brand-primary);
 }
 
 /* 主内容区 */
@@ -564,68 +572,93 @@ td.negative {
     }
 }
 
-/* 持仓信息 */
+/* 持仓信息 - 优化为卡片风格 */
 .holding-info {
     background: var(--color-bg-card);
     padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow-sm);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
     margin-bottom: 2rem;
+    border: 1px solid var(--color-border-primary);
 }
 
 .holding-info h3 {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     color: var(--color-text-primary);
+    font-size: var(--font-size-lg);
 }
 
-.holding-stats {
+.holding-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+    gap: 1.5rem;
 }
 
-.holding-group {
+.holding-card {
     background: var(--color-bg-hover);
     border-radius: 8px;
     padding: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.holding-group-title {
+.holding-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.holding-card-title {
     font-size: 0.8125rem;
     font-weight: 600;
     color: var(--color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--color-border-secondary);
 }
 
-.stat-item {
+.holding-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.holding-stat {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 0.35rem 0;
+    padding: 0.25rem 0;
 }
 
-.stat-item .label {
+.holding-stat .stat-label {
     font-size: 0.8125rem;
     color: var(--color-text-secondary);
 }
 
-.stat-item .value {
-    font-size: 1rem;
+.holding-stat .stat-value {
+    font-size: 1.125rem;
     font-weight: 600;
     color: var(--color-text-primary);
+    font-family: var(--font-family-mono);
 }
 
-.stat-highlight .label {
-    font-weight: 600;
+.holding-stat.highlight .stat-value {
+    font-size: 1.25rem;
     color: var(--color-brand-primary);
 }
 
-.stat-highlight .value {
-    font-size: 1.125rem;
+/* 响应式 */
+@media (max-width: 768px) {
+    .holding-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .holding-cards {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* 交易记录 */
