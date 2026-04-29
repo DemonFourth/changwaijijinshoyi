@@ -10,6 +10,9 @@
 4. [测试规范](#测试规范)
 5. [Git提交规范](#git提交规范)
 6. [文档规范](#文档规范)
+7. [数据显示规范](#数据显示规范)
+8. [UI设计模式](#ui设计模式)
+9. [功能添加完整流程](#功能添加完整流程)
 
 ---
 
@@ -876,6 +879,80 @@ git checkout master
 git merge develop
 git tag v1.1.0
 ```
+
+---
+
+## 数据显示规范
+
+**数字格式化统一规则**：
+- 净值数据：统一使用 `Utils.formatNumber(value, 4)`，确保4位小数、不足补0
+- 金额数据：使用 `Utils.formatMoney()` 或 `Utils.formatMoneySmart()`
+- 百分比：使用 `Utils.formatPercent()` 或手动拼接 `%`
+
+**示例**：
+```javascript
+// ✅ 正确：净值显示4位小数
+netValue.textContent = fund.netValue ? Utils.formatNumber(fund.netValue, 4) : '-';
+
+// ❌ 错误：直接显示，小数位不一致
+netValue.textContent = fund.netValue || '-';
+
+// ✅ 正确：金额显示千分位
+amount.textContent = Utils.formatMoney(trade.amount);
+
+// ✅ 正确：百分比显示
+growth.textContent = Utils.formatPercent(fund.estimatedGrowth);
+```
+
+**适用范围**：详情页、概览页、列表视图、交易记录、持仓信息
+
+---
+
+## UI设计模式
+
+**数据展示优化原则**：
+- 避免简单垂直列表，采用层次化布局
+- 核心数据大字号突出，详细信息网格化展示
+- 响应式设计：桌面端多列 → 移动端单列
+
+**Fund-Info 优化案例**：
+- 标题区：基金名称 + 代码同行显示（flex布局）
+- 核心数据区：两列网格（最新净值 + 估算净值）
+- 详细信息区：三列网格（代码、名称、备注）
+- 日期用小字体括号显示在数值右侧
+- 涨跌幅移至估算净值下方显示
+
+**参考**：`preview-fund-info.html` 预览页面
+
+**关键样式**：
+```css
+.fund-title-area { display: flex; align-items: baseline; gap: 1rem; }
+.fund-core-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.fund-details-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+```
+
+---
+
+## 功能添加完整流程
+
+**添加新字段（如基金备注）的标准流程**：
+
+1. **数据结构**：在创建对象时添加字段（如 `fundManager.js`）
+2. **表单输入**：在添加/编辑表单中增加对应字段（`modal.js`）
+3. **数据保存**：在保存逻辑中读取并存储新字段
+4. **显示逻辑**：在详情页等位置显示新字段（`detail.js`）
+5. **编辑功能**：添加编辑UI、保存、取消方法
+6. **菜单集成**：在操作菜单中添加编辑入口
+
+**关键**：同步更新所有相关文件，避免遗漏。
+
+**基金备注功能实现路径**：
+- `fundManager.js:105` - 数据结构添加 `remark: fundData.remark || ''`
+- `modal.js:115-117` - 添加基金表单增加备注输入框
+- `modal.js:112` - 保存备注到基金数据
+- `detail.js:233-234` - 在基金信息区显示备注
+- `detail.js` - 新增 `showRemarkEditUI()`, `saveRemark()`, `cancelRemarkEdit()` 方法
+- `detail.js:771` - 编辑菜单添加"📝 编辑备注"选项
 
 ---
 
