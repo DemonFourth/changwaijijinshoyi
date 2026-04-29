@@ -69,44 +69,59 @@
     --color-fall-bg: rgb(72 187 120 / 15%);
 }
 
-/* CSS设计令牌 - 深色主题 - 清新现代风 */
+/* CSS设计令牌 - 深色主题 - 墨绿清新风 */
 [data-theme="dark"] {
-    --color-brand-primary: #2d3748;
-    --color-brand-secondary: #4a5568;
-    --color-brand-gradient: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+    /* 品牌色 - 墨绿系 */
+    --color-brand-primary: #234e52;
+    --color-brand-secondary: #285e61;
+    --color-brand-gradient: linear-gradient(135deg, #234e52 0%, #38b2ac 100%);
+
+    /* 语义色 - 亮色保证对比度 */
     --color-success: #68d391;        /* 亮绿 - 买入 */
     --color-danger: #fc8181;         /* 浅红 - 卖出 */
     --color-warning: #fbd38d;
     --color-info: #63b3ed;          /* 亮蓝 - 分红 */
-    --color-profit: #68d391;        /* 亮绿 */
+    --color-profit: #68d391;         /* 亮绿 */
     --color-loss: #fc8181;          /* 浅红 */
-    --color-bg-primary: #1a202c;
-    --color-bg-secondary: #2d3748;
-    --color-bg-tertiary: #1a365d;
-    --color-bg-hover: #2a4a3a;
-    --color-bg-card: #2d3748;
-    --color-bg-remark: #2d3748;
+
+    /* 背景色 - 墨绿深色系 */
+    --color-bg-primary: #0d1313;
+    --color-bg-secondary: #141f1f;
+    --color-bg-tertiary: #1a2828;
+    --color-bg-hover: #1f3333;
+    --color-bg-card: #1a2828;
+    --color-bg-remark: #1a2828;
+
+    /* 文字色 */
     --color-text-primary: #e2e8f0;
     --color-text-secondary: #a0aec0;
     --color-text-tertiary: #718096;
-    --color-text-inverse: #ffffff; /* 深色表头文字用白色 */
+    --color-text-inverse: #141f1f;
     --color-text-on-brand: #ffffff;
-    --color-border-primary: #4a5568;
-    --color-border-secondary: #2d3748;
-    --color-border-focus: #63b3ed;
-    --shadow-sm: 0 2px 8px rgb(0 0 0 / 30%);
-    --shadow-md: 0 4px 16px rgb(0 0 0 / 40%);
-    --shadow-lg: 0 6px 20px rgb(0 0 0 / 50%);
-    --color-cycle-1: var(--color-brand-primary);
-    --color-cycle-2: var(--color-success);
-    --color-cycle-3: var(--color-warning);
-    --color-cycle-4: var(--color-danger);
+
+    /* 边框色 */
+    --color-border-primary: #2d4a4a;
+    --color-border-secondary: #234e52;
+    --color-border-focus: #38b2ac;
+
+    /* 阴影 - 绿调 */
+    --shadow-sm: 0 2px 8px rgb(56 178 172 / 20%);
+    --shadow-md: 0 4px 16px rgb(56 178 172 / 25%);
+    --shadow-lg: 0 6px 20px rgb(56 178 172 / 30%);
+
+    /* 持仓轮次配色 */
+    --color-cycle-1: #38b2ac;
+    --color-cycle-2: #68d391;
+    --color-cycle-3: #fbd38d;
+    --color-cycle-4: #fc8181;
     --color-cycle-bg-even: var(--color-bg-tertiary);
     --color-cycle-bg-odd: var(--color-bg-secondary);
-    --color-rise: #ff6b6b;
-    --color-fall: #51cf66;
-    --color-rise-bg: rgb(255 107 107 / 15%);
-    --color-fall-bg: rgb(81 207 102 / 15%);
+
+    /* 涨跌颜色 - 保持对比度 */
+    --color-rise: #fc8181;
+    --color-fall: #68d391;
+    --color-rise-bg: rgb(252 129 129 / 15%);
+    --color-fall-bg: rgb(104 211 145 / 15%);
 
     /* 间距 */
     --spacing-xs: 0.25rem;
