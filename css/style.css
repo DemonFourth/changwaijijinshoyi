@@ -96,7 +96,7 @@ body {
 
 .btn-secondary:hover {
     background: var(--color-bg-hover);
-    box-shadow: 0 2px 8px rgb(102 126 234 / 15%);
+    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.15);
 }
 
 .btn-danger {
@@ -1141,18 +1141,18 @@ td.negative {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--color-brand-gradient);
-    color: var(--color-text-inverse);
+    background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
+    color: #2d3748;
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgb(102 126 234 / 40%);
+    box-shadow: 0 4px 12px rgba(168, 230, 207, 0.4);
     transition: all 0.3s;
 }
 
 .fab:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 16px rgb(102 126 234 / 50%);
+    box-shadow: 0 6px 16px rgba(168, 230, 207, 0.5);
 }
 
 /* 弹窗 */
