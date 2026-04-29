@@ -507,28 +507,28 @@ const Detail = {
             dividend: '分红'
         };
 
-        const typeClass = {
-            buy: 'trade-type-buy',
-            sell: 'trade-type-sell',
-            dividend: 'trade-type-dividend'
+        const typeBadgeClass = {
+            buy: 'trade-type-badge trade-type-buy',
+            sell: 'trade-type-badge trade-type-sell',
+            dividend: 'trade-type-badge trade-type-dividend'
         };
 
         const priceDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
-        const remarkTitle = trade.remark || '';
         let profitDisplay = '-';
         let profitClass = '';
         if (trade.type === 'sell' && trade.profitAmount !== undefined) {
             const profitSign = trade.profitAmount >= 0 ? '+' : '';
             const rateSign = trade.profitRate >= 0 ? '+' : '';
             profitDisplay = profitSign + Utils.formatMoneySmart(trade.profitAmount) + ' / ' + rateSign + Utils.formatNumber(trade.profitRate, 2) + '%';
-            profitClass = trade.profitAmount >= 0 ? 'trade-profit--positive' : 'trade-profit--negative';
+            profitClass = trade.profitAmount >= 0 ? 'trade-profit-positive' : 'trade-profit-negative';
         }
         const cycleLabel = trade.cycleId > 0 ? '第' + trade.cycleId + '轮' : '-';
+        const remarkIcon = trade.remark ? `<span class="trade-remark-icon" data-remark="${trade.remark.replace(/"/g, '&quot;')}">?</span>` : '';
 
         return `
-            <tr data-trade-id="${trade.id}" title="${remarkTitle}">
+            <tr data-trade-id="${trade.id}">
                 <td>${trade.date}</td>
-                <td class="${typeClass[trade.type]}">${typeText[trade.type]}</td>
+                <td><span class="${typeBadgeClass[trade.type]}">${typeText[trade.type]}</span>${remarkIcon}</td>
                 <td>${priceDisplay}</td>
                 <td>${Utils.formatNumber(trade.shares)}</td>
                 <td>${Utils.formatMoney(trade.fee)}</td>
@@ -536,8 +536,8 @@ const Detail = {
                 <td class="${profitClass}">${profitDisplay}</td>
                 <td>${cycleLabel}</td>
                 <td>
-                    <button class="btn btn-secondary btn-edit-trade" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">编辑</button>
-                    <button class="btn btn-danger btn-delete-trade" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">删除</button>
+                    <button class="btn btn-secondary btn-sm btn-edit-trade">编辑</button>
+                    <button class="btn btn-danger btn-sm btn-delete-trade">删除</button>
                 </td>
             </tr>
         `;

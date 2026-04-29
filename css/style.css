@@ -685,6 +685,9 @@ td.negative {
 .trade-table {
     width: 100%;
     border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
 }
 
 .trade-table th,
@@ -695,12 +698,13 @@ td.negative {
 }
 
 .trade-table th {
-    background: var(--color-bg-hover);
-    color: var(--color-text-secondary);
+    background: var(--color-brand-gradient);
+    color: var(--color-text-inverse);
     font-weight: 600;
     font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    padding: 1rem 0.75rem;
 }
 
 .trade-table tbody tr {
@@ -709,11 +713,115 @@ td.negative {
 
 .trade-table tbody tr:hover {
     background: var(--color-bg-hover);
+    transform: scale(1.002);
 }
 
 .trade-table td {
     color: var(--color-text-primary);
     font-size: 0.875rem;
+}
+
+/* 操作类型标签 */
+.trade-type-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    min-width: 60px;
+}
+
+.trade-type-buy {
+    background: rgb(34 197 94 / 15%);
+    color: var(--color-success);
+    border: 1px solid rgb(34 197 94 / 30%);
+}
+
+.trade-type-sell {
+    background: rgb(239 68 68 / 15%);
+    color: var(--color-danger);
+    border: 1px solid rgb(239 68 68 / 30%);
+}
+
+.trade-type-dividend {
+    background: rgb(59 130 246 / 15%);
+    color: var(--color-info);
+    border: 1px solid rgb(59 130 246 / 30%);
+}
+
+/* 备注图标 */
+.trade-remark-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-bg-hover);
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    cursor: help;
+    margin-left: 0.5rem;
+    position: relative;
+}
+
+.trade-remark-icon:hover::after {
+    content: attr(data-remark);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem 0.75rem;
+    background: var(--color-bg-tooltip, #333);
+    color: var(--color-text-inverse);
+    font-size: 0.75rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 10;
+    margin-bottom: 0.5rem;
+}
+
+/* 收益列颜色 */
+.trade-profit-positive {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.trade-profit-negative {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+/* 操作按钮优化 */
+.trade-table .btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.trade-table .btn-sm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+
+/* 响应式：小屏幕横向滚动 */
+@media (max-width: 768px) {
+    .trade-table {
+        font-size: 0.8rem;
+    }
+    
+    .trade-table th,
+    .trade-table td {
+        padding: 0.625rem 0.5rem;
+    }
+    
+    .trade-type-badge {
+        min-width: 50px;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
+    }
 }
 
 .form-input-error {
