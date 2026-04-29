@@ -688,13 +688,13 @@ td.negative {
     margin-top: 15px;
     background: var(--color-bg-card);
     box-shadow: var(--shadow-sm);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
 }
 
 .trade-table th,
 .trade-table td {
-    padding: 12px;
+    padding: 14px 16px;
     text-align: center;
     border-bottom: 1px solid var(--color-border-primary);
 }
@@ -703,10 +703,10 @@ td.negative {
     background: var(--color-brand-gradient);
     color: var(--color-text-inverse);
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    padding: 1rem 0.75rem;
+    padding: 16px;
     border: none;
 }
 
@@ -718,69 +718,71 @@ td.negative {
     background: var(--color-bg-hover);
 }
 
+.trade-table tbody tr:hover {
+    background: var(--color-bg-hover);
+}
+
 .trade-table td {
     color: var(--color-text-primary);
 }
 
-/* 操作类型标签 - 与参考项目一致 */
+/* 操作类型标签 - 清新现代风 */
 .trade-type-badge {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
+    padding: 6px 16px;
     border-radius: 20px;
-    font-size: 0.75rem;
+    font-size: 12px;
     font-weight: 600;
     text-align: center;
     min-width: 60px;
 }
 
 .trade-type-buy {
-    background: rgba(16, 185, 129, 0.15);  /* 绿色背景 */
-    color: #10b981;                         /* 翡翠绿 */
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background: rgba(72, 187, 120, 0.15);  /* 绿色背景 */
+    color: var(--color-success);         /* #48bb78 */
+    border: 1px solid rgba(72, 187, 120, 0.3);
 }
 
 .trade-type-sell {
-    background: rgba(239, 68, 68, 0.15);   /* 红色背景 */
-    color: #ef4444;                         /* 红色 */
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(237, 137, 54, 0.15);   /* 珊瑚橙背景 */
+    color: var(--color-danger);           /* #ed8936 */
+    border: 1px solid rgba(237, 137, 54, 0.3);
 }
 
 .trade-type-dividend {
-    background: rgba(59, 130, 246, 0.15);  /* 蓝色背景 */
-    color: #3b82f6;                         /* 蓝色 */
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: rgba(66, 153, 225, 0.15);  /* 天蓝背景 */
+    color: var(--color-info);              /* #4299e1 */
+    border: 1px solid rgba(66, 153, 225, 0.3);
 }
 
-/* 备注图标 */
-.trade-remark-icon {
-    display: inline-flex;
+/* 备注行样式 - 引用行设计 */
+.trade-remark-row td {
+    padding: 10px 16px;
+    background: var(--color-bg-remark, #f7fafc);
+    border-bottom: 1px solid var(--color-border-primary);
+}
+
+.remark-content {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--color-bg-hover);
+    gap: 8px;
+    padding-left: 12px;
+    border-left: 4px solid var(--color-success);
+    font-style: italic;
     color: var(--color-text-secondary);
-    font-size: 0.7rem;
-    cursor: help;
-    margin-left: 0.5rem;
-    position: relative;
+    font-size: 13px;
 }
 
-.trade-remark-icon:hover::after {
-    content: attr(data-remark);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.5rem 0.75rem;
-    background: var(--color-bg-tooltip, #333);
-    color: var(--color-text-inverse);
-    font-size: 0.75rem;
-    border-radius: 6px;
-    white-space: nowrap;
-    z-index: 10;
-    margin-bottom: 0.5rem;
+.remark-icon {
+    font-size: 14px;
+}
+
+[data-theme="dark"] .trade-remark-row td {
+    background: #2d3748;
+}
+
+[data-theme="dark"] .remark-content {
+    border-left-color: var(--color-success);
 }
 
 /* 收益列颜色 */

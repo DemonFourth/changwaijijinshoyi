@@ -523,12 +523,12 @@ const Detail = {
             profitClass = trade.profitAmount >= 0 ? 'trade-profit-positive' : 'trade-profit-negative';
         }
         const cycleLabel = trade.cycleId > 0 ? '第' + trade.cycleId + '轮' : '-';
-        const remarkIcon = trade.remark ? `<span class="trade-remark-icon" data-remark="${trade.remark.replace(/"/g, '&quot;')}">?</span>` : '';
-
-        return `
+        
+        // 主行
+        let html = `
             <tr data-trade-id="${trade.id}">
                 <td>${trade.date}</td>
-                <td><span class="${typeBadgeClass[trade.type]}">${typeText[trade.type]}</span>${remarkIcon}</td>
+                <td><span class="${typeBadgeClass[trade.type]}">${typeText[trade.type]}</span></td>
                 <td>${priceDisplay}</td>
                 <td>${Utils.formatNumber(trade.shares)}</td>
                 <td>${Utils.formatMoney(trade.fee)}</td>
@@ -541,6 +541,22 @@ const Detail = {
                 </td>
             </tr>
         `;
+        
+        // 如果有备注，添加引用行
+        if (trade.remark) {
+            html += `
+                <tr class="trade-remark-row">
+                    <td colspan="9">
+                        <div class="remark-content">
+                            <span class="remark-icon">💬</span>
+                            <span class="remark-text">${trade.remark}</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        return html;
     },
 
     /**
