@@ -166,26 +166,26 @@ const Overview = {
     updateFundList() {
         let funds = FundManager.getAllFunds();
         const fundList = document.getElementById('fund-list');
-        
+
         if (!fundList) return;
-        
+
         // 加载视图偏好
         const prefs = Overview._viewPrefs || Overview.loadViewPreferences();
-        
+
         // 排序
         funds = Overview.sortFunds(funds, prefs.sortField, prefs.sortOrder);
-        
+
         if (funds.length === 0) {
             fundList.innerHTML = '<div class="empty-state" style="text-align: center; padding: 2rem; color: var(--color-text-tertiary);"><p>还没有添加基金</p><p>点击右上角"添加基金"按钮开始</p></div>';
             return;
         }
-        
+
         // 根据视图模式渲染
         fundList.className = `fund-list ${prefs.viewMode}-view`;
-        
+
         // 分组
         const groups = Overview.groupFundsByStatus(funds);
-        
+
         // 渲染分组
         let html = '';
         if (groups.holdingCount > 0) {
@@ -194,9 +194,9 @@ const Overview = {
         if (groups.clearedCount > 0) {
             html += Overview.renderFundGroup('cleared', '已清仓', groups.cleared, Overview._groupCollapsed.cleared);
         }
-        
+
         fundList.innerHTML = html;
-        
+
         // 绑定点击事件
         fundList.querySelectorAll('.fund-card, .fund-row').forEach(el => {
             el.addEventListener('click', (e) => {
@@ -205,7 +205,7 @@ const Overview = {
                 Router.navigate('detail', { fundId });
             });
         });
-        
+
         // 绑定分组折叠事件
         fundList.querySelectorAll('.fund-group-header').forEach(header => {
             header.addEventListener('click', () => {
@@ -213,12 +213,12 @@ const Overview = {
                 Overview.toggleGroup(groupId);
             });
         });
-        
+
         // 更新视图切换按钮状态
         document.querySelectorAll('.btn-view').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.view === prefs.viewMode);
         });
-        
+
         // 更新排序控件状态
         const sortField = document.getElementById('sort-field');
         const sortOrder = document.getElementById('sort-order');
@@ -272,7 +272,7 @@ const Overview = {
                     </div>
                     <div class="fund-stat">
                         <span class="fund-stat-label">最新净值</span>
-                        <span class="fund-stat-value">${Utils.formatNumber(fund.netValue || 0)}</span>
+                        <span class="fund-stat-value">${Utils.formatNumber(fund.netValue || 0, 4)}</span>
                     </div>
                 </div>
             </div>
@@ -296,27 +296,27 @@ const Overview = {
             let valA, valB;
             const statsA = FundManager.getFundStats(a.id);
             const statsB = FundManager.getFundStats(b.id);
-            
+
             switch (sortField) {
-                case 'profitRate':
-                    valA = statsA ? (statsA.summary.profitRate || 0) : 0;
-                    valB = statsB ? (statsB.summary.profitRate || 0) : 0;
-                    break;
-                case 'profitAmount':
-                    valA = statsA ? (statsA.summary.totalProfit || 0) : 0;
-                    valB = statsB ? (statsB.summary.totalProfit || 0) : 0;
-                    break;
-                case 'marketValue':
-                    valA = statsA ? (statsA.summary.currentHolding.value || 0) : 0;
-                    valB = statsB ? (statsB.summary.currentHolding.value || 0) : 0;
-                    break;
-                case 'name':
-                    valA = a.name || '';
-                    valB = b.name || '';
-                    return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-                default:
-                    valA = statsA ? (statsA.summary.profitRate || 0) : 0;
-                    valB = statsB ? (statsB.summary.profitRate || 0) : 0;
+            case 'profitRate':
+                valA = statsA ? (statsA.summary.profitRate || 0) : 0;
+                valB = statsB ? (statsB.summary.profitRate || 0) : 0;
+                break;
+            case 'profitAmount':
+                valA = statsA ? (statsA.summary.totalProfit || 0) : 0;
+                valB = statsB ? (statsB.summary.totalProfit || 0) : 0;
+                break;
+            case 'marketValue':
+                valA = statsA ? (statsA.summary.currentHolding.value || 0) : 0;
+                valB = statsB ? (statsB.summary.currentHolding.value || 0) : 0;
+                break;
+            case 'name':
+                valA = a.name || '';
+                valB = b.name || '';
+                return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            default:
+                valA = statsA ? (statsA.summary.profitRate || 0) : 0;
+                valB = statsB ? (statsB.summary.profitRate || 0) : 0;
             }
             return sortOrder === 'asc' ? valA - valB : valB - valA;
         });
@@ -331,11 +331,11 @@ const Overview = {
         if (funds.length === 0) {
             return '<div class="empty-state" style="text-align: center; padding: 2rem; color: var(--color-text-tertiary);"><p>还没有添加基金</p></div>';
         }
-        
+
         let html = '<table class="fund-list-table"><thead><tr>';
         html += '<th>基金名称</th><th>代码</th><th>收益率</th><th>收益额</th><th>持仓市值</th><th>最新净值</th>';
         html += '</tr></thead><tbody>';
-        
+
         funds.forEach(fund => {
             const stats = FundManager.getFundStats(fund.id);
             const summary = stats ? stats.summary : {};
@@ -343,17 +343,17 @@ const Overview = {
             const profitRate = summary.profitRate || 0;
             const profitAmount = summary.totalProfit || 0;
             const marketValue = holding.value || 0;
-            
+
             html += `<tr class="fund-row" data-fund-id="${fund.id}" style="cursor:pointer;">`;
             html += `<td class="fund-name-cell">${fund.name}</td>`;
             html += `<td class="fund-code-cell">${fund.code}</td>`;
             html += `<td class="${Utils.getValueColor(profitRate)}">${Utils.formatPercent(profitRate)}</td>`;
             html += `<td class="${Utils.getValueColor(profitAmount)}">${Utils.formatMoneySmart(profitAmount)}</td>`;
             html += `<td>${Utils.formatMoneySmart(marketValue)}</td>`;
-            html += `<td>${Utils.formatNumber(fund.netValue || 0)}</td>`;
+            html += `<td>${Utils.formatNumber(fund.netValue || 0, 4)}</td>`;
             html += '</tr>';
         });
-        
+
         html += '</tbody></table>';
         return html;
     },
@@ -376,7 +376,7 @@ const Overview = {
         const EPSILON = 0.0001;
         const holding = [];
         const cleared = [];
-        
+
         funds.forEach(fund => {
             const stats = FundManager.getFundStats(fund.id);
             const shares = stats ? (stats.summary.currentHolding.shares || 0) : 0;
@@ -386,14 +386,14 @@ const Overview = {
                 cleared.push(fund);
             }
         });
-        
+
         return { holding, cleared, holdingCount: holding.length, clearedCount: cleared.length };
     },
 
     renderFundGroup(groupId, title, funds, isCollapsed) {
         const prefs = Overview._viewPrefs || Overview.loadViewPreferences();
         const collapsedClass = isCollapsed ? 'collapsed' : '';
-        
+
         let html = `<div class="fund-group" data-group="${groupId}">`;
         html += `<div class="fund-group-header" data-group-id="${groupId}">`;
         html += `<span class="group-title">${title}</span>`;
@@ -401,7 +401,7 @@ const Overview = {
         html += `<span class="group-toggle">${isCollapsed ? '▶' : '▼'}</span>`;
         html += '</div>';
         html += `<div class="fund-group-body ${collapsedClass}">`;
-        
+
         if (funds.length === 0) {
             html += '<p class="group-empty">暂无基金</p>';
         } else if (prefs.viewMode === 'list') {
@@ -409,20 +409,20 @@ const Overview = {
         } else {
             html += Overview.renderCardView(funds);
         }
-        
+
         html += '</div></div>';
         return html;
     },
 
     toggleGroup(groupId) {
         Overview._groupCollapsed[groupId] = !Overview._groupCollapsed[groupId];
-        
+
         const group = document.querySelector(`.fund-group[data-group="${groupId}"]`);
         if (!group) return;
-        
+
         const body = group.querySelector('.fund-group-body');
         const toggle = group.querySelector('.group-toggle');
-        
+
         if (Overview._groupCollapsed[groupId]) {
             body.classList.add('collapsed');
             toggle.textContent = '▶';
@@ -430,7 +430,7 @@ const Overview = {
             body.classList.remove('collapsed');
             toggle.textContent = '▼';
         }
-        
+
         EventBus.emit(EventType.GROUP_TOGGLED, { groupId, collapsed: Overview._groupCollapsed[groupId] });
     },
 
@@ -521,7 +521,7 @@ const Overview = {
      */
     updateChart() {
         const funds = FundManager.getAllFunds();
-        
+
         if (ChartManager.isEChartsAvailable()) {
             const container = document.getElementById('chart-profit-trend');
             if (container) {
