@@ -1203,7 +1203,7 @@ td.negative {
     top: 0;
     bottom: 0;
     width: 5px;
-    background: var(--color-brand-gradient);
+    background: linear-gradient(180deg, var(--color-success), var(--color-info));
     border-radius: var(--radius-lg) 0 0 var(--radius-lg);
 }
 
@@ -1318,11 +1318,11 @@ td.negative {
 .form-section-title {
     font-size: var(--font-size-sm);
     font-weight: 700;
-    color: var(--color-brand-primary);
+    color: var(--color-success);
     margin-bottom: var(--spacing-md);
     padding-bottom: var(--spacing-xs);
     padding-left: var(--spacing-sm);
-    border-left: 3px solid var(--color-brand-primary);
+    border-left: 3px solid var(--color-success);
     text-transform: uppercase;
     letter-spacing: 1px;
     display: flex;
