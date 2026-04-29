@@ -37,9 +37,13 @@ const App = {
             // 初始化UI组件
             Overview.init();
             Detail.init();
+            ToolPage.init();
 
             // 绑定主题切换按钮
             this.setupThemeToggle();
+
+            // 绑定工具箱按钮
+            this.setupToolsButton();
 
             // 监听路由变化
             this.setupRouteListener();
@@ -89,6 +93,18 @@ const App = {
     },
 
     /**
+     * 设置工具箱按钮
+     */
+    setupToolsButton() {
+        const btnTools = document.getElementById('btn-tools');
+        if (btnTools) {
+            btnTools.addEventListener('click', () => {
+                Router.navigate('tools');
+            });
+        }
+    },
+
+    /**
      * 显示当前页面
      */
     showCurrentPage() {
@@ -105,6 +121,12 @@ const App = {
             if (detailPage) {
                 detailPage.classList.add('active');
                 Detail.load(route.params.fundId);
+            }
+        } else if (route.name === 'tools') {
+            const toolsPage = document.getElementById('page-tools');
+            if (toolsPage) {
+                toolsPage.classList.add('active');
+                ToolPage.init();
             }
         } else {
             const overviewPage = document.getElementById('page-overview');

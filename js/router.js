@@ -17,6 +17,10 @@ const Router = {
         detail: {
             path: 'detail',
             title: '详情页'
+        },
+        tools: {
+            path: 'tools',
+            title: '工具箱'
         }
     },
 

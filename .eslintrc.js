@@ -81,6 +81,8 @@ module.exports = {
     'FIFOCalculator': 'readonly',
     'FIFOValidator': 'readonly',
     'BigNumberFormatter': 'readonly',
-    'echarts': 'readonly'
+    'echarts': 'readonly',
+    'ConversionCalculator': 'readonly',
+    'ToolPage': 'readonly'
   }
 };
