@@ -1041,8 +1041,8 @@ td.negative {
 .top5-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-lg);
-    margin-bottom: var(--spacing-xl);
+    gap: 1rem;
+    margin-bottom: 2rem;
 }
 
 .top5-board {
