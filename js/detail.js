@@ -159,85 +159,52 @@ const Detail = {
      * @param {object} fund - 基金对象
      */
     updateFundInfo(fund) {
-        // 标题栏：基金名称和代码
+        // 基金标题区：基金名称和代码
         const fundName = document.getElementById('detail-fund-name');
         const fundCode = document.getElementById('detail-fund-code');
         if (fundName) fundName.textContent = fund.name;
         if (fundCode) fundCode.textContent = fund.code;
-        
-        // 标题栏：行情数据
-        const quoteNetValue = document.getElementById('quote-net-value');
-        const quoteEstimatedValue = document.getElementById('quote-estimated-value');
-        const quoteEstimatedGrowth = document.getElementById('quote-estimated-growth');
-        
-        if (quoteNetValue) {
-            quoteNetValue.textContent = fund.netValue || '-';
-        }
-        
-        if (quoteEstimatedValue) {
-            quoteEstimatedValue.textContent = fund.estimatedValue || '-';
-        }
-        
-        if (quoteEstimatedGrowth) {
-            if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
-                const rate = parseFloat(fund.estimatedGrowth);
-                const color = rate >= 0 ? 'var(--color-rise)' : 'var(--color-fall)';
-                quoteEstimatedGrowth.textContent = `${rate >= 0 ? '+' : ''}${rate}%`;
-                quoteEstimatedGrowth.style.color = color;
-                quoteEstimatedGrowth.style.fontWeight = 'bold';
-            } else {
-                quoteEstimatedGrowth.textContent = '-';
-                quoteEstimatedGrowth.style.color = '';
-                quoteEstimatedGrowth.style.fontWeight = '';
-            }
-        }
-        
-        // 基金信息区域（保留原有字段）
-        const title = document.getElementById('detail-title');
-        const code = document.getElementById('info-code');
-        const name = document.getElementById('info-name');
+
+        // 基金信息区域 - 新结构
         const netValue = document.getElementById('info-net-value');
         const netDate = document.getElementById('info-net-date');
         const estimatedValue = document.getElementById('info-estimated-value');
         const estimatedGrowth = document.getElementById('info-estimated-growth');
         const updateTime = document.getElementById('info-update-time');
-        
-        if (title) title.textContent = fund.name;
-        if (code) code.textContent = fund.code;
-        if (name) name.textContent = fund.name;
-        
-        if (netValue) {
-            netValue.textContent = fund.netValue || '-';
-        }
-        
-        if (netDate) netDate.textContent = fund.netValueDate || '-';
-        
-        if (estimatedValue) {
-            estimatedValue.textContent = fund.estimatedValue || '-';
-        }
-        
-        if (estimatedGrowth) {
-            if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
-                const rate = parseFloat(fund.estimatedGrowth);
-                const color = rate >= 0 ? 'var(--color-rise)' : 'var(--color-fall)';
-                estimatedGrowth.textContent = `${rate >= 0 ? '+' : ''}${rate}%`;
-                estimatedGrowth.style.color = color;
-                estimatedGrowth.style.fontWeight = 'bold';
-            } else {
-                estimatedGrowth.textContent = '-';
-                estimatedGrowth.style.color = '';
-                estimatedGrowth.style.fontWeight = '';
-            }
-        }
-        
+        const code = document.getElementById('info-code');
+        const name = document.getElementById('info-name');
+        const remark = document.getElementById('info-remark');
+
+        // 核心数据：最新净值 + 净值日期（统一4位小数）
+        if (netValue) netValue.textContent = fund.netValue ? Utils.formatNumber(fund.netValue, 4) : '-';
+        if (netDate) netDate.textContent = fund.netValueDate ? `(${fund.netValueDate})` : '';
+
+        // 核心数据：估算净值 + 更新时间 + 涨跌幅（统一4位小数）
+        if (estimatedValue) estimatedValue.textContent = fund.estimatedValue ? Utils.formatNumber(fund.estimatedValue, 4) : '-';
         if (updateTime) {
             if (fund.updateTime) {
                 const updateDate = new Date(fund.updateTime);
-                updateTime.textContent = updateDate.toLocaleString('zh-CN');
+                updateTime.textContent = `(${updateDate.toLocaleString('zh-CN')})`;
             } else {
-                updateTime.textContent = '-';
+                updateTime.textContent = '';
             }
         }
+        if (estimatedGrowth) {
+            if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
+                const rate = parseFloat(fund.estimatedGrowth);
+                const className = rate >= 0 ? 'core-change positive' : 'core-change negative';
+                estimatedGrowth.textContent = `${rate >= 0 ? '↑ +' : '↓ '}${rate}%`;
+                estimatedGrowth.className = className;
+            } else {
+                estimatedGrowth.textContent = '-';
+                estimatedGrowth.className = 'core-change';
+            }
+        }
+
+        // 详细信息网格
+        if (code) code.textContent = fund.code;
+        if (name) name.textContent = fund.name;
+        if (remark) remark.textContent = fund.remark || '-';
     },
 
     /**
@@ -353,25 +320,25 @@ const Detail = {
     updateChart(fund, stats) {
         if (ChartManager.isEChartsAvailable()) {
             const summary = stats.summary;
-            
+
             if (summary.totalCycles === 0) {
                 const container = document.getElementById('chart-detail-trend');
                 if (container) container.innerHTML = '<p style="text-align: center; color: var(--color-text-tertiary); padding: 40px;">暂无交易记录</p>';
                 return;
             }
-            
+
             // 渲染收益趋势图
             const trendContainer = document.getElementById('chart-fund-profit-trend');
             if (trendContainer) {
                 ChartManager.createChart('chart-fund-profit-trend', ChartManager.buildFundProfitTrendOption(fund, stats));
             }
-            
+
             // 渲染买卖对比图
             const compareContainer = document.getElementById('chart-buy-sell-compare');
             if (compareContainer) {
                 ChartManager.createChart('chart-buy-sell-compare', ChartManager.buildBuySellCompareOption(stats));
             }
-            
+
             // 渲染收益率变化图
             const rateContainer = document.getElementById('chart-profit-rate-change');
             if (rateContainer) {
@@ -729,21 +696,21 @@ const Detail = {
     },
 
     showNameEditUI() {
-        var fund = FundManager.getFund(Detail.currentFundId);
+        const fund = FundManager.getFund(Detail.currentFundId);
         if (!fund) return;
 
-        var nameEl = document.getElementById('detail-fund-name');
+        const nameEl = document.getElementById('detail-fund-name');
         if (!nameEl) return;
 
-        var currentName = fund.name || '';
+        const currentName = fund.name || '';
 
         nameEl.innerHTML = '<input type="text" id="input-edit-fund-name" class="form-input" value="' + currentName + '" style="font-size:inherit;font-weight:inherit;width:300px;">' +
             '<button class="btn btn-primary btn-sm" id="btn-save-fund-name">保存</button>' +
             '<button class="btn btn-secondary btn-sm" id="btn-cancel-fund-name">取消</button>';
 
-        var input = document.getElementById('input-edit-fund-name');
-        var btnSave = document.getElementById('btn-save-fund-name');
-        var btnCancel = document.getElementById('btn-cancel-fund-name');
+        const input = document.getElementById('input-edit-fund-name');
+        const btnSave = document.getElementById('btn-save-fund-name');
+        const btnCancel = document.getElementById('btn-cancel-fund-name');
 
         if (input) input.focus();
 
@@ -761,22 +728,23 @@ const Detail = {
     },
 
     showEditMenu() {
-        var menuHtml = '<div class="edit-menu-overlay" id="edit-menu-overlay">' +
+        const menuHtml = '<div class="edit-menu-overlay" id="edit-menu-overlay">' +
             '<div class="edit-menu">' +
             '<div class="edit-menu-item" id="menu-edit-name">✏️ 编辑名称</div>' +
+            '<div class="edit-menu-item" id="menu-edit-remark">📝 编辑备注</div>' +
             '<div class="edit-menu-item" id="menu-refresh-name">🔄 刷新名称</div>' +
             '</div></div>';
 
-        var actionsEl = document.querySelector('.detail-actions');
+        const actionsEl = document.querySelector('.detail-actions');
         if (!actionsEl) return;
 
         actionsEl.insertAdjacentHTML('beforeend', menuHtml);
 
-        var overlay = document.getElementById('edit-menu-overlay');
-        var menuEditName = document.getElementById('menu-edit-name');
-        var menuRefreshName = document.getElementById('menu-refresh-name');
+        const overlay = document.getElementById('edit-menu-overlay');
+        const menuEditName = document.getElementById('menu-edit-name');
+        const menuRefreshName = document.getElementById('menu-refresh-name');
 
-        var closeMenu = function() {
+        const closeMenu = function() {
             if (overlay) overlay.remove();
         };
 
@@ -793,6 +761,14 @@ const Detail = {
             });
         }
 
+        const menuEditRemark = document.getElementById('menu-edit-remark');
+        if (menuEditRemark) {
+            menuEditRemark.addEventListener('click', function() {
+                closeMenu();
+                Detail.showRemarkEditUI();
+            });
+        }
+
         if (menuRefreshName) {
             menuRefreshName.addEventListener('click', async function() {
                 closeMenu();
@@ -802,16 +778,16 @@ const Detail = {
     },
 
     saveFundName() {
-        var input = document.getElementById('input-edit-fund-name');
+        const input = document.getElementById('input-edit-fund-name');
         if (!input) return;
 
-        var newName = input.value.trim();
+        const newName = input.value.trim();
         if (!newName) {
             Utils.showToast('基金名称不能为空', 'error');
             return;
         }
 
-        var success = FundManager.updateFund(Detail.currentFundId, {
+        const success = FundManager.updateFund(Detail.currentFundId, {
             name: newName,
             nameSource: 'manual',
             nameUpdateTime: new Date().toISOString()
@@ -825,20 +801,78 @@ const Detail = {
     },
 
     cancelNameEdit() {
-        var fund = FundManager.getFund(Detail.currentFundId);
+        const fund = FundManager.getFund(Detail.currentFundId);
         if (!fund) return;
 
-        var nameEl = document.getElementById('detail-fund-name');
+        const nameEl = document.getElementById('detail-fund-name');
         if (nameEl) {
             nameEl.textContent = fund.name;
         }
     },
 
-    async refreshFundName() {
-        var fund = FundManager.getFund(Detail.currentFundId);
+    showRemarkEditUI() {
+        const fund = FundManager.getFund(Detail.currentFundId);
         if (!fund) return;
 
-        var btn = document.getElementById('btn-refresh-fund-name');
+        const remarkEl = document.getElementById('info-remark');
+        if (!remarkEl) return;
+
+        const currentRemark = fund.remark || '';
+
+        remarkEl.innerHTML = '<input type="text" id="input-edit-fund-remark" class="form-input" value="' + currentRemark + '" style="font-size:inherit;font-weight:inherit;width:300px;" maxlength="50">' +
+            '<button class="btn btn-primary btn-sm" id="btn-save-fund-remark">保存</button>' +
+            '<button class="btn btn-secondary btn-sm" id="btn-cancel-fund-remark">取消</button>';
+
+        const input = document.getElementById('input-edit-fund-remark');
+        const btnSave = document.getElementById('btn-save-fund-remark');
+        const btnCancel = document.getElementById('btn-cancel-fund-remark');
+
+        if (input) input.focus();
+
+        if (btnSave) {
+            btnSave.addEventListener('click', () => {
+                Detail.saveRemark();
+            });
+        }
+
+        if (btnCancel) {
+            btnCancel.addEventListener('click', () => {
+                Detail.cancelRemarkEdit();
+            });
+        }
+    },
+
+    saveRemark() {
+        const input = document.getElementById('input-edit-fund-remark');
+        if (!input) return;
+
+        const newRemark = input.value.trim();
+
+        const success = FundManager.updateFund(Detail.currentFundId, {
+            remark: newRemark
+        });
+
+        if (success) {
+            Detail.refresh();
+            Utils.showToast('备注已更新', 'success');
+        }
+    },
+
+    cancelRemarkEdit() {
+        const fund = FundManager.getFund(Detail.currentFundId);
+        if (!fund) return;
+
+        const remarkEl = document.getElementById('info-remark');
+        if (remarkEl) {
+            remarkEl.textContent = fund.remark || '-';
+        }
+    },
+
+    async refreshFundName() {
+        const fund = FundManager.getFund(Detail.currentFundId);
+        if (!fund) return;
+
+        const btn = document.getElementById('btn-refresh-fund-name');
         if (btn) {
             btn.disabled = true;
             btn.textContent = '...';
@@ -848,16 +882,16 @@ const Detail = {
             FundAPI.clearCacheForFund(fund.code);
             NameCache.remove(fund.code);
 
-            var name = await FundAPI.fetchNameOnly(fund.code);
-            var validation = NameValidator.detectGarbled(name);
+            const name = await FundAPI.fetchNameOnly(fund.code);
+            const validation = NameValidator.detectGarbled(name);
 
             if (validation.isGarbled) {
                 Utils.showToast('获取的名称可能存在乱码，请手动编辑', 'warning');
                 Detail.cancelNameEdit();
-                var nameEl = document.getElementById('detail-fund-name');
+                const nameEl = document.getElementById('detail-fund-name');
                 if (nameEl) nameEl.textContent = name;
             } else {
-                var success = FundManager.updateFund(Detail.currentFundId, {
+                const success = FundManager.updateFund(Detail.currentFundId, {
                     name: name,
                     nameSource: 'api',
                     nameUpdateTime: new Date().toISOString()
@@ -885,8 +919,8 @@ const Detail = {
             return;
         }
 
-        var result = FIFOValidator.verifyFund(Detail.currentFundId);
-        var resultEl = document.getElementById('fifo-verify-result');
+        const result = FIFOValidator.verifyFund(Detail.currentFundId);
+        const resultEl = document.getElementById('fifo-verify-result');
         if (!resultEl) return;
 
         resultEl.style.display = 'inline-block';
@@ -901,7 +935,7 @@ const Detail = {
         } else if (result.success && !result.consistent) {
             resultEl.classList.add('fifo-verify-fail');
             resultEl.textContent = '❌ 结果不一致';
-            var message = FIFOValidator.formatResult(result);
+            const message = FIFOValidator.formatResult(result);
             alert(message);
         } else {
             resultEl.classList.add('fifo-verify-fail');
