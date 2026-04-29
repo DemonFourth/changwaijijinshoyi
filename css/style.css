@@ -28,7 +28,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 20px rgba(168, 230, 207, 0.3);
+    box-shadow: 0 4px 20px rgb(168 230 207 / 30%);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -80,11 +80,11 @@ body {
 .btn-primary {
     background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
     color: var(--color-text-on-brand);
-    box-shadow: 0 2px 8px rgba(168, 230, 207, 0.3);
+    box-shadow: 0 2px 8px rgb(168 230 207 / 30%);
 }
 
 .btn-primary:hover {
-    box-shadow: 0 4px 12px rgba(168, 230, 207, 0.4);
+    box-shadow: 0 4px 12px rgb(168 230 207 / 40%);
     transform: translateY(-1px);
 }
 
@@ -96,7 +96,7 @@ body {
 
 .btn-secondary:hover {
     background: var(--color-bg-hover);
-    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.15);
+    box-shadow: 0 2px 8px rgb(72 187 120 / 15%);
 }
 
 .btn-danger {
@@ -286,7 +286,7 @@ td.negative {
     cursor: pointer;
     transition: all 0.3s ease;
     border: 1px solid var(--color-border-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
     position: relative;
     overflow: hidden;
 }
@@ -407,7 +407,7 @@ td.negative {
 }
 
 .chart-section-title {
-    margin: 0 0 1rem 0;
+    margin: 0 0 1rem;
     font-size: 1.125rem;
     font-weight: 600;
     color: var(--color-text-primary);
@@ -440,13 +440,13 @@ td.negative {
     font-size: var(--font-size-lg);
 }
 
-@media (min-width: 768px) {
+@media (width >= 768px) {
     .chart-detail-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (min-width: 1200px) {
+@media (width >= 1200px) {
     .chart-detail-grid {
         grid-template-columns: repeat(3, 1fr);
     }
@@ -460,7 +460,7 @@ td.negative {
 
 /* 基金信息 - 清新现代风 */
 .fund-info {
-    background: linear-gradient(135deg, rgba(168, 230, 207, 0.1) 0%, rgba(136, 216, 176, 0.1) 100%);
+    background: linear-gradient(135deg, rgb(168 230 207 / 10%) 0%, rgb(136 216 176 / 10%) 100%);
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: var(--shadow-md);
@@ -611,7 +611,7 @@ td.negative {
 }
 
 /* 响应式 */
-@media (max-width: 768px) {
+@media (width <= 768px) {
     .fund-core-stats {
         grid-template-columns: 1fr;
         gap: 1rem;
@@ -622,7 +622,7 @@ td.negative {
     }
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
     .fund-details-grid {
         grid-template-columns: 1fr;
     }
@@ -630,7 +630,7 @@ td.negative {
 
 /* 持仓信息 - 清新现代风 */
 .holding-info {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(168, 230, 207, 0.08) 100%);
+    background: linear-gradient(135deg, rgb(102 126 234 / 5%) 0%, rgb(168 230 207 / 8%) 100%);
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: var(--shadow-md);
@@ -740,14 +740,14 @@ td.negative {
 }
 
 /* 响应式 */
-@media (max-width: 768px) {
+@media (width <= 768px) {
     .holding-cards {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
     .holding-cards {
         grid-template-columns: 1fr;
     }
@@ -830,21 +830,21 @@ td.negative {
 }
 
 .trade-type-buy {
-    background: rgba(72, 187, 120, 0.15);  /* 绿色背景 */
+    background: rgb(72 187 120 / 15%);  /* 绿色背景 */
     color: var(--color-success);         /* #48bb78 */
-    border: 1px solid rgba(72, 187, 120, 0.3);
+    border: 1px solid rgb(72 187 120 / 30%);
 }
 
 .trade-type-sell {
-    background: rgba(237, 137, 54, 0.15);   /* 珊瑚橙背景 */
+    background: rgb(237 137 54 / 15%);   /* 珊瑚橙背景 */
     color: var(--color-danger);           /* #ed8936 */
-    border: 1px solid rgba(237, 137, 54, 0.3);
+    border: 1px solid rgb(237 137 54 / 30%);
 }
 
 .trade-type-dividend {
-    background: rgba(66, 153, 225, 0.15);  /* 天蓝背景 */
+    background: rgb(66 153 225 / 15%);  /* 天蓝背景 */
     color: var(--color-info);              /* #4299e1 */
-    border: 1px solid rgba(66, 153, 225, 0.3);
+    border: 1px solid rgb(66 153 225 / 30%);
 }
 
 /* 备注行样式 - 引用行设计 */
@@ -902,7 +902,7 @@ td.negative {
 }
 
 /* 响应式：小屏幕横向滚动 */
-@media (max-width: 768px) {
+@media (width <= 768px) {
     .trade-table {
         font-size: 0.8rem;
     }
@@ -921,7 +921,7 @@ td.negative {
 
 .form-input-error {
     border-color: var(--color-danger);
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+    box-shadow: 0 0 0 2px rgb(239 68 68 / 20%);
 }
 
 /* 交易备注 */
@@ -1006,7 +1006,7 @@ td.negative {
     text-align: center;
 }
 
-.page-btn:hover:not(:disabled):not(.active) {
+.page-btn:hover:not(:disabled, .active) {
     background: var(--color-bg-hover);
 }
 
@@ -1095,7 +1095,7 @@ td.negative {
     height: 24px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--color-success), #2f855a);
-    color: #fff;
+    color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1135,7 +1135,7 @@ td.negative {
     font-size: var(--font-size-sm);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
     .top5-container {
         grid-template-columns: 1fr;
     }
@@ -1158,13 +1158,13 @@ td.negative {
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(168, 230, 207, 0.4);
+    box-shadow: 0 4px 12px rgb(168 230 207 / 40%);
     transition: all 0.3s;
 }
 
 .fab:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(168, 230, 207, 0.5);
+    box-shadow: 0 6px 16px rgb(168 230 207 / 50%);
 }
 
 /* 弹窗 */
@@ -1196,7 +1196,7 @@ td.negative {
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 40px rgb(0 0 0 / 30%);
 }
 
 .modal-header {
@@ -1437,7 +1437,7 @@ td.negative {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgb(0 0 0 / 40%);
 }
 
 .edit-menu {
@@ -1476,12 +1476,12 @@ td.negative {
 
 .fifo-verify-success {
     color: var(--color-fall);
-    background: rgba(72, 187, 120, 0.15);
+    background: rgb(72 187 120 / 15%);
 }
 
 .fifo-verify-fail {
     color: var(--color-rise);
-    background: rgba(245, 101, 101, 0.15);
+    background: rgb(245 101 101 / 15%);
 }
 
 .trade-profit--positive {
@@ -1535,7 +1535,7 @@ td.negative {
     grid-column: span 2;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
     .chart-detail-grid {
         grid-template-columns: 1fr;
     }
@@ -1959,7 +1959,7 @@ td.negative {
 
 .cycle-group-header-row:hover {
     filter: brightness(0.97);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 5%);
 }
 
 .cycle-group-header {
@@ -1991,9 +1991,9 @@ td.negative {
     flex-shrink: 0;
     padding: 2px 10px;
     border-radius: 20px;
-    background: rgba(72, 187, 120, 0.15);
+    background: rgb(72 187 120 / 15%);
     color: var(--color-success);
-    border: 1px solid rgba(72, 187, 120, 0.3);
+    border: 1px solid rgb(72 187 120 / 30%);
 }
 
 .cycle-group-status {
@@ -2003,12 +2003,12 @@ td.negative {
     flex-shrink: 0;
     font-weight: 600;
     letter-spacing: 0.5px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
 }
 
 .cycle-group-status--active {
     background: linear-gradient(135deg, var(--color-info), var(--color-success));
-    color: #fff;
+    color: #ffffff;
     animation: pulse-subtle 2s ease-in-out infinite;
 }
 
@@ -2041,7 +2041,7 @@ td.negative {
     flex-wrap: wrap;
     gap: var(--spacing-md);
     align-items: center;
-    background: rgba(0, 0, 0, 0.02);
+    background: rgb(0 0 0 / 2%);
 }
 
 .cycle-group-summary .summary-profit--positive {
