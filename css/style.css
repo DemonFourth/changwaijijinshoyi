@@ -698,22 +698,25 @@ td.negative {
 }
 
 .trade-table th {
-    background: var(--color-brand-gradient);
-    color: var(--color-text-inverse);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
     font-weight: 600;
     font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     padding: 1rem 0.75rem;
+    border: none;
 }
 
 .trade-table tbody tr {
     transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
 }
 
 .trade-table tbody tr:hover {
-    background: var(--color-bg-hover);
+    background: #f8f9ff;
     transform: scale(1.002);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
 }
 
 .trade-table td {
