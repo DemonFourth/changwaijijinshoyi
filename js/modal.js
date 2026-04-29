@@ -14,7 +14,7 @@ const Modal = {
         const body = document.getElementById('modal-body');
         const footer = document.getElementById('modal-footer');
 
-        var result;
+        let result;
 
         switch (type) {
         case 'addFund':
@@ -112,6 +112,10 @@ const Modal = {
                 '<span class="form-name-source-badge" id="name-source-badge">等待获取</span>' +
                 '<span class="form-name-status" id="name-status"></span>' +
                 '</div>' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label class="form-label">备注</label>' +
+                '<input type="text" id="input-fund-remark" class="form-input" placeholder="添加备注（可选）" maxlength="50">' +
                 '</div>',
             actions: '<button class="btn btn-secondary" onclick="Modal.hide()">取消</button>' +
                 '<button class="btn btn-primary" id="btn-confirm-add-fund">确定</button>'
@@ -127,18 +131,18 @@ const Modal = {
         const sourceBadge = document.getElementById('name-source-badge');
         const nameStatus = document.getElementById('name-status');
 
-        var currentCode = '';
-        var currentName = '';
-        var currentSource = '';
+        let currentCode = '';
+        let currentName = '';
+        let currentSource = '';
 
-        var updateNameUI = function(name, source, isGarbled) {
+        const updateNameUI = function(name, source, isGarbled) {
             inputName.value = name || '';
             currentName = name || '';
             currentSource = source || '';
 
             sourceBadge.textContent = source === 'api' ? 'API获取' :
-                                      source === 'cache' ? '缓存' :
-                                      source === 'manual' ? '手动修改' : '等待获取';
+                source === 'cache' ? '缓存' :
+                    source === 'manual' ? '手动修改' : '等待获取';
             sourceBadge.className = 'form-name-source-badge';
             if (source === 'api') sourceBadge.classList.add('form-name-source-badge--api');
             else if (source === 'cache') sourceBadge.classList.add('form-name-source-badge--cache');
@@ -158,7 +162,7 @@ const Modal = {
             }
         };
 
-        var fetchName = async function(code, forceRefresh) {
+        const fetchName = async function(code, forceRefresh) {
             if (!Utils.isValidFundCode(code)) {
                 updateNameUI('', '', false);
                 return;
@@ -170,16 +174,16 @@ const Modal = {
                     NameCache.remove(code);
                 }
 
-                var cachedEntry = NameCache.get(code);
+                const cachedEntry = NameCache.get(code);
                 if (cachedEntry && !forceRefresh) {
-                    var isGarbled = NameValidator.detectGarbled(cachedEntry.name).isGarbled;
+                    const isGarbled = NameValidator.detectGarbled(cachedEntry.name).isGarbled;
                     updateNameUI(cachedEntry.name, 'cache', isGarbled);
                     EventBus.emit(EventType.NAME_CACHE_HIT, { code: code, name: cachedEntry.name });
                     return;
                 }
 
-                var name = await FundAPI.fetchNameOnly(code);
-                var validation = NameValidator.detectGarbled(name);
+                const name = await FundAPI.fetchNameOnly(code);
+                const validation = NameValidator.detectGarbled(name);
                 updateNameUI(name, 'api', validation.isGarbled);
 
                 if (!validation.isGarbled) {
@@ -194,9 +198,9 @@ const Modal = {
             }
         };
 
-        var debounceTimer = null;
+        let debounceTimer = null;
         inputCode.addEventListener('input', function() {
-            var code = inputCode.value.trim();
+            const code = inputCode.value.trim();
             errorDiv.textContent = '';
 
             if (debounceTimer) clearTimeout(debounceTimer);
@@ -214,9 +218,9 @@ const Modal = {
         });
 
         inputName.addEventListener('input', function() {
-            var name = inputName.value.trim();
+            const name = inputName.value.trim();
             if (name !== currentName) {
-                var validation = NameValidator.detectGarbled(name);
+                const validation = NameValidator.detectGarbled(name);
                 updateNameUI(name, 'manual', validation.isGarbled);
                 EventBus.emit(EventType.NAME_MANUAL_EDIT, { code: currentCode, name: name });
             }
@@ -237,45 +241,56 @@ const Modal = {
 
         btnConfirm.addEventListener('click', async () => {
             const code = inputCode.value.trim();
-
-            if (!Utils.isValidFundCode(code)) {
-                errorDiv.textContent = '请输入正确的6位基金代码';
-                return;
-            }
-
-            if (FundManager.isFundCodeExists(code)) {
-                errorDiv.textContent = '该基金已存在';
-                return;
-            }
+            const name = inputName.value.trim();
+            const remark = document.getElementById('input-fund-remark').value.trim();
+            currentCode = code;
+            currentName = name;
 
             errorDiv.textContent = '';
+            inputCode.classList.remove('form-input-error');
+
+            if (!code) {
+                errorDiv.textContent = '请输入基金代码';
+                inputCode.classList.add('form-input-error');
+                return;
+            }
+
+            if (!Utils.isValidFundCode(code)) {
+                errorDiv.textContent = '基金代码格式不正确（6位数字）';
+                inputCode.classList.add('form-input-error');
+                return;
+            }
 
             try {
-                var fundData = { code: code };
-                if (currentName && inputName.value.trim()) {
-                    fundData.name = inputName.value.trim();
-                    fundData.nameSource = currentSource === 'manual' ? 'manual' : currentSource;
-                }
+                Utils.showLoading();
+                EventBus.emit(EventType.FUND_ADDING);
+
+                const fundData = {
+                    code: code,
+                    name: name,
+                    remark: remark,  // 添加备注
+                    nameSource: name ? 'manual' : 'api'
+                };
 
                 const fund = await FundManager.addFund(fundData);
-                if (fund) {
-                    Modal.hide();
-                    if (typeof Overview !== 'undefined') {
-                        Overview.refresh();
-                    }
-                }
+
+                Utils.hideLoading();
+                Modal.hide();
+                Router.navigate('detail', { fundId: fund.id });
             } catch (error) {
+                Utils.hideLoading();
                 errorDiv.textContent = error.message;
+                inputCode.classList.add('form-input-error');
             }
         });
     },
 
     renderTradeFormSections(data) {
-        var isEdit = data && data.trade;
-        var trade = isEdit ? data.trade : {};
-        var dateVal = isEdit ? trade.date : Utils.formatDate(new Date());
+        const isEdit = data && data.trade;
+        const trade = isEdit ? data.trade : {};
+        const dateVal = isEdit ? trade.date : Utils.formatDate(new Date());
 
-        var html = '';
+        let html = '';
 
         html += '<div class="form-section">';
         html += '<div class="form-section-title">基础信息</div>';
@@ -294,7 +309,7 @@ const Modal = {
         html += '<div class="form-group" id="dividend-mode-group"' + (trade.type === 'dividend' ? '' : ' style="display:none;"') + '>';
         html += '<label class="form-label">分红模式 *</label>';
         html += '<select id="input-dividend-mode" class="form-select">';
-        var divMode = trade.dividendMode || 'cash';
+        const divMode = trade.dividendMode || 'cash';
         html += '<option value="cash"' + (divMode === 'cash' ? ' selected' : '') + '>现金分红</option>';
         html += '<option value="reinvest"' + (divMode === 'reinvest' ? ' selected' : '') + '>分红再投资</option>';
         html += '</select>';
@@ -350,7 +365,7 @@ const Modal = {
     },
 
     bindTradeEvents(data, isEdit) {
-        var btnId = isEdit ? 'btn-confirm-edit-trade' : 'btn-confirm-add-trade';
+        const btnId = isEdit ? 'btn-confirm-edit-trade' : 'btn-confirm-add-trade';
         const btnConfirm = document.getElementById(btnId);
         const tradeType = document.getElementById('input-trade-type');
         const dividendMode = document.getElementById('input-dividend-mode');
@@ -362,17 +377,16 @@ const Modal = {
         const hintAmount = document.getElementById('hint-amount');
 
         const updateFieldsVisibility = function() {
-            var type = tradeType.value;
-            var divMode = dividendMode ? dividendMode.value : 'cash';
+            const type = tradeType.value;
+            const divMode = dividendMode ? dividendMode.value : 'cash';
 
             if (dividendModeGroup) {
                 dividendModeGroup.style.display = (type === 'dividend') ? '' : 'none';
             }
 
             if (type === 'dividend' && divMode === 'reinvest') {
-                netValue.parentElement.style.display = 'none';
+                netValue.parentElement.style.display = '';
                 fee.parentElement.style.display = 'none';
-                netValue.value = '0';
                 fee.value = '0';
                 amount.placeholder = '分红金额（可选，不知道可不填）';
             } else if (type === 'dividend') {
@@ -412,8 +426,8 @@ const Modal = {
                 hintAmount.textContent = type === 'buy'
                     ? '自动计算：净值×份额+手续费 = ' + autoCalcAmount.toFixed(2)
                     : type === 'sell'
-                    ? '自动计算：净值×份额-手续费 = ' + autoCalcAmount.toFixed(2)
-                    : '自动计算：净值×份额 = ' + autoCalcAmount.toFixed(2);
+                        ? '自动计算：净值×份额-手续费 = ' + autoCalcAmount.toFixed(2)
+                        : '自动计算：净值×份额 = ' + autoCalcAmount.toFixed(2);
                 hintAmount.classList.remove('form-hint-warn');
                 amount.classList.remove('form-input-mismatch');
             } else {
@@ -438,8 +452,8 @@ const Modal = {
                 hintAmount.textContent = type === 'buy'
                     ? '自动计算：净值×份额+手续费 = ' + autoCalcAmount.toFixed(2)
                     : type === 'sell'
-                    ? '自动计算：净值×份额-手续费 = ' + autoCalcAmount.toFixed(2)
-                    : '自动计算：净值×份额 = ' + autoCalcAmount.toFixed(2);
+                        ? '自动计算：净值×份额-手续费 = ' + autoCalcAmount.toFixed(2)
+                        : '自动计算：净值×份额 = ' + autoCalcAmount.toFixed(2);
                 hintAmount.classList.remove('form-hint-warn');
                 amount.classList.remove('form-input-mismatch');
             }
@@ -459,7 +473,7 @@ const Modal = {
         amount.addEventListener('input', checkMismatch);
 
         btnConfirm.addEventListener('click', () => {
-            var tradeData = {
+            const tradeData = {
                 date: document.getElementById('input-trade-date').value,
                 type: tradeType.value,
                 netValue: netValue.value,
@@ -474,7 +488,7 @@ const Modal = {
             }
 
             if (isEdit) {
-                var success = TradeManager.updateTrade(data.trade.id, tradeData);
+                const success = TradeManager.updateTrade(data.trade.id, tradeData);
                 if (success) {
                     Modal.hide();
                     if (typeof Detail !== 'undefined') {
@@ -483,7 +497,7 @@ const Modal = {
                 }
             } else {
                 tradeData.fundId = data.fundId;
-                var trade = TradeManager.addTrade(tradeData);
+                const trade = TradeManager.addTrade(tradeData);
                 if (trade) {
                     Modal.hide();
                     if (typeof Detail !== 'undefined') {

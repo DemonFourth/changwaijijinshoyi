@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fund-Info UI 优化预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .preview-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .preview-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .preview-header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-header p {
+            color: #666;
+        }
+
+        /* 当前设计 - 用于对比 */
+        .section {
+            margin-bottom: 3rem;
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            color: #333;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .label-current {
+            display: inline-block;
+            background: #ff9800;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        .label-new {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        /* 当前设计样式 */
+        .fund-info-current {
+            background: #ffffff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .info-row-current {
+            display: flex;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-row-current:last-child {
+            border-bottom: none;
+        }
+
+        .info-row-current .label {
+            width: 120px;
+            color: #666666;
+        }
+
+        .info-row-current .value {
+            flex: 1;
+            color: #333333;
+            font-weight: 500;
+        }
+
+        /* 新设计样式 - 金融数据仪表盘风格 */
+        .fund-info-new {
+            background: #ffffff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 2rem;
+            border: 1px solid #f0f0f0;
+        }
+
+        /* 基金标题区 */
+        .fund-title-area {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .fund-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333333;
+        }
+
+        .fund-code {
+            display: inline-block;
+            font-size: 0.875rem;
+            color: #666666;
+            background: #f5f5f5;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        /* 核心数值包装器 */
+        .core-value-wrapper {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+
+        .core-date {
+            font-size: 0.75rem;
+            color: #999999;
+        }
+
+        /* 核心数据区 */
+        .fund-core-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .core-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .core-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #999999;
+            font-weight: 600;
+        }
+
+        .core-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #333333;
+            font-family: 'Courier New', monospace;
+            line-height: 1.2;
+        }
+
+        .core-change {
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .core-change.positive {
+            color: #f56565;
+        }
+
+        .core-change.negative {
+            color: #48bb78;
+        }
+
+        /* 详细信息网格 */
+        .fund-details-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background 0.2s ease;
+        }
+
+        .detail-item:hover {
+            background: #f9f9ff;
+        }
+
+        .detail-icon {
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            color: #666666;
+            min-width: 60px;
+        }
+
+        .detail-value {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #333333;
+            margin-left: auto;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .fund-core-stats {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .fund-details-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .fund-details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 模拟数据样式 */
+        .mock-data {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <div class="preview-header">
+            <h1>🎨 Fund-Info UI 优化预览</h1>
+            <p>对比当前设计与优化方案的效果</p>
+        </div>
+
+        <!-- 当前设计 -->
+        <div class="section">
+            <h2 class="section-title">
+                当前设计 <span class="label-current">CURRENT</span>
+            </h2>
+            <p style="color: #666; margin-bottom: 1rem;">简单垂直列表，信息密度低，无视觉层次</p>
+            
+            <div class="fund-info-current">
+                <div class="info-row-current">
+                    <span class="label">基金代码：</span>
+                    <span class="value mock-data">000001</span>
+                </div>
+                <div class="info-row-current">
+                    <span class="label">基金名称：</span>
+                    <span class="value mock-data">华夏成长混合</span>
+                </div>
+                <div class="info-row-current">
+                    <span class="label">最新净值：</span>
+                    <span class="value mock-data">1.2345</span>
+                </div>
+                <div class="info-row-current">
+                    <span class="label">净值日期：</span>
+                    <span class="value mock-data">2026-04-29</span>
+                </div>
+                <div class="info-row-current">
+                    <span class="label">估算净值：</span>
+                    <span class="value mock-data">1.2500</span>
+                </div>
+                <div class="info-row-current">
+                    <span class="label">估算涨幅：</span>
+                    <span class="value" style="color: #f56565; font-weight: 600;">+1.25%</span>
+                </div>
+                <div class="info-row-current">
+                    <span class="label">更新时间：</span>
+                    <span class="value mock-data">2026-04-29 15:00:00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新设计 -->
+        <div class="section">
+            <h2 class="section-title">
+                优化方案 <span class="label-new">NEW</span>
+            </h2>
+            <p style="color: #666; margin-bottom: 1rem;">金融数据仪表盘风格，基金名称+代码置顶，四列详细信息网格</p>
+            
+            <div class="fund-info-new">
+                <!-- 基金标题区 -->
+                <div class="fund-title-area">
+                    <div class="fund-name">华夏成长混合</div>
+                    <div class="fund-code">000001</div>
+                </div>
+                
+                <!-- 核心数据区 -->
+                <div class="fund-core-stats">
+                    <div class="core-stat">
+                        <span class="core-label">最新净值</span>
+                        <div class="core-value-wrapper">
+                            <span class="core-value mock-data">1.2345</span>
+                            <span class="core-date">(2026-04-29)</span>
+                        </div>
+                    </div>
+                    <div class="core-stat">
+                        <span class="core-label">估算净值</span>
+                        <div class="core-value-wrapper">
+                            <span class="core-value mock-data">1.2500</span>
+                            <span class="core-date">(2026-04-29 15:00:00)</span>
+                        </div>
+                        <span class="core-change positive">↑ +1.25%</span>
+                    </div>
+                </div>
+                
+                <!-- 详细信息网格 -->
+                <div class="fund-details-grid">
+                    <div class="detail-item">
+                        <span class="detail-icon">🏷️</span>
+                        <span class="detail-label">基金代码</span>
+                        <span class="detail-value mock-data">000001</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">📊</span>
+                        <span class="detail-label">基金名称</span>
+                        <span class="detail-value mock-data">华夏成长混合</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">📝</span>
+                        <span class="detail-label">备注</span>
+                        <span class="detail-value mock-data">长期持有</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="note">
+                <strong>✨ 优化亮点：</strong><br>
+                • <strong>信息去重</strong>：移除标题栏重复的基金名称/代码<br>
+                • <strong>视觉层次</strong>：核心数据大字号突出显示<br>
+                • <strong>布局优化</strong>：两列核心数据 + 三列详细信息<br>
+                • <strong>专业感</strong>：金融仪表盘风格，配色统一<br>
+                • <strong>响应式</strong>：移动端自适应布局<br>
+                • <strong>微交互</strong>：悬停效果，涨跌颜色标识
+            </div>
+        </div>
+
+        <!-- 对比总结 -->
+        <div class="section">
+            <h2 class="section-title">📊 优化对比</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+                <thead>
+                    <tr style="background: #f9f9f9;">
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #667eea;">对比项</th>
+                        <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #ff9800;">当前设计</th>
+                        <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #48bb78;">优化方案</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #f0f0f0;">布局方式</td>
+                        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #f0f0f0;">单列列表</td>
+                        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #f0f0f0;">网格布局（2+3列）</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #f0f0f0;">信息密度</td>
+                        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #f0f0f0;">低</td>
+                        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #f0f0f0;">高</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #f0f0f0;">视觉层次</td>
+                        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #f0f0f0;">无</td>
+                        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #f0f0f0;">核心数据突出</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #f0f0f0;">信息重复</td>
+                        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #f0f0f0;">是（名称/代码）</td>
+                        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #f0f0f0;">否（已移除）</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #f0f0f0;">交互效果</td>
+                        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #f0f0f0;">无</td>
+                        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #f0f0f0;">悬停效果</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.75rem;">响应式</td>
+                        <td style="padding: 0.75rem; text-align: center;">部分支持</td>
+                        <td style="padding: 0.75rem; text-align: center;">完整支持</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem; color: #999; font-size: 0.875rem;">
+            <p>预览页面已创建 • 在浏览器中打开此文件查看效果</p>
+        </div>
+    </div>
+</body>
+</html>

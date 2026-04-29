@@ -411,34 +411,157 @@ td.negative {
     gap: 0.5rem;
 }
 
-/* 基金信息 */
+/* 基金信息 - 数据仪表盘风格 */
 .fund-info {
     background: var(--color-bg-card);
     padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow-sm);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
     margin-bottom: 2rem;
+    border: 1px solid var(--color-border-primary);
 }
 
-.info-row {
+/* 基金标题区 */
+.fund-title-area {
     display: flex;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--color-border-primary);
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--color-border-primary);
 }
 
-.info-row:last-child {
-    border-bottom: none;
-}
-
-.info-row .label {
-    width: 120px;
-    color: var(--color-text-secondary);
-}
-
-.info-row .value {
-    flex: 1;
+.fund-name {
+    font-size: 1.5rem;
+    font-weight: 700;
     color: var(--color-text-primary);
+}
+
+.fund-code {
+    display: inline-block;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-hover);
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-family: var(--font-family-mono);
+    font-weight: 600;
+}
+
+/* 核心数值包装器 */
+.core-value-wrapper {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.core-date {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+/* 核心数据区 */
+.fund-core-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--color-border-primary);
+}
+
+.core-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.core-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-tertiary);
+    font-weight: 600;
+}
+
+.core-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    font-family: var(--font-family-mono);
+    line-height: 1.2;
+}
+
+.core-change {
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.core-change.positive {
+    color: var(--color-rise);
+}
+
+.core-change.negative {
+    color: var(--color-fall);
+}
+
+/* 详细信息网格 */
+.fund-details-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.detail-item:hover {
+    background: var(--color-bg-hover);
+}
+
+.detail-icon {
+    font-size: 1rem;
+    opacity: 0.7;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    min-width: 60px;
+}
+
+.detail-value {
+    font-size: 0.875rem;
     font-weight: 500;
+    color: var(--color-text-primary);
+    margin-left: auto;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .fund-core-stats {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .fund-details-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .fund-details-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* 持仓信息 */
@@ -1463,13 +1586,11 @@ td.negative {
     font-size: var(--font-size-sm);
 }
 
-/* 详情页标题栏 */
-.detail-header {
+/* 基金操作按钮区 */
+.detail-actions {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-xl);
-    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
 }
 
 .detail-title-area {

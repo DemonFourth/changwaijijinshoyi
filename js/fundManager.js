@@ -71,9 +71,9 @@ const FundManager = {
                 throw new Error('该基金已存在');
             }
 
-            var fundName = fundData.name;
-            var nameSource = fundData.nameSource || 'manual';
-            var apiData = null;
+            let fundName = fundData.name;
+            let nameSource = fundData.nameSource || 'manual';
+            let apiData = null;
 
             if (!fundName) {
                 apiData = await FundAPI.getFundData(fundData.code);
@@ -87,10 +87,10 @@ const FundManager = {
                 apiData = await FundAPI.getFundData(fundData.code);
             }
 
-            var validation = NameValidator.detectGarbled(fundName);
+            const validation = NameValidator.detectGarbled(fundName);
             if (validation.isGarbled) {
                 console.warn('Name appears garbled:', fundName, validation);
-                var cachedEntry = NameCache.get(fundData.code);
+                const cachedEntry = NameCache.get(fundData.code);
                 if (cachedEntry && !NameValidator.detectGarbled(cachedEntry.name).isGarbled) {
                     fundName = cachedEntry.name;
                     nameSource = 'cache';
@@ -103,6 +103,7 @@ const FundManager = {
                 name: fundName,
                 nameSource: nameSource,
                 nameUpdateTime: new Date().toISOString(),
+                remark: fundData.remark || '',  // 新增备注字段
                 netValue: apiData ? apiData.netValue : 0,
                 netValueDate: apiData ? apiData.netValueDate : '',
                 estimatedValue: apiData ? apiData.estimatedValue : 0,
@@ -189,7 +190,7 @@ const FundManager = {
 
             const apiData = await FundAPI.refreshFundData(fund.code);
 
-            var updates = {
+            const updates = {
                 netValue: apiData.netValue,
                 netValueDate: apiData.netValueDate,
                 estimatedValue: apiData.estimatedValue,
@@ -230,7 +231,7 @@ const FundManager = {
             for (const apiData of apiResults) {
                 const fund = funds.find(f => f.code === apiData.code);
                 if (fund) {
-                    var updates = {
+                    const updates = {
                         netValue: apiData.netValue,
                         netValueDate: apiData.netValueDate,
                         estimatedValue: apiData.estimatedValue,

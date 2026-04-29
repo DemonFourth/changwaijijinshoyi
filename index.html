@@ -82,61 +82,58 @@
 
             <!-- 详情页 -->
             <div id="page-detail" class="page">
-                <div class="detail-header">
+                <div class="detail-actions" style="margin-bottom: 1rem;">
                     <button id="btn-back" class="btn btn-back">← 返回</button>
-                    <div class="detail-title-area">
-                        <div class="detail-fund-name" id="detail-fund-name">基金详情</div>
-                        <div class="detail-fund-code" id="detail-fund-code"></div>
-                    </div>
-                    <div class="detail-quote-area">
-                        <div class="quote-item">
-                            <span class="quote-label">最新净值</span>
-                            <span class="quote-value" id="quote-net-value">-</span>
-                        </div>
-                        <div class="quote-item">
-                            <span class="quote-label">估算净值</span>
-                            <span class="quote-value" id="quote-estimated-value">-</span>
-                        </div>
-                        <div class="quote-item">
-                            <span class="quote-label">估算涨幅</span>
-                            <span class="quote-value" id="quote-estimated-growth">-</span>
-                        </div>
-                    </div>
-                    <div class="detail-actions">
+                    <div style="margin-left: auto; display: flex; gap: 0.5rem;">
                         <button id="btn-edit-fund" class="btn btn-secondary">编辑</button>
                         <button id="btn-delete-fund" class="btn btn-danger">删除</button>
                     </div>
                 </div>
 
-                <!-- 基金信息 -->
+                <!-- 基金信息 - 优化后的数据仪表盘风格 -->
                 <div class="fund-info">
-                    <div class="info-row">
-                        <span class="label">基金代码：</span>
-                        <span id="info-code" class="value">-</span>
+                    <!-- 基金标题区 -->
+                    <div class="fund-title-area">
+                        <div class="fund-name" id="detail-fund-name">基金详情</div>
+                        <div class="fund-code" id="detail-fund-code"></div>
                     </div>
-                    <div class="info-row">
-                        <span class="label">基金名称：</span>
-                        <span id="info-name" class="value">-</span>
+                    
+                    <!-- 核心数据区 -->
+                    <div class="fund-core-stats">
+                        <div class="core-stat">
+                            <span class="core-label">最新净值</span>
+                            <div class="core-value-wrapper">
+                                <span class="core-value" id="info-net-value">-</span>
+                                <span class="core-date" id="info-net-date"></span>
+                            </div>
+                        </div>
+                        <div class="core-stat">
+                            <span class="core-label">估算净值</span>
+                            <div class="core-value-wrapper">
+                                <span class="core-value" id="info-estimated-value">-</span>
+                                <span class="core-date" id="info-update-time"></span>
+                            </div>
+                            <span class="core-change" id="info-estimated-growth"></span>
+                        </div>
                     </div>
-                    <div class="info-row">
-                        <span class="label">最新净值：</span>
-                        <span id="info-net-value" class="value">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">净值日期：</span>
-                        <span id="info-net-date" class="value">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">估算净值：</span>
-                        <span id="info-estimated-value" class="value">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">估算涨幅：</span>
-                        <span id="info-estimated-growth" class="value">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">更新时间：</span>
-                        <span id="info-update-time" class="value">-</span>
+                    
+                    <!-- 详细信息网格 -->
+                    <div class="fund-details-grid">
+                        <div class="detail-item">
+                            <span class="detail-icon">🏷️</span>
+                            <span class="detail-label">基金代码</span>
+                            <span class="detail-value" id="info-code">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">📊</span>
+                            <span class="detail-label">基金名称</span>
+                            <span class="detail-value" id="info-name">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">📝</span>
+                            <span class="detail-label">备注</span>
+                            <span class="detail-value" id="info-remark">-</span>
+                        </div>
                     </div>
                 </div>
 

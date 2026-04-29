@@ -6,9 +6,15 @@
 const ChartManager = {
     // ECharts实例缓存 Map<containerId, echartsInstance>
     _instances: new Map(),
-    
+
     // ECharts是否可用
     _echartsAvailable: false,
+
+    // 懒加载观察器
+    _lazyObserver: null,
+
+    // 待创建的图表队列 Map<containerId, option>
+    _pendingCharts: new Map(),
 
     /**
      * 初始化图表管理器
@@ -18,14 +24,94 @@ const ChartManager = {
         if (!ChartManager._echartsAvailable) {
             console.warn('ECharts not available (lib/echarts.min.js not loaded), falling back to simple charts');
         }
-        
+
         // 监听主题变化
         EventBus.on(EventType.THEME_CHANGED, () => ChartManager.onThemeChanged());
-        
+
+        // 统一主题适配接口 - 监听图表主题更新事件
+        EventBus.on(EventType.CHART_THEME_CHANGED, (data) => {
+            ChartManager.onThemeChange(data && data.theme);
+        });
+
         // 监听窗口resize
         window.addEventListener('resize', Utils.debounce(() => ChartManager.onResize(), 200));
-        
+
+        // 初始化懒加载观察器
+        ChartManager._initLazyObserver();
+
         console.log('ChartManager initialized, ECharts available:', ChartManager._echartsAvailable);
+    },
+
+    /**
+     * 初始化懒加载观察器
+     */
+    _initLazyObserver() {
+        if (!('IntersectionObserver' in window)) return;
+
+        ChartManager._lazyObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const containerId = entry.target.id;
+                    const pendingOption = ChartManager._pendingCharts.get(containerId);
+                    if (pendingOption) {
+                        ChartManager._pendingCharts.delete(containerId);
+                        ChartManager.createChart(containerId, pendingOption);
+                        ChartManager._lazyObserver.unobserve(entry.target);
+                    }
+                }
+            });
+        }, { rootMargin: '100px' });
+    },
+
+    /**
+     * 延迟创建图表（进入视口时再创建）
+     * @param {string} containerId - DOM容器ID
+     * @param {Object} option - ECharts配置项
+     */
+    createChartLazy(containerId, option) {
+        const container = document.getElementById(containerId);
+        if (!container) {
+            console.warn('Chart container not found:', containerId);
+            return null;
+        }
+
+        // 如果容器已经在视口中，直接创建
+        const rect = container.getBoundingClientRect();
+        const inView = rect.top < window.innerHeight && rect.bottom > 0;
+        if (inView) {
+            return ChartManager.createChart(containerId, option);
+        }
+
+        // 否则加入待创建队列，使用懒加载
+        ChartManager._pendingCharts.set(containerId, option);
+
+        if (ChartManager._lazyObserver) {
+            ChartManager._lazyObserver.observe(container);
+        }
+
+        return null;
+    },
+
+    /**
+     * 统一主题变更接口 - 所有需要响应主题变化的模块调用此方法
+     * @param {string} theme - 主题名称 'light' | 'dark'
+     */
+    onThemeChange(theme) {
+        if (!theme) theme = ThemeManager.getTheme();
+        if (!ChartManager._echartsAvailable) return;
+
+        ChartManager._instances.forEach((instance, containerId) => {
+            try {
+                const currentOption = instance.getOption();
+                if (currentOption && currentOption[0]) {
+                    const textStyle = currentOption[0].textStyle || {};
+                    textStyle.color = theme === 'dark' ? '#b0b0b0' : '#666666';
+                    instance.setOption({ textStyle }, { notMerge: false });
+                }
+            } catch (e) {
+                console.warn('Failed to update chart theme:', containerId, e);
+            }
+        });
     },
 
     /**
@@ -44,24 +130,24 @@ const ChartManager = {
      */
     createChart(containerId, option) {
         if (!ChartManager._echartsAvailable) return null;
-        
+
         const container = document.getElementById(containerId);
         if (!container) return null;
-        
+
         // 销毁已有实例
         ChartManager.disposeChart(containerId);
-        
+
         // 合并主题配色
         const themeConfig = ChartManager.getThemeConfig();
         const mergedOption = ChartManager.mergeThemeOption(option, themeConfig);
-        
+
         // 创建实例
         const instance = echarts.init(container);
         instance.setOption(mergedOption);
-        
+
         // 缓存实例
         ChartManager._instances.set(containerId, instance);
-        
+
         return instance;
     },
 
@@ -93,7 +179,7 @@ const ChartManager = {
      */
     getThemeConfig() {
         const isDark = ThemeManager.getTheme() === 'dark';
-        
+
         if (isDark) {
             return {
                 backgroundColor: 'transparent',
@@ -127,7 +213,7 @@ const ChartManager = {
         // 设置通用样式
         if (!option.textStyle) option.textStyle = {};
         option.textStyle.color = themeConfig.textColor;
-        
+
         return option;
     },
 
@@ -135,22 +221,11 @@ const ChartManager = {
      * 响应主题变化
      */
     onThemeChanged() {
-        if (!ChartManager._echartsAvailable) return;
-        
-        const themeConfig = ChartManager.getThemeConfig();
-        ChartManager._instances.forEach((instance, id) => {
-            try {
-                // 获取当前option并更新文字颜色
-                const option = instance.getOption();
-                if (option && option.textStyle) {
-                    option.textStyle[0].color = themeConfig.textColor;
-                }
-                // 简单地重新设置 - 实际使用中各图表工厂方法会重新构建
-                instance.setOption({ textStyle: { color: themeConfig.textColor } });
-            } catch (e) {
-                console.warn('Failed to update chart theme:', id, e);
-            }
-        });
+        const theme = ThemeManager.getTheme();
+
+        ChartManager.onThemeChange(theme);
+
+        EventBus.emit(EventType.CHART_THEME_CHANGED, { theme });
     },
 
     /**
@@ -175,15 +250,15 @@ const ChartManager = {
      */
     buildProfitTrendOption(funds) {
         const themeConfig = ChartManager.getThemeConfig();
-        
+
         if (!funds || funds.length === 0) {
             return ChartManager.buildEmptyOption('暂无收益数据');
         }
-        
+
         // 收集所有基金的收益数据点
         const dataPoints = [];
         let cumulativeProfit = 0;
-        
+
         funds.forEach(fund => {
             const stats = FundManager.getFundStats(fund.id);
             if (stats && stats.summary) {
@@ -194,14 +269,14 @@ const ChartManager = {
                 });
             }
         });
-        
+
         if (dataPoints.length === 0) {
             return ChartManager.buildEmptyOption('暂无收益数据');
         }
-        
+
         // 按收益排序
         dataPoints.sort((a, b) => b.value - a.value);
-        
+
         return {
             textStyle: { color: themeConfig.textColor },
             tooltip: {
@@ -217,7 +292,7 @@ const ChartManager = {
             xAxis: {
                 type: 'category',
                 data: dataPoints.map(p => p.name),
-                axisLabel: { 
+                axisLabel: {
                     color: themeConfig.textColor,
                     rotate: dataPoints.length > 5 ? 30 : 0,
                     fontSize: 11
@@ -226,7 +301,7 @@ const ChartManager = {
             },
             yAxis: {
                 type: 'value',
-                axisLabel: { 
+                axisLabel: {
                     color: themeConfig.textColor,
                     formatter: val => (val >= 10000 || val <= -10000) ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
                 },
@@ -259,26 +334,26 @@ const ChartManager = {
      */
     buildFundProfitTrendOption(fund, stats) {
         const themeConfig = ChartManager.getThemeConfig();
-        
+
         if (!stats || !stats.cycles || stats.cycles.length === 0) {
             return ChartManager.buildEmptyOption('暂无交易数据');
         }
-        
+
         // 按周期构建收益趋势
         const cycleNames = [];
         const profitData = [];
         const rateData = [];
-        
+
         stats.cycles.forEach((cycle, index) => {
             cycleNames.push(`周期${cycle.id || (index + 1)}`);
             profitData.push(cycle.totalProfit || 0);
             rateData.push(cycle.profitRate || 0);
         });
-        
+
         return {
             textStyle: { color: themeConfig.textColor },
             tooltip: { trigger: 'axis' },
-            legend: { 
+            legend: {
                 data: ['收益额', '收益率'],
                 textStyle: { color: themeConfig.textColor }
             },
@@ -335,15 +410,15 @@ const ChartManager = {
      */
     buildBuySellCompareOption(stats) {
         const themeConfig = ChartManager.getThemeConfig();
-        
+
         if (!stats || !stats.summary) {
             return ChartManager.buildEmptyOption('暂无数据');
         }
-        
+
         const summary = stats.summary;
         const buyAmount = summary.totalInvest || 0;
         const sellAmount = summary.totalSellAmount || 0;
-        
+
         return {
             textStyle: { color: themeConfig.textColor },
             tooltip: { trigger: 'axis' },
@@ -356,7 +431,7 @@ const ChartManager = {
             },
             yAxis: {
                 type: 'value',
-                axisLabel: { 
+                axisLabel: {
                     color: themeConfig.textColor,
                     formatter: val => (val >= 10000) ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
                 },
@@ -388,17 +463,17 @@ const ChartManager = {
      */
     buildProfitRateChangeOption(cycles) {
         const themeConfig = ChartManager.getThemeConfig();
-        
+
         if (!cycles || cycles.length === 0) {
             return ChartManager.buildEmptyOption('暂无数据');
         }
-        
+
         const cycleNames = cycles.map((c, i) => `周期${c.id || (i + 1)}`);
         const rateData = cycles.map(c => c.profitRate || 0);
-        
+
         return {
             textStyle: { color: themeConfig.textColor },
-            tooltip: { 
+            tooltip: {
                 trigger: 'axis',
                 formatter: p => `${p[0].name}<br/>收益率: ${p[0].value.toFixed(2)}%`
             },
@@ -420,7 +495,7 @@ const ChartManager = {
                 type: 'line',
                 data: rateData,
                 lineStyle: { color: themeConfig.itemColor[0] },
-                itemStyle: { 
+                itemStyle: {
                     color: function(params) {
                         return params.value >= 0 ? themeConfig.profitColor : themeConfig.lossColor;
                     }
@@ -437,9 +512,9 @@ const ChartManager = {
     },
 
     buildCostTrendOption(fund, trades, stats) {
-        var themeConfig = ChartManager.getThemeConfig();
+        const themeConfig = ChartManager.getThemeConfig();
 
-        var allTrades = (trades || []).slice().sort(function(a, b) {
+        const allTrades = (trades || []).slice().sort(function(a, b) {
             return new Date(a.date) - new Date(b.date);
         });
 
@@ -447,7 +522,7 @@ const ChartManager = {
             return ChartManager.buildEmptyOption('暂无交易数据');
         }
 
-        var cycles = CalculatorV2.identifyHoldingCycles(allTrades);
+        let cycles = CalculatorV2.identifyHoldingCycles(allTrades);
         if (!cycles || cycles.length === 0) {
             cycles = [{
                 id: 1,
@@ -458,36 +533,36 @@ const ChartManager = {
             }];
         }
 
-        var allDates = [];
-        var allNetValues = [];
-        var allCostPrices = [];
-        var detailData = [];
-        var minNetValue = Infinity;
-        var maxNetValue = -Infinity;
+        const allDates = [];
+        const allNetValues = [];
+        const allCostPrices = [];
+        const detailData = [];
+        let minNetValue = Infinity;
+        let maxNetValue = -Infinity;
 
-        var cycleDataList = [];
+        const cycleDataList = [];
 
-        for (var c = 0; c < cycles.length; c++) {
-            var cycle = cycles[c];
-            var cycleTrades = (cycle.trades || []).slice().sort(function(a, b) {
+        for (let c = 0; c < cycles.length; c++) {
+            const cycle = cycles[c];
+            const cycleTrades = (cycle.trades || []).slice().sort(function(a, b) {
                 return new Date(a.date) - new Date(b.date);
             });
 
             if (cycleTrades.length === 0) continue;
 
-            var cumulativeShares = 0;
-            var cumulativeCost = 0;
-            var cycleDates = [];
-            var cycleNetValues = [];
-            var cycleCostPrices = [];
+            let cumulativeShares = 0;
+            let cumulativeCost = 0;
+            const cycleDates = [];
+            const cycleNetValues = [];
+            const cycleCostPrices = [];
 
-            for (var i = 0; i < cycleTrades.length; i++) {
-                var trade = cycleTrades[i];
-                var shares = parseFloat(trade.shares) || 0;
-                var amount = parseFloat(trade.amount) || 0;
-                var netValue = parseFloat(trade.netValue) || 0;
-                var tradeType = trade.type;
-                var isDividendReinvest = tradeType === 'dividend' && trade.dividendMode === 'reinvest';
+            for (let i = 0; i < cycleTrades.length; i++) {
+                const trade = cycleTrades[i];
+                const shares = parseFloat(trade.shares) || 0;
+                const amount = parseFloat(trade.amount) || 0;
+                const netValue = parseFloat(trade.netValue) || 0;
+                const tradeType = trade.type;
+                const isDividendReinvest = tradeType === 'dividend' && trade.dividendMode === 'reinvest';
 
                 if (tradeType === 'buy') {
                     cumulativeShares += shares;
@@ -519,17 +594,18 @@ const ChartManager = {
                     });
                 } else if (tradeType === 'sell') {
                     var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
-                    var sellCost = shares * costPrice;
+                    const sellCost = shares * costPrice;
                     cumulativeShares -= shares;
                     cumulativeCost -= sellCost;
                 } else if (isDividendReinvest) {
-                    var reinvestShares = parseFloat(trade.reinvestShares) || shares;
+                    const reinvestShares = parseFloat(trade.reinvestShares) || shares;
+                    const dividendNetValue = parseFloat(trade.netValue) || 0;
                     cumulativeShares += reinvestShares;
 
                     cycleDates.push(trade.date);
                     allDates.push(trade.date);
-                    cycleNetValues.push(null);
-                    allNetValues.push(null);
+                    cycleNetValues.push(dividendNetValue > 0 ? dividendNetValue : null);
+                    allNetValues.push(dividendNetValue > 0 ? dividendNetValue : null);
 
                     var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
                     cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
@@ -540,7 +616,7 @@ const ChartManager = {
                     detailData.push({
                         shares: reinvestShares,
                         amount: 0,
-                        netValue: 0,
+                        netValue: dividendNetValue,
                         cumulativeShares: cumulativeShares,
                         cumulativeCost: cumulativeCost,
                         costPrice: costPrice,
@@ -559,28 +635,28 @@ const ChartManager = {
             });
         }
 
-        var latestNetValue = parseFloat(fund.netValue) || parseFloat(fund.estimatedValue) || 0;
+        const latestNetValue = parseFloat(fund.netValue) || parseFloat(fund.estimatedValue) || 0;
         if (latestNetValue > 0) {
             if (latestNetValue < minNetValue) minNetValue = latestNetValue;
             if (latestNetValue > maxNetValue) maxNetValue = latestNetValue;
         }
 
-        var valueRange = maxNetValue - minNetValue;
-        var yAxisMin = Math.max(0, minNetValue - valueRange * 0.1);
-        var yAxisMax = maxNetValue + valueRange * 0.1;
+        const valueRange = maxNetValue - minNetValue;
+        const yAxisMin = Math.max(0, minNetValue - valueRange * 0.1);
+        const yAxisMax = maxNetValue + valueRange * 0.1;
 
-        var series = [];
+        const series = [];
 
-        var colors = [themeConfig.itemColor[0], '#ed8936', '#9f7aea', '#38b2ac', '#f56565', '#66d9ef'];
+        const colors = [themeConfig.itemColor[0], '#ed8936', '#9f7aea', '#38b2ac', '#f56565', '#66d9ef'];
 
-        for (var ci = 0; ci < cycleDataList.length; ci++) {
-            var cycleData = cycleDataList[ci];
-            var cycleColor = colors[ci % colors.length];
+        for (let ci = 0; ci < cycleDataList.length; ci++) {
+            const cycleData = cycleDataList[ci];
+            const cycleColor = colors[ci % colors.length];
 
-            var cycleNetValueData = [];
-            var cycleCostData = [];
-            var dateIdx = 0;
-            for (var di = 0; di < allDates.length; di++) {
+            const cycleNetValueData = [];
+            const cycleCostData = [];
+            let dateIdx = 0;
+            for (let di = 0; di < allDates.length; di++) {
                 if (dateIdx < cycleData.dates.length && allDates[di] === cycleData.dates[dateIdx]) {
                     cycleNetValueData.push(cycleData.netValues[dateIdx]);
                     cycleCostData.push(cycleData.costPrices[dateIdx]);
@@ -617,8 +693,8 @@ const ChartManager = {
         }
 
         if (latestNetValue > 0) {
-            var latestNetValueLine = [];
-            for (var j = 0; j < allDates.length; j++) {
+            const latestNetValueLine = [];
+            for (let j = 0; j < allDates.length; j++) {
                 latestNetValueLine.push(latestNetValue);
             }
             series.push({
@@ -631,7 +707,7 @@ const ChartManager = {
             });
         }
 
-        var legendData = ['买入净值', '持仓成本'];
+        const legendData = ['买入净值', '持仓成本'];
         if (latestNetValue > 0) {
             legendData.push('最新净值');
         }
@@ -640,19 +716,20 @@ const ChartManager = {
             tooltip: {
                 trigger: 'axis',
                 formatter: function(params) {
-                    var validParams = params.filter(function(p) { return p.value !== null; });
+                    const validParams = params.filter(function(p) { return p.value !== null; });
                     if (validParams.length === 0) return '';
-                    var idx = validParams[0].dataIndex;
-                    var detail = detailData[idx];
-                    var result = validParams[0].axisValue + '<br/>';
+                    const idx = validParams[0].dataIndex;
+                    const detail = detailData[idx];
+                    let result = validParams[0].axisValue + '<br/>';
                     result += '持仓周期: 第' + detail.cycleId + '轮<br/>';
-                    result += '买入净值: ' + detail.netValue.toFixed(4) + '<br/>';
-                    result += '持仓成本价: ' + detail.costPrice.toFixed(4) + '<br/>';
                     if (detail.isDividendReinvest) {
+                        result += '分红再投资净值: ' + detail.netValue.toFixed(4) + '<br/>';
                         result += '分红再投资: ' + detail.shares.toFixed(2) + '份<br/>';
                     } else {
+                        result += '买入净值: ' + detail.netValue.toFixed(4) + '<br/>';
                         result += '本次买入: ' + detail.shares.toFixed(2) + '份<br/>';
                     }
+                    result += '持仓成本价: ' + detail.costPrice.toFixed(4) + '<br/>';
                     result += '累计份额: ' + detail.cumulativeShares.toFixed(2) + '份';
                     return result;
                 }
