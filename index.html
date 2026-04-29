@@ -16,10 +16,10 @@
         <header class="header">
             <h1 class="title">场外基金收益计算器</h1>
             <div class="header-actions">
-                <button id="btn-export" class="btn btn-secondary">导出数据</button>
-                <button id="btn-import" class="btn btn-secondary">导入数据</button>
-                <button id="btn-theme" class="btn btn-icon" title="切换主题">🌙</button>
-                <button id="btn-settings" class="btn btn-icon">⚙️</button>
+                <button id="btn-export" class="btn btn-secondary" type="button">导出数据</button>
+                <button id="btn-import" class="btn btn-secondary" type="button">导入数据</button>
+                <button id="btn-theme" class="btn btn-icon" type="button" title="切换主题">🌙</button>
+                <button id="btn-settings" class="btn btn-icon" type="button">⚙️</button>
             </div>
         </header>
 
@@ -56,8 +56,8 @@
                         <h2>我的基金</h2>
                         <div class="list-controls">
                             <div class="view-toggle">
-                                <button class="btn-view active" data-view="card" title="卡片视图">▦</button>
-                                <button class="btn-view" data-view="list" title="列表视图">☰</button>
+                                <button class="btn-view active" data-view="card" title="卡片视图" type="button">▦</button>
+                                <button class="btn-view" data-view="list" title="列表视图" type="button">☰</button>
                             </div>
                             <select class="sort-select" id="sort-field">
                                 <option value="profitRate">按收益率</option>
@@ -65,8 +65,8 @@
                                 <option value="marketValue">按市值</option>
                                 <option value="name">按名称</option>
                             </select>
-                            <button class="btn-sort-order" id="sort-order" title="降序">↓</button>
-                            <button id="btn-add-fund" class="btn btn-primary">+ 添加基金</button>
+                            <button class="btn-sort-order" id="sort-order" title="降序" type="button">↓</button>
+                            <button id="btn-add-fund" class="btn btn-primary" type="button">+ 添加基金</button>
                         </div>
                     </div>
                     <div id="fund-list" class="fund-list">
@@ -83,10 +83,10 @@
             <!-- 详情页 -->
             <div id="page-detail" class="page">
                 <div class="detail-actions" style="margin-bottom: 1rem;">
-                    <button id="btn-back" class="btn btn-back">← 返回</button>
+                    <button id="btn-back" class="btn btn-back" type="button">← 返回</button>
                     <div style="margin-left: auto; display: flex; gap: 0.5rem;">
-                        <button id="btn-edit-fund" class="btn btn-secondary">编辑</button>
-                        <button id="btn-delete-fund" class="btn btn-danger">删除</button>
+                        <button id="btn-edit-fund" class="btn btn-secondary" type="button">编辑</button>
+                        <button id="btn-delete-fund" class="btn btn-danger" type="button">删除</button>
                     </div>
                 </div>
 
@@ -142,7 +142,7 @@
                     <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
                         <h3 style="margin: 0; flex: 1;">持仓信息</h3>
                         <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <button id="btn-fifo-verify" class="btn btn-secondary btn-sm">验证计算</button>
+                            <button id="btn-fifo-verify" class="btn btn-secondary btn-sm" type="button">验证计算</button>
                             <span id="fifo-verify-result" class="fifo-verify-result"></span>
                         </div>
                     </div>
@@ -232,7 +232,7 @@
                 <div class="trade-records">
                     <div class="records-header">
                         <h3>交易记录</h3>
-                        <button id="btn-add-trade" class="btn btn-primary">+ 添加交易</button>
+                        <button id="btn-add-trade" class="btn btn-primary" type="button">+ 添加交易</button>
                     </div>
                     <div class="trade-filter-bar">
                         <select id="filter-trade-type" class="filter-select">
@@ -244,7 +244,7 @@
                         <input type="date" id="filter-start-date" class="filter-date" title="开始日期">
                         <span class="filter-sep">~</span>
                         <input type="date" id="filter-end-date" class="filter-date" title="结束日期">
-                        <button class="btn btn-secondary btn-sm" id="btn-clear-filter">清除筛选</button>
+                        <button class="btn btn-secondary btn-sm" id="btn-clear-filter" type="button">清除筛选</button>
                         <span class="filter-result-count" id="filter-result-count"></span>
                     </div>
                     <table class="trade-table">
@@ -295,7 +295,7 @@
 
         <!-- 悬浮按钮 -->
         <div class="fab-container">
-            <button id="fab-refresh" class="fab" title="刷新数据">🔄</button>
+            <button id="fab-refresh" class="fab" title="刷新数据" type="button">🔄</button>
         </div>
     </div>
 
@@ -305,7 +305,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 id="modal-title">弹窗标题</h3>
-                <button class="modal-close">×</button>
+                <button class="modal-close" type="button">×</button>
             </div>
             <div class="modal-body" id="modal-body">
                 <!-- 弹窗内容将动态生成 -->
