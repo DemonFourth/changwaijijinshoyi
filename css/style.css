@@ -700,13 +700,13 @@ td.negative {
 }
 
 .trade-table th {
-    background: #ef4444;
-    color: white;
-    font-weight: 500;
+    background: var(--color-brand-gradient);
+    color: var(--color-text-inverse);
+    font-weight: 600;
     font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    padding: 12px;
+    padding: 1rem 0.75rem;
     border: none;
 }
 
