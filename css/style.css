@@ -685,43 +685,41 @@ td.negative {
 .trade-table {
     width: 100%;
     border-collapse: collapse;
+    margin-top: 15px;
+    background: var(--color-bg-card);
+    box-shadow: var(--shadow-sm);
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
 }
 
 .trade-table th,
 .trade-table td {
-    padding: 0.875rem 0.75rem;
-    text-align: left;
+    padding: 12px;
+    text-align: center;
     border-bottom: 1px solid var(--color-border-primary);
 }
 
 .trade-table th {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #ffffff;
-    font-weight: 600;
+    background: #ef4444;
+    color: white;
+    font-weight: 500;
     font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    padding: 1rem 0.75rem;
+    padding: 12px;
     border: none;
 }
 
 .trade-table tbody tr {
-    transition: all 0.2s ease;
-    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
 }
 
 .trade-table tbody tr:hover {
-    background: #f8f9ff;
-    transform: scale(1.002);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    background: var(--color-bg-hover);
 }
 
 .trade-table td {
     color: var(--color-text-primary);
-    font-size: 0.875rem;
 }
 
 /* 操作类型标签 */
