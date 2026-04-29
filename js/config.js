@@ -58,8 +58,8 @@ const Config = {
         defaultBuyFee: 0,
         // 手续费默认值（卖出）
         defaultSellFee: 0,
-        // 是否使用FIFO算法
-        useFIFO: true
+        // 计算方法（加权平均成本法）
+        useWeightedAverage: true
     },
 
     // UI配置

@@ -173,7 +173,10 @@ const EventType = {
     NAME_MANUAL_EDIT: 'name:manualEdit',
 
     // 错误事件
-    ERROR_OCCURRED: 'error:occurred'
+    ERROR_OCCURRED: 'error:occurred',
+
+    // 图表主题更新事件（统一接口）
+    CHART_THEME_CHANGED: 'chart:themeChanged'
 };
 
 // 注册到模块系统

@@ -8,13 +8,13 @@ const NameCache = {
     DEFAULT_TTL: 30 * 24 * 60 * 60 * 1000,
 
     get(fundCode) {
-        var cache = NameCache.loadCache();
+        const cache = NameCache.loadCache();
         if (!cache) return null;
 
-        var entry = cache[fundCode];
+        const entry = cache[fundCode];
         if (!entry) return null;
 
-        var now = Date.now();
+        const now = Date.now();
         if (now - entry.timestamp > NameCache.DEFAULT_TTL) {
             delete cache[fundCode];
             NameCache.saveCache(cache);
@@ -25,7 +25,7 @@ const NameCache = {
     },
 
     set(fundCode, name, source) {
-        var cache = NameCache.loadCache() || {};
+        const cache = NameCache.loadCache() || {};
 
         cache[fundCode] = {
             name: name,
@@ -38,7 +38,7 @@ const NameCache = {
     },
 
     remove(fundCode) {
-        var cache = NameCache.loadCache();
+        const cache = NameCache.loadCache();
         if (!cache || !cache[fundCode]) return false;
 
         delete cache[fundCode];
@@ -55,13 +55,13 @@ const NameCache = {
     },
 
     getStats() {
-        var cache = NameCache.loadCache() || {};
-        var entries = Object.keys(cache).length;
-        var now = Date.now();
-        var validEntries = 0;
-        var expiredEntries = 0;
+        const cache = NameCache.loadCache() || {};
+        const entries = Object.keys(cache).length;
+        const now = Date.now();
+        let validEntries = 0;
+        let expiredEntries = 0;
 
-        for (var code in cache) {
+        for (const code in cache) {
             if (cache.hasOwnProperty(code)) {
                 if (now - cache[code].timestamp <= NameCache.DEFAULT_TTL) {
                     validEntries++;
@@ -79,13 +79,13 @@ const NameCache = {
     },
 
     cleanup() {
-        var cache = NameCache.loadCache();
+        const cache = NameCache.loadCache();
         if (!cache) return 0;
 
-        var now = Date.now();
-        var removed = 0;
+        const now = Date.now();
+        let removed = 0;
 
-        for (var code in cache) {
+        for (const code in cache) {
             if (cache.hasOwnProperty(code)) {
                 if (now - cache[code].timestamp > NameCache.DEFAULT_TTL) {
                     delete cache[code];

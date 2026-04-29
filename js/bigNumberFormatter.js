@@ -12,10 +12,10 @@ const BigNumberFormatter = {
      */
     format(amount, decimals = 2) {
         if (amount === null || amount === undefined || isNaN(amount)) return '¥0.00';
-        
+
         const abs = Math.abs(amount);
         const sign = amount < 0 ? '-' : '';
-        
+
         if (abs >= 100000000) {
             // 亿级
             const value = (abs / 100000000).toFixed(decimals);
@@ -38,13 +38,13 @@ const BigNumberFormatter = {
      */
     formatFull(amount, decimals = 2) {
         if (amount === null || amount === undefined || isNaN(amount)) return '¥0.00';
-        
+
         const abs = Math.abs(amount).toFixed(decimals);
         const parts = abs.split('.');
         const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         const result = parts.length > 1 ? `${intPart}.${parts[1]}` : intPart;
         const sign = amount < 0 ? '-' : '';
-        
+
         return `${sign}¥${result}`;
     },
 
@@ -67,7 +67,7 @@ const BigNumberFormatter = {
         if (!BigNumberFormatter.isBigNumber(amount)) {
             return BigNumberFormatter.formatFull(amount, decimals);
         }
-        
+
         const display = BigNumberFormatter.format(amount, decimals);
         const full = BigNumberFormatter.formatFull(amount, decimals);
         return `<span class="big-number" title="${full}">${display}</span>`;

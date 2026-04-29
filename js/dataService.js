@@ -10,14 +10,61 @@ const DataService = {
     // 交易记录缓存
     tradesCache: null,
 
+    // 计算结果缓存 Map<fundId, Map<netValue, result>>
+    _calculationCache: new Map(),
+
     /**
      * 初始化数据服务
      */
     init() {
-        // 加载数据到缓存
         this.loadFunds();
         this.loadTrades();
         console.log('DataService initialized');
+    },
+
+    /**
+     * 获取基金的计算结果（带缓存）
+     * @param {string} fundId - 基金ID
+     * @param {number} currentNetValue - 当前净值
+     * @returns {object|null}
+     */
+    getCalculatedProfit(fundId, currentNetValue) {
+        const fund = this.getFund(fundId);
+        if (!fund) return null;
+
+        const trades = this.getTradesByFund(fundId);
+        if (!trades || trades.length === 0) {
+            return CalculatorV2.getEmptyResult();
+        }
+
+        const cacheKey = String(currentNetValue);
+
+        if (!this._calculationCache.has(fundId)) {
+            this._calculationCache.set(fundId, new Map());
+        }
+
+        const fundCache = this._calculationCache.get(fundId);
+
+        if (fundCache.has(cacheKey)) {
+            return fundCache.get(cacheKey);
+        }
+
+        const result = CalculatorV2.calculateFundProfit(trades, currentNetValue);
+        fundCache.set(cacheKey, result);
+
+        return result;
+    },
+
+    /**
+     * 清除基金的计算缓存
+     * @param {string} fundId - 基金ID（不传则清除所有）
+     */
+    invalidateCache(fundId) {
+        if (fundId) {
+            this._calculationCache.delete(fundId);
+        } else {
+            this._calculationCache.clear();
+        }
     },
 
     /**
@@ -182,6 +229,7 @@ const DataService = {
         const success = this.saveTrades(trades);
 
         if (success) {
+            this.invalidateCache(trade.fundId);
             EventBus.emit(EventType.TRADE_ADDED, { trade });
             EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: trade.fundId });
         }
@@ -209,6 +257,7 @@ const DataService = {
         const success = this.saveTrades(trades);
 
         if (success) {
+            this.invalidateCache(fundId);
             EventBus.emit(EventType.TRADE_UPDATED, { trade: trades[index] });
             EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
         }
@@ -236,6 +285,7 @@ const DataService = {
         const success = this.saveTrades(trades);
 
         if (success) {
+            this.invalidateCache(fundId);
             EventBus.emit(EventType.TRADE_DELETED, { trade: deletedTrade });
             EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
         }
@@ -251,7 +301,13 @@ const DataService = {
     deleteTradesByFund(fundId) {
         const trades = this.loadTrades();
         const filteredTrades = trades.filter(t => t.fundId !== fundId);
-        return this.saveTrades(filteredTrades);
+        const success = this.saveTrades(filteredTrades);
+
+        if (success) {
+            this.invalidateCache(fundId);
+        }
+
+        return success;
     },
 
     /**
@@ -342,9 +398,9 @@ const DataService = {
         const success = Storage.importAll(data, merge);
 
         if (success) {
-            // 清空缓存，重新加载
             this.fundsCache = null;
             this.tradesCache = null;
+            this._calculationCache.clear();
             this.loadFunds();
             this.loadTrades();
 
@@ -361,6 +417,7 @@ const DataService = {
     clearAll() {
         this.fundsCache = [];
         this.tradesCache = [];
+        this._calculationCache.clear();
 
         const success = Storage.clear();
 

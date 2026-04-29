@@ -243,7 +243,7 @@ const FundAPI = {
     },
 
     async fetchNameOnly(fundCode) {
-        var data = await FundAPI.getFundData(fundCode, false);
+        const data = await FundAPI.getFundData(fundCode, false);
         return data.name;
     },
 
@@ -255,15 +255,15 @@ const FundAPI = {
      */
     async batchGetFundData(fundCodes, concurrency = 5) {
         console.log(`Batch get fund data: ${fundCodes.length} funds, concurrency: ${concurrency}`);
-        
+
         const results = [];
         const errors = [];
-        
+
         // 分批处理
         for (let i = 0; i < fundCodes.length; i += concurrency) {
             const batch = fundCodes.slice(i, i + concurrency);
             console.log(`Processing batch ${Math.floor(i / concurrency) + 1}: ${batch.join(', ')}`);
-            
+
             const batchPromises = batch.map(code =>
                 this.getFundData(code).catch(error => {
                     console.error(`Failed to get data for ${code}:`, error);
@@ -271,11 +271,11 @@ const FundAPI = {
                     return null;
                 })
             );
-            
+
             const batchResults = await Promise.all(batchPromises);
             results.push(...batchResults.filter(r => r !== null));
         }
-        
+
         console.log(`Batch complete: ${results.length} success, ${errors.length} errors`);
         return results;
     },

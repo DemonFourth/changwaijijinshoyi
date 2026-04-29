@@ -155,7 +155,7 @@ const TradeManager = {
             errors.push('份额必须大于0');
         }
 
-        var isDividendReinvest = tradeData.type === 'dividend' && tradeData.dividendMode === 'reinvest';
+        const isDividendReinvest = tradeData.type === 'dividend' && tradeData.dividendMode === 'reinvest';
         if (!isDividendReinvest) {
             if (!Utils.isValidNumber(tradeData.amount) || parseFloat(tradeData.amount) <= 0) {
                 errors.push('金额必须大于0');

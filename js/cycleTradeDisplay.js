@@ -29,7 +29,7 @@ const CycleTradeDisplay = {
         CycleTradeDisplay._containerEl = containerEl;
         CycleTradeDisplay._uncategorizedTrades = null;
 
-        var trades = TradeManager.getTradesByFund(fundId);
+        const trades = TradeManager.getTradesByFund(fundId);
         if (!trades || trades.length === 0) {
             CycleTradeDisplay._cycles = [];
             CycleTradeDisplay._allTrades = [];
@@ -43,7 +43,7 @@ const CycleTradeDisplay = {
             return new Date(b.date) - new Date(a.date);
         });
 
-        var sortedAsc = trades.slice().sort(function(a, b) {
+        const sortedAsc = trades.slice().sort(function(a, b) {
             return new Date(a.date) - new Date(b.date);
         });
         CycleTradeDisplay._cycles = CalculatorV2.identifyHoldingCycles(sortedAsc);
@@ -70,11 +70,11 @@ const CycleTradeDisplay = {
     },
 
     buildTradeCycleMap(cycles) {
-        var map = {};
-        for (var i = 0; i < cycles.length; i++) {
-            var cycle = cycles[i];
+        const map = {};
+        for (let i = 0; i < cycles.length; i++) {
+            const cycle = cycles[i];
             if (cycle.trades) {
-                for (var j = 0; j < cycle.trades.length; j++) {
+                for (let j = 0; j < cycle.trades.length; j++) {
                     map[cycle.trades[j].id] = cycle.id;
                 }
             }
@@ -83,13 +83,13 @@ const CycleTradeDisplay = {
     },
 
     checkUncategorizedTrades(allTrades) {
-        var categorizedCount = 0;
-        for (var i = 0; i < CycleTradeDisplay._cycles.length; i++) {
+        let categorizedCount = 0;
+        for (let i = 0; i < CycleTradeDisplay._cycles.length; i++) {
             categorizedCount += (CycleTradeDisplay._cycles[i].trades || []).length;
         }
         if (categorizedCount < allTrades.length) {
-            var uncategorized = [];
-            for (var k = 0; k < allTrades.length; k++) {
+            const uncategorized = [];
+            for (let k = 0; k < allTrades.length; k++) {
                 if (!CycleTradeDisplay._tradeCycleMap[allTrades[k].id]) {
                     uncategorized.push(allTrades[k]);
                 }
@@ -105,11 +105,11 @@ const CycleTradeDisplay = {
     },
 
     getDefaultExpandState(cycles) {
-        var state = {};
+        const state = {};
         if (cycles.length === 1) {
             state[cycles[0].id] = true;
         } else {
-            for (var i = 0; i < cycles.length; i++) {
+            for (let i = 0; i < cycles.length; i++) {
                 state[cycles[i].id] = (cycles[i].status === 'active');
             }
         }
@@ -117,16 +117,16 @@ const CycleTradeDisplay = {
     },
 
     getCycleColor(cycleId) {
-        var index = (cycleId - 1) % CycleTradeDisplay.CYCLE_COLORS.length;
+        const index = (cycleId - 1) % CycleTradeDisplay.CYCLE_COLORS.length;
         return CycleTradeDisplay.CYCLE_COLORS[index];
     },
 
     sortTradesDesc(a, b) {
-        var dateDiff = new Date(b.date) - new Date(a.date);
+        const dateDiff = new Date(b.date) - new Date(a.date);
         if (dateDiff !== 0) return dateDiff;
 
-        var typeOrder = { sell: 3, buy: 2, dividend: 1 };
-        var typeDiff = (typeOrder[b.type] || 0) - (typeOrder[a.type] || 0);
+        const typeOrder = { sell: 3, buy: 2, dividend: 1 };
+        const typeDiff = (typeOrder[b.type] || 0) - (typeOrder[a.type] || 0);
         if (typeDiff !== 0) return typeDiff;
 
         if (b.id > a.id) return 1;
@@ -135,17 +135,17 @@ const CycleTradeDisplay = {
     },
 
     computeCycleSummaryWithProfit(cycle) {
-        var tradeCount = (cycle.trades || []).length;
-        var totalInvest = 0;
-        for (var i = 0; i < (cycle.trades || []).length; i++) {
+        const tradeCount = (cycle.trades || []).length;
+        let totalInvest = 0;
+        for (let i = 0; i < (cycle.trades || []).length; i++) {
             if (cycle.trades[i].type === 'buy') {
                 totalInvest += parseFloat(cycle.trades[i].amount || 0);
             }
         }
 
-        var fund = FundManager.getFund(CycleTradeDisplay._fundId);
-        var netValue = fund ? parseFloat(fund.netValue || 0) : 0;
-        var profitResult = CalculatorV2.calculateCycleProfit(cycle, netValue);
+        const fund = FundManager.getFund(CycleTradeDisplay._fundId);
+        const netValue = fund ? parseFloat(fund.netValue || 0) : 0;
+        const profitResult = CalculatorV2.calculateCycleProfit(cycle, netValue);
 
         return {
             tradeCount: tradeCount,
@@ -155,7 +155,7 @@ const CycleTradeDisplay = {
     },
 
     loadViewPrefs() {
-        var prefs = Storage.loadViewPrefs();
+        const prefs = Storage.loadViewPrefs();
         if (prefs.tradeDisplayMode) {
             CycleTradeDisplay._displayMode = prefs.tradeDisplayMode;
         }
@@ -166,7 +166,7 @@ const CycleTradeDisplay = {
 
     saveViewPrefs() {
         try {
-            var prefs = Storage.loadViewPrefs();
+            const prefs = Storage.loadViewPrefs();
             prefs.tradeDisplayMode = CycleTradeDisplay._displayMode;
             prefs.cycleExpandState = CycleTradeDisplay._cycleExpandState;
             Storage.saveViewPrefs(prefs);
@@ -185,24 +185,24 @@ const CycleTradeDisplay = {
     },
 
     renderGroupedMode() {
-        var tradeList = document.getElementById('trade-list');
-        var paginationContainer = document.getElementById('trade-pagination-container');
+        const tradeList = document.getElementById('trade-list');
+        const paginationContainer = document.getElementById('trade-pagination-container');
         if (!tradeList) return;
 
-        var filterBar = document.querySelector('.trade-filter-bar');
+        const filterBar = document.querySelector('.trade-filter-bar');
         CycleTradeDisplay.renderFilterBarControls(filterBar);
 
-        var filteredCycles = CycleTradeDisplay.applyFiltersToCycles();
+        const filteredCycles = CycleTradeDisplay.applyFiltersToCycles();
 
-        var cyclesDescOrder = filteredCycles.slice().sort(function(a, b) {
+        const cyclesDescOrder = filteredCycles.slice().sort(function(a, b) {
             return b.id - a.id;
         });
 
-        var flatTrades = [];
-        for (var i = 0; i < cyclesDescOrder.length; i++) {
-            var cycleTrades = cyclesDescOrder[i].filteredTrades || cyclesDescOrder[i].trades;
-            var tradesDesc = cycleTrades.slice().sort(CycleTradeDisplay.sortTradesDesc);
-            for (var j = 0; j < tradesDesc.length; j++) {
+        const flatTrades = [];
+        for (let i = 0; i < cyclesDescOrder.length; i++) {
+            const cycleTrades = cyclesDescOrder[i].filteredTrades || cyclesDescOrder[i].trades;
+            const tradesDesc = cycleTrades.slice().sort(CycleTradeDisplay.sortTradesDesc);
+            for (let j = 0; j < tradesDesc.length; j++) {
                 flatTrades.push(tradesDesc[j]);
             }
         }
@@ -223,7 +223,7 @@ const CycleTradeDisplay = {
             }
         });
 
-        var pageData = Paginator.getCurrentPageData(CycleTradeDisplay._groupedPaginator);
+        const pageData = Paginator.getCurrentPageData(CycleTradeDisplay._groupedPaginator);
         CycleTradeDisplay.renderGroupedPage(pageData, filteredCycles);
 
         if (paginationContainer) {
@@ -240,24 +240,24 @@ const CycleTradeDisplay = {
     renderFilterBarControls(filterBar) {
         if (!filterBar) return;
 
-        var existingToggle = filterBar.querySelector('.display-mode-toggle');
+        const existingToggle = filterBar.querySelector('.display-mode-toggle');
         if (!existingToggle) {
-            var toggleHtml = CycleGroupRenderer.renderModeToggle(CycleTradeDisplay._displayMode);
-            var tempDiv = document.createElement('div');
+            const toggleHtml = CycleGroupRenderer.renderModeToggle(CycleTradeDisplay._displayMode);
+            const tempDiv = document.createElement('div');
             tempDiv.innerHTML = toggleHtml;
             filterBar.insertBefore(tempDiv.firstChild, filterBar.firstChild);
         } else {
             existingToggle.outerHTML = CycleGroupRenderer.renderModeToggle(CycleTradeDisplay._displayMode);
         }
 
-        var existingCycleFilter = filterBar.querySelector('#filter-cycle');
-        var cycleFilterHtml = CycleGroupRenderer.renderCycleFilter(CycleTradeDisplay._cycles, CycleTradeDisplay._currentFilters.cycleId);
+        const existingCycleFilter = filterBar.querySelector('#filter-cycle');
+        const cycleFilterHtml = CycleGroupRenderer.renderCycleFilter(CycleTradeDisplay._cycles, CycleTradeDisplay._currentFilters.cycleId);
         if (cycleFilterHtml) {
             if (!existingCycleFilter) {
-                var tempDiv2 = document.createElement('div');
+                const tempDiv2 = document.createElement('div');
                 tempDiv2.innerHTML = cycleFilterHtml;
-                var cycleFilterEl = tempDiv2.firstChild;
-                var clearBtn = filterBar.querySelector('#btn-clear-filter');
+                const cycleFilterEl = tempDiv2.firstChild;
+                const clearBtn = filterBar.querySelector('#btn-clear-filter');
                 if (clearBtn) {
                     filterBar.insertBefore(cycleFilterEl, clearBtn);
                 } else {
@@ -270,7 +270,7 @@ const CycleTradeDisplay = {
     },
 
     renderGroupedPage(pageTrades, filteredCycles) {
-        var tradeList = document.getElementById('trade-list');
+        const tradeList = document.getElementById('trade-list');
         if (!tradeList) return;
 
         if (!pageTrades || pageTrades.length === 0) {
@@ -278,7 +278,7 @@ const CycleTradeDisplay = {
             return;
         }
 
-        var renderItems = CycleTradeDisplay.rebuildGroupsFromPageData(pageTrades);
+        const renderItems = CycleTradeDisplay.rebuildGroupsFromPageData(pageTrades);
         tradeList.innerHTML = CycleGroupRenderer.renderGroupedView(renderItems);
 
         CycleTradeDisplay.bindGroupedEvents();
@@ -286,35 +286,35 @@ const CycleTradeDisplay = {
     },
 
     rebuildGroupsFromPageData(pageTrades) {
-        var items = [];
+        const items = [];
 
-        var cyclesDesc = CycleTradeDisplay._cycles.slice().sort(function(a, b) {
+        const cyclesDesc = CycleTradeDisplay._cycles.slice().sort(function(a, b) {
             return b.id - a.id;
         });
 
-        var cycleOrderMap = {};
-        for (var ci = 0; ci < cyclesDesc.length; ci++) {
+        const cycleOrderMap = {};
+        for (let ci = 0; ci < cyclesDesc.length; ci++) {
             cycleOrderMap[cyclesDesc[ci].id] = ci;
         }
 
-        var prevCycleId = null;
-        for (var i = 0; i < pageTrades.length; i++) {
-            var trade = pageTrades[i];
-            var cycleId = CycleTradeDisplay._tradeCycleMap[trade.id];
+        let prevCycleId = null;
+        for (let i = 0; i < pageTrades.length; i++) {
+            const trade = pageTrades[i];
+            const cycleId = CycleTradeDisplay._tradeCycleMap[trade.id];
 
             if (cycleId && cycleId !== prevCycleId) {
-                var cycle = null;
-                for (var k = 0; k < CycleTradeDisplay._cycles.length; k++) {
+                let cycle = null;
+                for (let k = 0; k < CycleTradeDisplay._cycles.length; k++) {
                     if (CycleTradeDisplay._cycles[k].id === cycleId) {
                         cycle = CycleTradeDisplay._cycles[k];
                         break;
                     }
                 }
                 if (cycle) {
-                    var isExpanded = CycleTradeDisplay._cycleExpandState[cycleId] !== false;
-                    var color = CycleTradeDisplay.getCycleColor(cycleId);
-                    var summary = CycleTradeDisplay.computeCycleSummaryWithProfit(cycle);
-                    var cycleIndex = cycleOrderMap[cycleId] !== undefined ? cycleOrderMap[cycleId] : 0;
+                    const isExpanded = CycleTradeDisplay._cycleExpandState[cycleId] !== false;
+                    const color = CycleTradeDisplay.getCycleColor(cycleId);
+                    const summary = CycleTradeDisplay.computeCycleSummaryWithProfit(cycle);
+                    const cycleIndex = cycleOrderMap[cycleId] !== undefined ? cycleOrderMap[cycleId] : 0;
 
                     items.push({
                         type: 'cycle-header',
@@ -328,9 +328,9 @@ const CycleTradeDisplay = {
                 prevCycleId = cycleId;
             }
 
-            var color2 = cycleId ? CycleTradeDisplay.getCycleColor(cycleId) : 'var(--color-warning)';
-            var isExpanded2 = cycleId ? (CycleTradeDisplay._cycleExpandState[cycleId] !== false) : true;
-            var cycleIndex2 = (cycleId && cycleOrderMap[cycleId] !== undefined) ? cycleOrderMap[cycleId] : 0;
+            const color2 = cycleId ? CycleTradeDisplay.getCycleColor(cycleId) : 'var(--color-warning)';
+            const isExpanded2 = cycleId ? (CycleTradeDisplay._cycleExpandState[cycleId] !== false) : true;
+            const cycleIndex2 = (cycleId && cycleOrderMap[cycleId] !== undefined) ? cycleOrderMap[cycleId] : 0;
             items.push({
                 type: 'trade',
                 trade: trade,
@@ -345,19 +345,19 @@ const CycleTradeDisplay = {
     },
 
     renderFlatMode() {
-        var filterBar = document.querySelector('.trade-filter-bar');
+        const filterBar = document.querySelector('.trade-filter-bar');
         if (filterBar) {
-            var existingToggle = filterBar.querySelector('.display-mode-toggle');
+            const existingToggle = filterBar.querySelector('.display-mode-toggle');
             if (!existingToggle) {
-                var toggleHtml = CycleGroupRenderer.renderModeToggle('flat');
-                var tempDiv = document.createElement('div');
+                const toggleHtml = CycleGroupRenderer.renderModeToggle('flat');
+                const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = toggleHtml;
                 filterBar.insertBefore(tempDiv.firstChild, filterBar.firstChild);
             } else {
                 existingToggle.outerHTML = CycleGroupRenderer.renderModeToggle('flat');
             }
 
-            var existingCycleFilter = filterBar.querySelector('#filter-cycle');
+            const existingCycleFilter = filterBar.querySelector('#filter-cycle');
             if (existingCycleFilter) {
                 existingCycleFilter.remove();
             }
@@ -365,17 +365,17 @@ const CycleTradeDisplay = {
     },
 
     applyFiltersToCycles() {
-        var filters = CycleTradeDisplay._currentFilters;
-        var result = [];
+        const filters = CycleTradeDisplay._currentFilters;
+        const result = [];
 
-        for (var i = 0; i < CycleTradeDisplay._cycles.length; i++) {
-            var cycle = CycleTradeDisplay._cycles[i];
+        for (let i = 0; i < CycleTradeDisplay._cycles.length; i++) {
+            const cycle = CycleTradeDisplay._cycles[i];
 
             if (filters.cycleId && cycle.id !== filters.cycleId) {
                 continue;
             }
 
-            var filteredTrades = (cycle.trades || []).slice();
+            let filteredTrades = (cycle.trades || []).slice();
 
             if (filters.type) {
                 filteredTrades = filteredTrades.filter(function(t) { return t.type === filters.type; });
@@ -406,9 +406,9 @@ const CycleTradeDisplay = {
         CycleTradeDisplay._displayMode = (CycleTradeDisplay._displayMode === 'grouped') ? 'flat' : 'grouped';
         CycleTradeDisplay.saveViewPrefs();
 
-        var filterBar = document.querySelector('.trade-filter-bar');
+        const filterBar = document.querySelector('.trade-filter-bar');
         if (filterBar) {
-            var toggle = filterBar.querySelector('.display-mode-toggle');
+            const toggle = filterBar.querySelector('.display-mode-toggle');
             if (toggle) {
                 toggle.outerHTML = CycleGroupRenderer.renderModeToggle(CycleTradeDisplay._displayMode);
             }
@@ -424,15 +424,15 @@ const CycleTradeDisplay = {
             CycleTradeDisplay._toggleDebounceTimer = null;
         }, 200);
 
-        var currentState = CycleTradeDisplay._cycleExpandState[cycleId];
-        var newState = (currentState === undefined) ? false : !currentState;
+        const currentState = CycleTradeDisplay._cycleExpandState[cycleId];
+        const newState = (currentState === undefined) ? false : !currentState;
         CycleTradeDisplay._cycleExpandState[cycleId] = newState;
         CycleTradeDisplay.saveViewPrefs();
 
-        var tradeList = document.getElementById('trade-list');
+        const tradeList = document.getElementById('trade-list');
         if (!tradeList) return;
 
-        var headerRow = tradeList.querySelector('.cycle-group-header-row[data-cycle-id="' + cycleId + '"]');
+        const headerRow = tradeList.querySelector('.cycle-group-header-row[data-cycle-id="' + cycleId + '"]');
         if (headerRow) {
             if (newState) {
                 headerRow.classList.remove('cycle-group--collapsed');
@@ -443,7 +443,7 @@ const CycleTradeDisplay = {
             }
         }
 
-        var summaryRow = tradeList.querySelector('.cycle-group-summary-row[data-cycle-id="' + cycleId + '"]');
+        const summaryRow = tradeList.querySelector('.cycle-group-summary-row[data-cycle-id="' + cycleId + '"]');
         if (summaryRow) {
             if (newState) {
                 summaryRow.classList.remove('cycle-group--collapsed');
@@ -454,8 +454,8 @@ const CycleTradeDisplay = {
             }
         }
 
-        var tradeRows = tradeList.querySelectorAll('.cycle-group-trade-row[data-cycle-id="' + cycleId + '"]');
-        for (var i = 0; i < tradeRows.length; i++) {
+        const tradeRows = tradeList.querySelectorAll('.cycle-group-trade-row[data-cycle-id="' + cycleId + '"]');
+        for (let i = 0; i < tradeRows.length; i++) {
             tradeRows[i].style.display = newState ? '' : 'none';
         }
     },
@@ -474,10 +474,10 @@ const CycleTradeDisplay = {
     clearFilters() {
         CycleTradeDisplay._currentFilters = { type: null, startDate: null, endDate: null, cycleId: null };
 
-        var filterTradeType = document.getElementById('filter-trade-type');
-        var filterStartDate = document.getElementById('filter-start-date');
-        var filterEndDate = document.getElementById('filter-end-date');
-        var filterCycle = document.getElementById('filter-cycle');
+        const filterTradeType = document.getElementById('filter-trade-type');
+        const filterStartDate = document.getElementById('filter-start-date');
+        const filterEndDate = document.getElementById('filter-end-date');
+        const filterCycle = document.getElementById('filter-cycle');
 
         if (filterTradeType) filterTradeType.value = '';
         if (filterStartDate) filterStartDate.value = '';
@@ -492,7 +492,7 @@ const CycleTradeDisplay = {
     refresh() {
         if (!CycleTradeDisplay._fundId) return;
 
-        var trades = TradeManager.getTradesByFund(CycleTradeDisplay._fundId);
+        const trades = TradeManager.getTradesByFund(CycleTradeDisplay._fundId);
         if (!trades || trades.length === 0) {
             CycleTradeDisplay._cycles = [];
             CycleTradeDisplay._allTrades = [];
@@ -505,7 +505,7 @@ const CycleTradeDisplay = {
             return new Date(b.date) - new Date(a.date);
         });
 
-        var sortedAsc = trades.slice().sort(function(a, b) {
+        const sortedAsc = trades.slice().sort(function(a, b) {
             return new Date(a.date) - new Date(b.date);
         });
         CycleTradeDisplay._cycles = CalculatorV2.identifyHoldingCycles(sortedAsc);
@@ -536,12 +536,12 @@ const CycleTradeDisplay = {
     },
 
     bindGroupedEvents() {
-        var tradeList = document.getElementById('trade-list');
+        const tradeList = document.getElementById('trade-list');
         if (!tradeList) return;
 
         tradeList.querySelectorAll('.cycle-group-header-row').forEach(function(headerRow) {
             headerRow.addEventListener('click', function(e) {
-                var cycleId = parseInt(e.currentTarget.dataset.cycleId);
+                const cycleId = parseInt(e.currentTarget.dataset.cycleId);
                 if (cycleId) {
                     CycleTradeDisplay.toggleCycleExpand(cycleId);
                 }
@@ -550,12 +550,12 @@ const CycleTradeDisplay = {
     },
 
     bindPaginationEvents() {
-        var paginationContainer = document.getElementById('trade-pagination-container');
+        const paginationContainer = document.getElementById('trade-pagination-container');
         if (!paginationContainer || !CycleTradeDisplay._groupedPaginator) return;
 
         paginationContainer.querySelectorAll('.page-btn[data-page]').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                var page = parseInt(btn.dataset.page);
+                const page = parseInt(btn.dataset.page);
                 Paginator.goToPage(CycleTradeDisplay._groupedPaginator, page);
                 paginationContainer.innerHTML = Paginator.renderControls(CycleTradeDisplay._groupedPaginator);
                 CycleTradeDisplay.bindPaginationEvents();
@@ -564,7 +564,7 @@ const CycleTradeDisplay = {
 
         paginationContainer.querySelectorAll('.page-btn[data-action]').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                var action = btn.dataset.action;
+                const action = btn.dataset.action;
                 if (action === 'prev') {
                     Paginator.goToPage(CycleTradeDisplay._groupedPaginator, CycleTradeDisplay._groupedPaginator.currentPage - 1);
                 } else if (action === 'next') {

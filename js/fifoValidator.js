@@ -7,7 +7,7 @@ const FIFOValidator = {
     TOLERANCE: 0.01,
 
     verifyFund(fundId) {
-        var fund = FundManager.getFund(fundId);
+        const fund = FundManager.getFund(fundId);
         if (!fund) {
             return {
                 success: false,
@@ -15,7 +15,7 @@ const FIFOValidator = {
             };
         }
 
-        var trades = TradeManager.getTradesByFund(fundId);
+        const trades = TradeManager.getTradesByFund(fundId);
         if (!trades || trades.length === 0) {
             return {
                 success: true,
@@ -24,16 +24,16 @@ const FIFOValidator = {
             };
         }
 
-        var currentNetValue = parseFloat(fund.netValue) || 0;
+        const currentNetValue = parseFloat(fund.netValue) || 0;
 
-        var fifoResult = FIFOCalculator.calculate(trades, currentNetValue);
+        const fifoResult = FIFOCalculator.calculate(trades, currentNetValue);
 
-        var sortedTrades = trades.slice().sort(function(a, b) {
+        const sortedTrades = trades.slice().sort(function(a, b) {
             return new Date(a.date) - new Date(b.date);
         });
-        var weightedResult = CalculatorV2.calculateFundProfit(sortedTrades, currentNetValue);
+        const weightedResult = CalculatorV2.calculateFundProfit(sortedTrades, currentNetValue);
 
-        var comparison = FIFOValidator.compareResults(fifoResult, weightedResult);
+        const comparison = FIFOValidator.compareResults(fifoResult, weightedResult);
 
         return {
             success: true,
@@ -53,10 +53,10 @@ const FIFOValidator = {
     },
 
     compareResults(fifoResult, weightedResult) {
-        var differences = [];
-        var consistent = true;
+        const differences = [];
+        let consistent = true;
 
-        var items = [
+        const items = [
             { name: '总收益', fifo: fifoResult.totalProfit, weighted: weightedResult.totalProfit },
             { name: '已实现收益', fifo: fifoResult.realizedProfit, weighted: weightedResult.realizedProfit },
             { name: '浮动收益', fifo: fifoResult.floatingProfit, weighted: weightedResult.floatingProfit },
@@ -64,9 +64,9 @@ const FIFOValidator = {
             { name: '持有份额', fifo: fifoResult.holdingShares, weighted: weightedResult.holdingShares }
         ];
 
-        for (var i = 0; i < items.length; i++) {
-            var item = items[i];
-            var diff = Math.abs(item.fifo - item.weighted);
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const diff = Math.abs(item.fifo - item.weighted);
             if (diff > FIFOValidator.TOLERANCE) {
                 consistent = false;
                 differences.push({
@@ -96,10 +96,10 @@ const FIFOValidator = {
                 '浮动收益：' + Utils.formatMoneySmart(validationResult.fifoResult.floatingProfit);
         }
 
-        var msg = '❌ 验证失败\nFIFO与移动加权平均计算结果不一致\n\n';
-        var diffs = validationResult.differences;
-        for (var i = 0; i < diffs.length; i++) {
-            var d = diffs[i];
+        let msg = '❌ 验证失败\nFIFO与移动加权平均计算结果不一致\n\n';
+        const diffs = validationResult.differences;
+        for (let i = 0; i < diffs.length; i++) {
+            const d = diffs[i];
             msg += d.name + ':\n';
             msg += '  FIFO: ' + Utils.formatMoneySmart(d.fifo) + '\n';
             msg += '  加权: ' + Utils.formatMoneySmart(d.weighted) + '\n';

@@ -15,12 +15,12 @@ const CycleGroupRenderer = {
     renderCycleFilter(cycles, selectedCycleId) {
         if (!cycles || cycles.length <= 1) return '';
 
-        var html = '<select id="filter-cycle" class="filter-cycle-select">';
+        let html = '<select id="filter-cycle" class="filter-cycle-select">';
         html += '<option value="">全部轮次</option>';
-        for (var i = 0; i < cycles.length; i++) {
-            var cycle = cycles[i];
-            var selected = (selectedCycleId === cycle.id) ? ' selected' : '';
-            var statusText = cycle.status === 'active' ? '进行中' : '已结束';
+        for (let i = 0; i < cycles.length; i++) {
+            const cycle = cycles[i];
+            const selected = (selectedCycleId === cycle.id) ? ' selected' : '';
+            const statusText = cycle.status === 'active' ? '进行中' : '已结束';
             html += '<option value="' + cycle.id + '"' + selected + '>第' + cycle.id + '轮持仓 (' + statusText + ')</option>';
         }
         html += '</select>';
@@ -36,19 +36,19 @@ const CycleGroupRenderer = {
     },
 
     renderTradeRow(trade, cycleColor, isExpanded, cycleId, cycleIndex) {
-        var typeText = { buy: '买入', sell: '卖出', dividend: '分红' };
-        var typeClass = { buy: 'trade-type-buy', sell: 'trade-type-sell', dividend: 'trade-type-dividend' };
-        var priceDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
-        var remarkTitle = trade.remark || '';
-        var bgColor = (cycleIndex % 2 === 0) ? 'var(--color-cycle-bg-odd)' : 'var(--color-cycle-bg-even)';
-        var displayStyle = isExpanded ? '' : 'display:none;';
-        var cycleLabel = cycleId > 0 ? '第' + cycleId + '轮' : '-';
-        var labelColor = cycleId > 0 ? cycleColor : 'var(--color-text-tertiary)';
-        var profitDisplay = '-';
-        var profitClass = '';
+        const typeText = { buy: '买入', sell: '卖出', dividend: '分红' };
+        const typeClass = { buy: 'trade-type-buy', sell: 'trade-type-sell', dividend: 'trade-type-dividend' };
+        const priceDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
+        const remarkTitle = trade.remark || '';
+        const bgColor = (cycleIndex % 2 === 0) ? 'var(--color-cycle-bg-odd)' : 'var(--color-cycle-bg-even)';
+        const displayStyle = isExpanded ? '' : 'display:none;';
+        const cycleLabel = cycleId > 0 ? '第' + cycleId + '轮' : '-';
+        const labelColor = cycleId > 0 ? cycleColor : 'var(--color-text-tertiary)';
+        let profitDisplay = '-';
+        let profitClass = '';
         if (trade.type === 'sell' && trade.profitAmount !== undefined) {
-            var profitSign = trade.profitAmount >= 0 ? '+' : '';
-            var rateSign = trade.profitRate >= 0 ? '+' : '';
+            const profitSign = trade.profitAmount >= 0 ? '+' : '';
+            const rateSign = trade.profitRate >= 0 ? '+' : '';
             profitDisplay = profitSign + Utils.formatMoneySmart(trade.profitAmount) + ' / ' + rateSign + Utils.formatNumber(trade.profitRate, 2) + '%';
             profitClass = trade.profitAmount >= 0 ? 'trade-profit--positive' : 'trade-profit--negative';
         }
@@ -75,9 +75,9 @@ const CycleGroupRenderer = {
             return CycleGroupRenderer.renderEmptyState('暂无交易记录');
         }
 
-        var html = '';
-        for (var i = 0; i < renderItems.length; i++) {
-            var item = renderItems[i];
+        let html = '';
+        for (let i = 0; i < renderItems.length; i++) {
+            const item = renderItems[i];
             if (item.type === 'cycle-header') {
                 html += CycleGroupRenderer.renderCycleGroupHeaderRow(
                     item.cycle, item.isExpanded, item.color, item.summary, item.cycleIndex
@@ -97,10 +97,10 @@ const CycleGroupRenderer = {
 
     renderUncategorizedGroup(trades) {
         if (!trades || trades.length === 0) return '';
-        var html = '<tr class="cycle-group-header-row" style="border-left: 3px dashed var(--color-warning); background: var(--color-cycle-bg-odd);">' +
+        let html = '<tr class="cycle-group-header-row" style="border-left: 3px dashed var(--color-warning); background: var(--color-cycle-bg-odd);">' +
             '<td colspan="8"><div class="cycle-group-header"><span class="cycle-group-label" style="color: var(--color-warning);">未分类</span>' +
             '<span style="font-size: var(--font-size-xs); color: var(--color-text-tertiary);">数据可能存在异常</span></div></td></tr>';
-        for (var i = 0; i < trades.length; i++) {
+        for (let i = 0; i < trades.length; i++) {
             html += CycleGroupRenderer.renderTradeRow(trades[i], 'var(--color-warning)', true, -1, 0);
         }
         return html;

@@ -80,7 +80,7 @@ const CalculatorV2 = {
                     holdingShares = 0;
                 }
             } else if (trade.type === 'dividend') {
-                var dividendMode = trade.dividendMode || 'cash';
+                const dividendMode = trade.dividendMode || 'cash';
 
                 if (dividendMode === 'reinvest') {
                     holdingShares += parseFloat(trade.shares);
@@ -176,7 +176,7 @@ const CalculatorV2 = {
                 });
 
             } else if (trade.type === 'dividend') {
-                var dividendMode = trade.dividendMode || 'cash';
+                const dividendMode = trade.dividendMode || 'cash';
 
                 if (dividendMode === 'reinvest') {
                     holdingShares += shares;
