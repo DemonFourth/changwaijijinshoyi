@@ -82,7 +82,7 @@
 [data-theme="dark"] {
     --color-brand-primary: #8b9cf7;
     --color-brand-secondary: #9b6dc7;
-    --color-brand-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --color-brand-gradient: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
 
     --color-success: #68d391;
     --color-danger: #fc8181;
