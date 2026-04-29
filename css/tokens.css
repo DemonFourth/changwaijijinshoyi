@@ -5,9 +5,11 @@
     --color-brand-secondary: #764ba2;
     --color-brand-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 
-    /* 语义色 */
+    /* 语义色 - 与参考项目一致 */
+    --color-profit: #ef4444;         /* 红色 - 参考项目的盈利色 */
+    --color-loss: #10b981;           /* 翡翠绿 - 参考项目的亏损色 */
     --color-success: #48bb78;
-    --color-danger: #f56565;
+    --color-danger: #ef4444;        /* 使用与profit相同的红色 */
     --color-warning: #ff9800;
     --color-info: #667eea;
 

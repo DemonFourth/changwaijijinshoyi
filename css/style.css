@@ -722,7 +722,7 @@ td.negative {
     color: var(--color-text-primary);
 }
 
-/* 操作类型标签 */
+/* 操作类型标签 - 与参考项目一致 */
 .trade-type-badge {
     display: inline-block;
     padding: 0.25rem 0.75rem;
@@ -734,21 +734,21 @@ td.negative {
 }
 
 .trade-type-buy {
-    background: rgb(34 197 94 / 15%);
-    color: var(--color-success);
-    border: 1px solid rgb(34 197 94 / 30%);
+    background: rgba(16, 185, 129, 0.15);  /* 绿色背景 */
+    color: #10b981;                         /* 翡翠绿 */
+    border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .trade-type-sell {
-    background: rgb(239 68 68 / 15%);
-    color: var(--color-danger);
-    border: 1px solid rgb(239 68 68 / 30%);
+    background: rgba(239, 68, 68, 0.15);   /* 红色背景 */
+    color: #ef4444;                         /* 红色 */
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .trade-type-dividend {
-    background: rgb(59 130 246 / 15%);
-    color: var(--color-info);
-    border: 1px solid rgb(59 130 246 / 30%);
+    background: rgba(59, 130, 246, 0.15);  /* 蓝色背景 */
+    color: #3b82f6;                         /* 蓝色 */
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 /* 备注图标 */
