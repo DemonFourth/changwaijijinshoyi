@@ -268,7 +268,7 @@ const Modal = {
                 const fundData = {
                     code: code,
                     name: name,
-                    remark: remark,  // 添加备注
+                    remark: remark, // 添加备注
                     nameSource: name ? 'manual' : 'api'
                 };
 

@@ -575,7 +575,7 @@ const ChartManager = {
                     if (netValue < minNetValue) minNetValue = netValue;
                     if (netValue > maxNetValue) maxNetValue = netValue;
 
-                    var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                    const costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
                     cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
                     allCostPrices.push(parseFloat(costPrice.toFixed(4)));
                     if (costPrice < minNetValue) minNetValue = costPrice;
@@ -593,7 +593,7 @@ const ChartManager = {
                         isSell: false
                     });
                 } else if (tradeType === 'sell') {
-                    var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                    const costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
                     const sellCost = shares * costPrice;
                     cumulativeShares -= shares;
                     cumulativeCost -= sellCost;

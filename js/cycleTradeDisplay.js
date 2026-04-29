@@ -210,7 +210,7 @@ const CycleTradeDisplay = {
         if (flatTrades.length === 0) {
             tradeList.innerHTML = CycleGroupRenderer.renderEmptyState('没有匹配的交易记录');
             if (paginationContainer) paginationContainer.innerHTML = '';
-            var filterCount = document.getElementById('filter-result-count');
+            const filterCount = document.getElementById('filter-result-count');
             if (filterCount) filterCount.textContent = '共 0 条记录';
             return;
         }
@@ -231,7 +231,7 @@ const CycleTradeDisplay = {
             CycleTradeDisplay.bindPaginationEvents();
         }
 
-        var filterCount = document.getElementById('filter-result-count');
+        const filterCount = document.getElementById('filter-result-count');
         if (filterCount) {
             filterCount.textContent = '共 ' + CycleTradeDisplay._groupedPaginator.filteredData.length + ' 条记录';
         }

@@ -523,7 +523,7 @@ const Detail = {
             profitClass = trade.profitAmount >= 0 ? 'trade-profit-positive' : 'trade-profit-negative';
         }
         const cycleLabel = trade.cycleId > 0 ? '第' + trade.cycleId + '轮' : '-';
-        
+
         // 主行
         let html = `
             <tr data-trade-id="${trade.id}">
@@ -541,7 +541,7 @@ const Detail = {
                 </td>
             </tr>
         `;
-        
+
         // 如果有备注，添加引用行
         if (trade.remark) {
             html += `
@@ -555,7 +555,7 @@ const Detail = {
                 </tr>
             `;
         }
-        
+
         return html;
     },
 

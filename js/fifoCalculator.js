@@ -77,7 +77,7 @@ const FIFOCalculator = {
             const fee = parseFloat(trade.fee) || 0;
 
             if (trade.type === 'buy') {
-                var costPerShare = shares > 0 ? amount / shares : 0;
+                const costPerShare = shares > 0 ? amount / shares : 0;
                 holdingQueue.push({
                     shares: shares,
                     cost: amount,
@@ -96,7 +96,7 @@ const FIFOCalculator = {
                 const dividendMode = trade.dividendMode || 'cash';
                 if (dividendMode === 'reinvest' && trade.reinvestShares) {
                     const reinvestShares = parseFloat(trade.reinvestShares) || 0;
-                    var costPerShare = reinvestShares > 0 ? amount / reinvestShares : 0;
+                    const costPerShare = reinvestShares > 0 ? amount / reinvestShares : 0;
                     holdingQueue.push({
                         shares: reinvestShares,
                         cost: amount,

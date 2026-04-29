@@ -103,7 +103,7 @@ const FundManager = {
                 name: fundName,
                 nameSource: nameSource,
                 nameUpdateTime: new Date().toISOString(),
-                remark: fundData.remark || '',  // 新增备注字段
+                remark: fundData.remark || '', // 新增备注字段
                 netValue: apiData ? apiData.netValue : 0,
                 netValueDate: apiData ? apiData.netValueDate : '',
                 estimatedValue: apiData ? apiData.estimatedValue : 0,
@@ -148,7 +148,7 @@ const FundManager = {
             // 备注字段需要显式处理，确保更新时不会丢失
             updates.updateTime = new Date().toISOString();
         }
-        
+
         const success = DataService.updateFund(fundId, updates);
 
         if (success) {

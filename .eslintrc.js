@@ -69,6 +69,18 @@ module.exports = {
     'Modal': 'readonly',
     'Overview': 'readonly',
     'Detail': 'readonly',
-    'App': 'readonly'
+    'App': 'readonly',
+    // 额外模块
+    'ThemeManager': 'readonly',
+    'ChartManager': 'readonly',
+    'CycleGroupRenderer': 'readonly',
+    'CycleTradeDisplay': 'readonly',
+    'Paginator': 'readonly',
+    'NameCache': 'readonly',
+    'NameValidator': 'readonly',
+    'FIFOCalculator': 'readonly',
+    'FIFOValidator': 'readonly',
+    'BigNumberFormatter': 'readonly',
+    'echarts': 'readonly'
   }
 };
