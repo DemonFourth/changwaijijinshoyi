@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>场外基金收益计算器</title>
+    <title>场外基金收益计算�?/title>
     <link rel="stylesheet" href="css/tokens.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- ECharts本地库 -->
+    <!-- ECharts本地�?-->
     <script src="lib/echarts.min.js"></script>
     <!-- 应用容器 -->
     <div id="app">
-        <!-- 标题栏 -->
+        <!-- 标题�?-->
         <header class="header">
-            <h1 class="title">场外基金收益计算器</h1>
+            <h1 class="title">场外基金收益计算�?/h1>
             <div class="header-actions">
                 <button id="btn-export" class="btn btn-secondary">导出数据</button>
                 <button id="btn-import" class="btn btn-secondary">导入数据</button>
@@ -27,22 +27,22 @@
         <main id="main-content" class="main-content">
             <!-- 汇总页 -->
             <div id="page-overview" class="page active">
-                <!-- 统计卡片区 -->
+                <!-- 统计卡片�?-->
                 <div class="stats-container">
                     <div class="stat-card">
-                        <div class="stat-label">总投入</div>
+                        <div class="stat-label">总投�?/div>
                         <div class="stat-value" id="total-invest">¥0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">总市值</div>
+                        <div class="stat-label">总市�?/div>
                         <div class="stat-value" id="total-value">¥0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">总收益</div>
+                        <div class="stat-label">总收�?/div>
                         <div class="stat-value" id="total-profit">¥0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">收益率</div>
+                        <div class="stat-label">收益�?/div>
                         <div class="stat-value" id="total-rate">0.00%</div>
                     </div>
                 </div>
@@ -56,21 +56,21 @@
                         <h2>我的基金</h2>
                         <div class="list-controls">
                             <div class="view-toggle">
-                                <button class="btn-view active" data-view="card" title="卡片视图">▦</button>
-                                <button class="btn-view" data-view="list" title="列表视图">☰</button>
+                                <button class="btn-view active" data-view="card" title="卡片视图">�?/button>
+                                <button class="btn-view" data-view="list" title="列表视图">�?/button>
                             </div>
                             <select class="sort-select" id="sort-field">
                                 <option value="profitRate">按收益率</option>
                                 <option value="profitAmount">按收益额</option>
-                                <option value="marketValue">按市值</option>
-                                <option value="name">按名称</option>
+                                <option value="marketValue">按市�?/option>
+                                <option value="name">按名�?/option>
                             </select>
-                            <button class="btn-sort-order" id="sort-order" title="降序">↓</button>
+                            <button class="btn-sort-order" id="sort-order" title="降序">�?/button>
                             <button id="btn-add-fund" class="btn btn-primary">+ 添加基金</button>
                         </div>
                     </div>
                     <div id="fund-list" class="fund-list">
-                        <!-- 基金卡片将动态生成 -->
+                        <!-- 基金卡片将动态生�?-->
                     </div>
                 </div>
 
@@ -80,35 +80,35 @@
                 </div>
             </div>
 
-            <!-- 详情页 -->
+            <!-- 详情�?-->
             <div id="page-detail" class="page">
                 <div class="detail-actions" style="margin-bottom: 1rem;">
-                    <button id="btn-back" class="btn btn-back">← 返回</button>
+                    <button id="btn-back" class="btn btn-back">�?返回</button>
                     <div style="margin-left: auto; display: flex; gap: 0.5rem;">
                         <button id="btn-edit-fund" class="btn btn-secondary">编辑</button>
                         <button id="btn-delete-fund" class="btn btn-danger">删除</button>
                     </div>
                 </div>
 
-                <!-- 基金信息 - 优化后的数据仪表盘风格 -->
+                <!-- 基金信息 - 优化后的数据仪表盘风�?-->
                 <div class="fund-info">
-                    <!-- 基金标题区 -->
+                    <!-- 基金标题�?-->
                     <div class="fund-title-area">
                         <div class="fund-name" id="detail-fund-name">基金详情</div>
                         <div class="fund-code" id="detail-fund-code"></div>
                     </div>
                     
-                    <!-- 核心数据区 -->
+                    <!-- 核心数据�?-->
                     <div class="fund-core-stats">
                         <div class="core-stat">
-                            <span class="core-label">最新净值</span>
+                            <span class="core-label">最新净�?/span>
                             <div class="core-value-wrapper">
                                 <span class="core-value" id="info-net-value">-</span>
                                 <span class="core-date" id="info-net-date"></span>
                             </div>
                         </div>
                         <div class="core-stat">
-                            <span class="core-label">估算净值</span>
+                            <span class="core-label">估算净�?/span>
                             <div class="core-value-wrapper">
                                 <span class="core-value" id="info-estimated-value">-</span>
                                 <span class="core-date" id="info-update-time"></span>
@@ -120,7 +120,7 @@
                     <!-- 详细信息网格 -->
                     <div class="fund-details-grid">
                         <div class="detail-item">
-                            <span class="detail-icon">🏷️</span>
+                            <span class="detail-icon">🏷�?/span>
                             <span class="detail-label">基金代码</span>
                             <span class="detail-value" id="info-code">-</span>
                         </div>
@@ -137,9 +137,15 @@
                     </div>
                 </div>
 
-                <!-- 持仓信息 - 优化为卡片风格 -->
+                <!-- 持仓信息 - 优化为卡片风�?-->
                 <div class="holding-info">
-                    <h3>持仓信息</h3>
+                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0; flex: 1;">持仓信息</h3>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <button id="btn-fifo-verify" class="btn btn-secondary btn-sm">验证计算</button>
+                            <span id="fifo-verify-result" class="fifo-verify-result"></span>
+                        </div>
+                    </div>
                     <div class="holding-cards">
                         <!-- 持仓概况卡片 -->
                         <div class="holding-card">
@@ -150,7 +156,7 @@
                                     <span class="stat-value" id="holding-shares">0</span>
                                 </div>
                                 <div class="holding-stat">
-                                    <span class="stat-label">持有成本价</span>
+                                    <span class="stat-label">持有成本�?/span>
                                     <span class="stat-value" id="cost-per-share">¥0.0000</span>
                                 </div>
                                 <div class="holding-stat">
@@ -158,7 +164,7 @@
                                     <span class="stat-value" id="holding-cost">¥0.00</span>
                                 </div>
                                 <div class="holding-stat">
-                                    <span class="stat-label">当前市值</span>
+                                    <span class="stat-label">当前市�?/span>
                                     <span class="stat-value" id="holding-value">¥0.00</span>
                                 </div>
                             </div>
@@ -173,22 +179,22 @@
                                     <span class="stat-value" id="holding-profit">¥0.00</span>
                                 </div>
                                 <div class="holding-stat">
-                                    <span class="stat-label">持仓收益率</span>
+                                    <span class="stat-label">持仓收益�?/span>
                                     <span class="stat-value" id="holding-rate">0.00%</span>
                                 </div>
                             </div>
                         </div>
                     
-                        <!-- 总收益卡片 -->
+                        <!-- 总收益卡�?-->
                         <div class="holding-card">
-                            <div class="holding-card-title">总收益</div>
+                            <div class="holding-card-title">总收�?/div>
                             <div class="holding-card-body">
                                 <div class="holding-stat">
-                                    <span class="stat-label">已实现收益</span>
+                                    <span class="stat-label">已实现收�?/span>
                                     <span class="stat-value" id="realized-profit">¥0.00</span>
                                 </div>
                                 <div class="holding-stat">
-                                    <span class="stat-label">总收益</span>
+                                    <span class="stat-label">总收�?/span>
                                     <span class="stat-value" id="detail-total-profit">¥0.00</span>
                                 </div>
                                 <div class="holding-stat highlight">
@@ -199,58 +205,13 @@
                         </div>
                     </div>
                 </div>
-                            <div class="stat-item">
-                                <span class="label">持有成本价</span>
-                                <span id="cost-per-share" class="value">¥0.0000</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="label">持有成本</span>
-                                <span id="holding-cost" class="value">¥0.00</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="label">当前市值</span>
-                                <span id="holding-value" class="value">¥0.00</span>
-                            </div>
-                        </div>
-                        <div class="holding-group">
-                            <div class="holding-group-title">持有收益</div>
-                            <div class="stat-item">
-                                <span class="label">浮动盈亏</span>
-                                <span id="holding-profit" class="value">¥0.00</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="label">持仓收益率</span>
-                                <span id="holding-rate" class="value">0.00%</span>
-                            </div>
-                        </div>
-                        <div class="holding-group">
-                            <div class="holding-group-title">总收益</div>
-                            <div class="stat-item">
-                                <span class="label">已实现收益</span>
-                                <span id="realized-profit" class="value">¥0.00</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="label">总收益</span>
-                                <span id="detail-total-profit" class="value">¥0.00</span>
-                            </div>
-                            <div class="stat-item stat-highlight">
-                                <span class="label">总收益率</span>
-                                <span id="detail-total-rate" class="value">0.00%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="margin-top: 15px; text-align: center;">
-                        <button id="btn-fifo-verify" class="btn btn-secondary btn-sm">验证计算</button>
-                        <span id="fifo-verify-result" class="fifo-verify-result" style="display: none;"></span>
-                    </div>
-                </div>
-
+                
                 <!-- 持仓周期 -->
                 <div class="cycle-info-section" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">
                     <h3 style="margin-bottom: 15px;">持仓周期</h3>
                     <div class="cycle-summary" style="display: flex; gap: 20px; margin-bottom: 15px;">
                         <div class="cycle-stat-item">
-                            <span class="label">总周期数：</span>
+                            <span class="label">总周期数�?/span>
                             <span id="cycle-count" class="value">0</span>
                         </div>
                         <div class="cycle-stat-item">
@@ -263,7 +224,7 @@
                         </div>
                     </div>
                     <div id="cycle-list" style="margin-top: 10px;">
-                        <!-- 周期列表将在这里动态生成 -->
+                        <!-- 周期列表将在这里动态生�?-->
                     </div>
                 </div>
 
@@ -280,10 +241,10 @@
                             <option value="sell">卖出</option>
                             <option value="dividend">分红</option>
                         </select>
-                        <input type="date" id="filter-start-date" class="filter-date" title="开始日期">
+                        <input type="date" id="filter-start-date" class="filter-date" title="开始日�?>
                         <span class="filter-sep">~</span>
                         <input type="date" id="filter-end-date" class="filter-date" title="结束日期">
-                        <button class="btn btn-secondary btn-sm" id="btn-clear-filter">清除筛选</button>
+                        <button class="btn btn-secondary btn-sm" id="btn-clear-filter">清除筛�?/button>
                         <span class="filter-result-count" id="filter-result-count"></span>
                     </div>
                     <table class="trade-table">
@@ -291,17 +252,17 @@
                             <tr>
                                 <th>日期</th>
                                 <th>操作</th>
-                                <th>价格(元)</th>
+                                <th>价格(�?</th>
                                 <th>份额</th>
-                                <th>手续费(元)</th>
-                                <th>金额(元)</th>
+                                <th>手续�?�?</th>
+                                <th>金额(�?</th>
                                 <th>收益</th>
                                 <th>持仓周期</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="trade-list">
-                            <!-- 交易记录将动态生成 -->
+                            <!-- 交易记录将动态生�?-->
                         </tbody>
                     </table>
                     <div id="trade-pagination-container" class="pagination-container"></div>
@@ -320,7 +281,7 @@
                             <div id="chart-buy-sell-compare" class="chart"></div>
                         </div>
                         <div class="chart-item">
-                            <h4>收益率变化</h4>
+                            <h4>收益率变�?/h4>
                             <div id="chart-profit-rate-change" class="chart"></div>
                         </div>
                         <div class="chart-item">
@@ -347,10 +308,10 @@
                 <button class="modal-close">×</button>
             </div>
             <div class="modal-body" id="modal-body">
-                <!-- 弹窗内容将动态生成 -->
+                <!-- 弹窗内容将动态生�?-->
             </div>
             <div class="modal-footer" id="modal-footer">
-                <!-- 弹窗操作按钮将动态生成 -->
+                <!-- 弹窗操作按钮将动态生�?-->
             </div>
         </div>
     </div>
@@ -358,7 +319,7 @@
     <!-- 加载提示 -->
     <div id="loading" class="loading hidden">
         <div class="loading-spinner"></div>
-        <div class="loading-text">加载中...</div>
+        <div class="loading-text">加载�?..</div>
     </div>
 
     <!-- 提示消息 -->
