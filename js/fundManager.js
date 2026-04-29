@@ -143,10 +143,13 @@ const FundManager = {
      * @returns {boolean}
      */
     updateFund(fundId, updates) {
-        const success = DataService.updateFund(fundId, {
-            ...updates,
-            updateTime: new Date().toISOString()
-        });
+        // 确保备注字段被正确处理
+        if (updates.remark !== undefined) {
+            // 备注字段需要显式处理，确保更新时不会丢失
+            updates.updateTime = new Date().toISOString();
+        }
+        
+        const success = DataService.updateFund(fundId, updates);
 
         if (success) {
             Utils.showToast('基金更新成功', 'success');

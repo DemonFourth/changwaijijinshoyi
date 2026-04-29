@@ -193,7 +193,8 @@ const Detail = {
             if (fund.estimatedGrowth !== undefined && fund.estimatedGrowth !== null) {
                 const rate = parseFloat(fund.estimatedGrowth);
                 const className = rate >= 0 ? 'core-change positive' : 'core-change negative';
-                estimatedGrowth.textContent = `${rate >= 0 ? '↑ +' : '↓ '}${rate}%`;
+                // 涨跌幅统一显示2位小数
+                estimatedGrowth.textContent = `${rate >= 0 ? '↑ +' : '↓ '}${rate.toFixed(2)}%`;
                 estimatedGrowth.className = className;
             } else {
                 estimatedGrowth.textContent = '-';
