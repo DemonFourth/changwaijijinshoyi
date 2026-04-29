@@ -25,6 +25,7 @@
     --color-text-secondary: #718096;
     --color-text-tertiary: #a0aec0;
     --color-text-inverse: #2d3748; /* 浅色表头文字用深色 */
+    --color-text-on-brand: #2d3748; /* 品牌色上的文字 */
 
     /* 边框色 - 清新现代风 */
     --color-border-primary: #e2e8f0;

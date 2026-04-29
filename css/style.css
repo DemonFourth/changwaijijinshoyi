@@ -79,7 +79,7 @@ body {
 
 .btn-primary {
     background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
-    color: #2d3748;
+    color: var(--color-text-on-brand);
     box-shadow: 0 2px 8px rgba(168, 230, 207, 0.3);
 }
 
@@ -861,7 +861,7 @@ td.negative {
 }
 
 [data-theme="dark"] .trade-remark-row td {
-    background: #2d3748;
+    background: var(--color-bg-tertiary);
 }
 
 [data-theme="dark"] .remark-content {
@@ -1003,7 +1003,7 @@ td.negative {
 
 .page-btn.active {
     background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
-    color: #2d3748;
+    color: var(--color-text-on-brand);
     border-color: var(--color-success);
     font-weight: 600;
 }
@@ -1142,7 +1142,7 @@ td.negative {
     height: 56px;
     border-radius: 50%;
     background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
-    color: #2d3748;
+    color: var(--color-text-on-brand);
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
@@ -1998,7 +1998,7 @@ td.negative {
 
 .cycle-group-status--closed {
     background: linear-gradient(135deg, var(--color-success), #2f855a);
-    color: #fff;
+    color: var(--color-text-on-brand);
 }
 
 @keyframes pulse-subtle {
