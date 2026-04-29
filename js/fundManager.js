@@ -17,6 +17,7 @@ const FundManager = {
         EventBus.on(EventType.FUND_UPDATED, () => this.clearStatsCache());
         EventBus.on(EventType.FUND_DELETED, () => this.clearStatsCache());
         EventBus.on(EventType.TRADE_ADDED, () => this.clearStatsCache());
+        EventBus.on(EventType.TRADE_UPDATED, () => this.clearStatsCache());
         EventBus.on(EventType.TRADE_DELETED, () => this.clearStatsCache());
         EventBus.on(EventType.FUND_REFRESHED, () => this.clearStatsCache());
     },
