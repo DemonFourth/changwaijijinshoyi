@@ -69,48 +69,48 @@
     --color-fall-bg: rgb(72 187 120 / 15%);
 }
 
-/* CSS设计令牌 - 深色主题 - 深蓝科技风 */
+/* CSS设计令牌 - 深色主题 - 暗紫轻奢风 */
 [data-theme="dark"] {
-    /* 品牌色 - 深蓝系 */
-    --color-brand-primary: #1a365d;
-    --color-brand-secondary: #2c5282;
-    --color-brand-gradient: linear-gradient(135deg, #1a365d 0%, #4299e1 100%);
+    /* 品牌色 - 暗紫系 */
+    --color-brand-primary: #44337a;
+    --color-brand-secondary: #5b21b6;
+    --color-brand-gradient: linear-gradient(135deg, #44337a 0%, #9f7aea 100%);
 
     /* 语义色 - 亮色保证对比度 */
     --color-success: #68d391;        /* 亮绿 - 买入 */
     --color-danger: #fc8181;         /* 浅红 - 卖出 */
     --color-warning: #fbd38d;
-    --color-info: #63b3ed;          /* 亮蓝 - 分红 */
+    --color-info: #b794f4;          /* 淡紫 - 分红 */
     --color-profit: #68d391;         /* 亮绿 */
-    --color-loss: #fc8181;          /* 浅红 */
+    --color-loss: #fc8181;           /* 浅红 */
 
-    /* 背景色 - 深蓝黑系 */
-    --color-bg-primary: #0d1421;
-    --color-bg-secondary: #141f2e;
-    --color-bg-tertiary: #1a2740;
-    --color-bg-hover: #1e2d42;
-    --color-bg-card: #1a2740;
-    --color-bg-remark: #1a2740;
+    /* 背景色 - 深紫黑系 */
+    --color-bg-primary: #0d0a14;
+    --color-bg-secondary: #14111a;
+    --color-bg-tertiary: #1e1828;
+    --color-bg-hover: #261e30;
+    --color-bg-card: #1e1828;
+    --color-bg-remark: #1e1828;
 
     /* 文字色 */
     --color-text-primary: #e2e8f0;
     --color-text-secondary: #a0aec0;
     --color-text-tertiary: #718096;
-    --color-text-inverse: #141f2e;
+    --color-text-inverse: #14111a;
     --color-text-on-brand: #ffffff;
 
     /* 边框色 */
-    --color-border-primary: #2d3f5f;
-    --color-border-secondary: #1a365d;
-    --color-border-focus: #4299e1;
+    --color-border-primary: #3d2a4d;
+    --color-border-secondary: #44337a;
+    --color-border-focus: #9f7aea;
 
-    /* 阴影 - 蓝调 */
-    --shadow-sm: 0 2px 8px rgb(66 153 225 / 20%);
-    --shadow-md: 0 4px 16px rgb(66 153 225 / 25%);
-    --shadow-lg: 0 6px 20px rgb(66 153 225 / 30%);
+    /* 阴影 - 紫调 */
+    --shadow-sm: 0 2px 8px rgb(159 122 234 / 20%);
+    --shadow-md: 0 4px 16px rgb(159 122 234 / 25%);
+    --shadow-lg: 0 6px 20px rgb(159 122 234 / 30%);
 
     /* 持仓轮次配色 */
-    --color-cycle-1: #4299e1;
+    --color-cycle-1: #9f7aea;
     --color-cycle-2: #68d391;
     --color-cycle-3: #fbd38d;
     --color-cycle-4: #fc8181;
