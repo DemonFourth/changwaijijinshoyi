@@ -24,7 +24,7 @@
     --color-text-primary: #2d3748;
     --color-text-secondary: #718096;
     --color-text-tertiary: #a0aec0;
-    --color-text-inverse: #ffffff; /* 浅色表头文字用白色 */
+    --color-text-inverse: #2d3748; /* 浅色表头文字用深色 */
 
     /* 边框色 - 清新现代风 */
     --color-border-primary: #e2e8f0;
