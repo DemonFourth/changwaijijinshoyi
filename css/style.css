@@ -1073,6 +1073,7 @@ td.negative {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
+    padding: var(--spacing-sm) 0;
 }
 
 .top5-item {
