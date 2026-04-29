@@ -183,7 +183,7 @@ body {
     left: 0;
     right: 0;
     height: 3px;
-    background: var(--color-brand-gradient);
+    background: linear-gradient(90deg, var(--color-success), var(--color-info));
 }
 
 .stat-card:hover {
@@ -282,12 +282,25 @@ td.negative {
 .fund-card {
     background: var(--color-bg-card);
     padding: 1.5rem;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 2px solid transparent;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+    border: 1px solid var(--color-border-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     position: relative;
+    overflow: hidden;
+}
+
+.fund-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-success), var(--color-info));
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .fund-card::after {
@@ -302,13 +315,17 @@ td.negative {
 }
 
 .fund-card:hover {
-    border-color: var(--color-brand-primary);
+    border-color: var(--color-success);
     box-shadow: var(--shadow-lg);
     transform: translateY(-4px);
 }
 
+.fund-card:hover::before {
+    opacity: 1;
+}
+
 .fund-card:hover::after {
-    color: var(--color-brand-primary);
+    color: var(--color-success);
     transform: translateY(-50%) translateX(4px);
 }
 
