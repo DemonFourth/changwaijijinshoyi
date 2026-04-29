@@ -28,7 +28,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 20px rgb(102 126 234 / 30%);
+    box-shadow: 0 4px 20px rgba(168, 230, 207, 0.3);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -78,13 +78,13 @@ body {
 }
 
 .btn-primary {
-    background: var(--color-brand-gradient);
-    color: var(--color-text-inverse);
-    box-shadow: 0 2px 8px rgb(102 126 234 / 30%);
+    background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
+    color: #2d3748;
+    box-shadow: 0 2px 8px rgba(168, 230, 207, 0.3);
 }
 
 .btn-primary:hover {
-    box-shadow: 0 4px 12px rgb(102 126 234 / 40%);
+    box-shadow: 0 4px 12px rgba(168, 230, 207, 0.4);
     transform: translateY(-1px);
 }
 
@@ -419,14 +419,26 @@ td.negative {
     gap: 0.5rem;
 }
 
-/* 基金信息 - 数据仪表盘风格 */
+/* 基金信息 - 清新现代风 */
 .fund-info {
-    background: var(--color-bg-card);
+    background: linear-gradient(135deg, rgba(168, 230, 207, 0.1) 0%, rgba(136, 216, 176, 0.1) 100%);
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: var(--shadow-md);
     margin-bottom: 2rem;
     border: 1px solid var(--color-border-primary);
+    position: relative;
+    overflow: hidden;
+}
+
+.fund-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--color-brand-gradient);
 }
 
 /* 基金标题区 */
@@ -443,6 +455,10 @@ td.negative {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--color-text-primary);
+    background: linear-gradient(135deg, var(--color-brand-primary), var(--color-success));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .fund-code {
@@ -451,9 +467,10 @@ td.negative {
     color: var(--color-text-secondary);
     background: var(--color-bg-hover);
     padding: 0.25rem 0.75rem;
-    border-radius: 4px;
+    border-radius: 20px;
     font-family: var(--font-family-mono);
     font-weight: 600;
+    border: 1px solid var(--color-border-secondary);
 }
 
 /* 核心数值包装器 */
@@ -572,14 +589,26 @@ td.negative {
     }
 }
 
-/* 持仓信息 - 优化为卡片风格 */
+/* 持仓信息 - 清新现代风 */
 .holding-info {
-    background: var(--color-bg-card);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(168, 230, 207, 0.08) 100%);
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: var(--shadow-md);
     margin-bottom: 2rem;
     border: 1px solid var(--color-border-primary);
+    position: relative;
+    overflow: hidden;
+}
+
+.holding-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-success), var(--color-info));
 }
 
 .holding-info h3 {
@@ -595,10 +624,23 @@ td.negative {
 }
 
 .holding-card {
-    background: var(--color-bg-hover);
-    border-radius: 8px;
-    padding: 1rem;
+    background: var(--color-bg-card);
+    border-radius: 12px;
+    padding: 1.25rem;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--color-border-primary);
+    position: relative;
+    overflow: hidden;
+}
+
+.holding-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-success), var(--color-info));
 }
 
 .holding-card:hover {
@@ -615,6 +657,17 @@ td.negative {
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--color-border-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.holding-card-title::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-success);
 }
 
 .holding-card-body {
@@ -1417,45 +1470,7 @@ td.negative {
     background: var(--color-fall-bg);
 }
 
-.trade-type-buy,
-.trade-type-sell,
-.trade-type-dividend {
-    display: inline-block;
-    font-size: 12px;
-    font-weight: bold;
-    padding: 4px 8px;
-    border-radius: 4px;
-}
-
-.trade-type-buy {
-    color: rgb(25, 118, 210);
-    background: rgb(227, 242, 253);
-}
-
-.trade-type-sell {
-    color: rgb(230, 81, 0);
-    background: rgb(255, 243, 224);
-}
-
-.trade-type-dividend {
-    color: rgb(94, 53, 177);
-    background: rgb(237, 231, 246);
-}
-
-[data-theme="dark"] .trade-type-buy {
-    color: rgb(144, 202, 249);
-    background: rgba(25, 118, 210, 0.2);
-}
-
-[data-theme="dark"] .trade-type-sell {
-    color: rgb(255, 183, 77);
-    background: rgba(230, 81, 0, 0.2);
-}
-
-[data-theme="dark"] .trade-type-dividend {
-    color: rgb(179, 136, 255);
-    background: rgba(94, 53, 177, 0.2);
-}
+/* 删除重复的操作类型样式 - 已在730-756行定义 */
 
 .chart-section {
     margin-top: var(--spacing-lg);
