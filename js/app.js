@@ -3,6 +3,8 @@
  * 初始化所有模块并启动应用
  */
 
+/* global TooltipManager */
+
 const App = {
     /**
      * 初始化应用
@@ -38,6 +40,13 @@ const App = {
             Overview.init();
             Detail.init();
             ToolPage.init();
+
+            // 初始化 TooltipManager
+            if (TooltipManager) {
+                TooltipManager.init();
+                TooltipManager.bindExistingTooltips();
+                TooltipManager.bindLargeNumberTooltips();
+            }
 
             // 绑定主题切换按钮
             this.setupThemeToggle();

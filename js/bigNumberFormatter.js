@@ -70,7 +70,7 @@ const BigNumberFormatter = {
 
         const display = BigNumberFormatter.format(amount, decimals);
         const full = BigNumberFormatter.formatFull(amount, decimals);
-        return `<span class="big-number" title="${full}">${display}</span>`;
+        return `<span class="big-number large-number-tooltip" data-full-value="${full}">${display}</span>`;
     }
 };
 
