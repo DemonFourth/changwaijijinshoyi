@@ -195,14 +195,14 @@ const TooltipManager = {
             right: viewport.width - triggerRect.right - this.config.padding
         };
 
-        // 选择最佳方向（优先上方）
-        let placement = 'top';
+        // 选择最佳方向（优先下方，避免盖住标题）
+        let placement = 'bottom';
         const tooltipHeight = tooltipRect.height || 100;
 
-        if (space.top < tooltipHeight + this.config.offset + 10) {
-            // 上方空间不足，尝试下方
-            if (space.bottom >= tooltipHeight + this.config.offset + 10) {
-                placement = 'bottom';
+        if (space.bottom < tooltipHeight + this.config.offset + 10) {
+            // 下方空间不足，尝试上方
+            if (space.top >= tooltipHeight + this.config.offset + 10) {
+                placement = 'top';
             } else {
                 // 上下都不足，选择空间较大的一方
                 placement = space.bottom > space.top ? 'bottom' : 'top';
