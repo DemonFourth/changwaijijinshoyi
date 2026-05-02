@@ -5,6 +5,7 @@
 
 const ToolPage = {
     currentResult: null,
+    tierCount: 0,
 
     /**
      * 初始化工具页面
@@ -52,6 +53,181 @@ const ToolPage = {
                 });
             }
         });
+
+        // 费率模式切换
+        ToolPage.initFeeModeToggle();
+
+        // 添加费率段按钮
+        const btnAddTier = document.getElementById('btn-add-tier');
+        if (btnAddTier) {
+            btnAddTier.addEventListener('click', () => {
+                ToolPage.addFeeTier();
+            });
+        }
+
+        // A基金份额变化时更新分段费率提示
+        const aSharesInput = document.getElementById('conv-a-shares');
+        if (aSharesInput) {
+            aSharesInput.addEventListener('input', () => {
+                ToolPage.validateTieredShares();
+            });
+        }
+    },
+
+    /**
+     * 初始化费率模式切换
+     */
+    initFeeModeToggle() {
+        const radios = document.querySelectorAll('input[name="fee-mode"]');
+        radios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const mode = e.target.value;
+                ToolPage.switchFeeMode(mode);
+            });
+        });
+    },
+
+    /**
+     * 切换费率模式
+     */
+    switchFeeMode(mode) {
+        const singleSection = document.getElementById('single-fee-section');
+        const tieredSection = document.getElementById('tiered-fee-section');
+
+        if (mode === 'single') {
+            singleSection.classList.remove('hidden');
+            tieredSection.classList.add('hidden');
+        } else {
+            singleSection.classList.add('hidden');
+            tieredSection.classList.remove('hidden');
+
+            // 初始化第一个费率段
+            if (ToolPage.tierCount === 0) {
+                ToolPage.addFeeTier();
+            }
+        }
+
+        // 隐藏计算结果
+        document.getElementById('conv-result')?.classList.add('hidden');
+        ToolPage.currentResult = null;
+    },
+
+    /**
+     * 添加费率段
+     */
+    addFeeTier() {
+        ToolPage.tierCount++;
+        const container = document.getElementById('tiered-fee-container');
+        const tierId = `tier-${ToolPage.tierCount}`;
+
+        const tierDiv = document.createElement('div');
+        tierDiv.className = 'fee-tier-row';
+        tierDiv.id = tierId;
+        tierDiv.innerHTML = `
+            <div class="form-row">
+                <div class="form-group flex-2">
+                    <label class="form-label">份额</label>
+                    <input type="number" class="form-input tier-shares" step="0.01" min="0" placeholder="0.00" data-tier="${ToolPage.tierCount}">
+                </div>
+                <div class="form-group flex-1">
+                    <label class="form-label">费率(%)</label>
+                    <input type="number" class="form-input tier-rate" step="0.01" min="0" placeholder="0.00" data-tier="${ToolPage.tierCount}">
+                </div>
+                <div class="form-group flex-0">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="button" class="btn btn-danger btn-sm btn-remove-tier" data-tier="${ToolPage.tierCount}">×</button>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(tierDiv);
+
+        // 绑定事件
+        const sharesInput = tierDiv.querySelector('.tier-shares');
+        const rateInput = tierDiv.querySelector('.tier-rate');
+        const removeBtn = tierDiv.querySelector('.btn-remove-tier');
+
+        sharesInput.addEventListener('input', () => {
+            ToolPage.validateTieredShares();
+        });
+
+        rateInput.addEventListener('input', () => {
+            document.getElementById('conv-result')?.classList.add('hidden');
+            ToolPage.currentResult = null;
+        });
+
+        removeBtn.addEventListener('click', () => {
+            ToolPage.removeFeeTier(tierId);
+        });
+    },
+
+    /**
+     * 移除费率段
+     */
+    removeFeeTier(tierId) {
+        const container = document.getElementById('tiered-fee-container');
+        const tierElement = document.getElementById(tierId);
+
+        if (container.children.length <= 1) {
+            Utils.showToast('至少保留一个费率段', 'error');
+            return;
+        }
+
+        if (tierElement) {
+            tierElement.remove();
+            ToolPage.validateTieredShares();
+        }
+    },
+
+    /**
+     * 验证分段费率份额总和
+     */
+    validateTieredShares() {
+        const totalShares = parseFloat(document.getElementById('conv-a-shares')?.value) || 0;
+        const tierSharesInputs = document.querySelectorAll('.tier-shares');
+        let totalTierShares = 0;
+
+        tierSharesInputs.forEach(input => {
+            totalTierShares += parseFloat(input.value) || 0;
+        });
+
+        const validationEl = document.getElementById('tiered-shares-validation');
+        if (!validationEl) return;
+
+        if (totalShares === 0) {
+            validationEl.textContent = '';
+            validationEl.className = 'validation-message';
+            return;
+        }
+
+        const diff = Math.abs(totalTierShares - totalShares);
+        if (diff < 0.01) {
+            validationEl.textContent = `✓ 已分配 ${totalTierShares.toFixed(2)} / ${totalShares.toFixed(2)} 份`;
+            validationEl.className = 'validation-message valid';
+        } else {
+            validationEl.textContent = `⚠ 已分配 ${totalTierShares.toFixed(2)} / ${totalShares.toFixed(2)} 份（${totalTierShares > totalShares ? '超出' : '不足'} ${(diff).toFixed(2)} 份）`;
+            validationEl.className = 'validation-message invalid';
+        }
+    },
+
+    /**
+     * 收集分段费率参数
+     */
+    collectTieredFeeParams() {
+        const tiers = [];
+        const tierRows = document.querySelectorAll('.fee-tier-row');
+
+        tierRows.forEach(row => {
+            const shares = parseFloat(row.querySelector('.tier-shares').value) || 0;
+            const rate = parseFloat(row.querySelector('.tier-rate').value) || 0;
+
+            tiers.push({
+                shares: shares,
+                rate: rate
+            });
+        });
+
+        return tiers;
     },
 
     /**
@@ -94,14 +270,31 @@ const ToolPage = {
      * 执行计算
      */
     handleCalculate() {
-        const params = {
+        const feeMode = document.querySelector('input[name="fee-mode"]:checked')?.value || 'single';
+
+        const baseParams = {
             aNetValue: parseFloat(document.getElementById('conv-a-net-value').value),
             aShares: parseFloat(document.getElementById('conv-a-shares').value),
-            aSellRate: parseFloat(document.getElementById('conv-a-sell-rate').value),
             bNetValue: parseFloat(document.getElementById('conv-b-net-value').value),
             bShares: parseFloat(document.getElementById('conv-b-shares').value),
             bBuyRate: parseFloat(document.getElementById('conv-b-buy-rate').value)
         };
+
+        let params;
+
+        if (feeMode === 'tiered') {
+            params = {
+                ...baseParams,
+                useTieredFee: true,
+                sellFeeTiers: ToolPage.collectTieredFeeParams()
+            };
+        } else {
+            params = {
+                ...baseParams,
+                useTieredFee: false,
+                aSellRate: parseFloat(document.getElementById('conv-a-sell-rate').value)
+            };
+        }
 
         const result = ConversionCalculator.calculate(params);
 
@@ -139,6 +332,9 @@ const ToolPage = {
 
         document.getElementById('conv-result-total-fee').textContent = Utils.formatMoney(result.totalFee);
 
+        // 渲染卖出手续费明细
+        ToolPage.renderSellFeeDetails(result);
+
         const btnSave = document.getElementById('btn-save-conversion');
         const targetFundId = document.getElementById('conv-target-fund')?.value;
         if (targetFundId) {
@@ -148,6 +344,35 @@ const ToolPage = {
         }
 
         resultDiv.classList.remove('hidden');
+    },
+
+    /**
+     * 渲染卖出手续费明细
+     */
+    renderSellFeeDetails(result) {
+        const detailsSection = document.getElementById('sell-fee-details');
+        const detailsList = document.getElementById('sell-fee-details-list');
+
+        if (!detailsSection || !detailsList) return;
+
+        if (!result.sellFeeDetails || result.sellFeeDetails.length <= 1) {
+            detailsSection.classList.add('hidden');
+            return;
+        }
+
+        detailsSection.classList.remove('hidden');
+        detailsList.innerHTML = '';
+
+        result.sellFeeDetails.forEach((tier, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'fee-detail-item';
+            itemDiv.innerHTML = `
+                <span class="fee-detail-label">第${index + 1}段：</span>
+                <span class="fee-detail-value">${tier.shares.toFixed(2)}份 × ${Utils.formatMoney(tier.amount / tier.shares)} × ${tier.rate}% = </span>
+                <span class="fee-detail-fee">${Utils.formatMoney(tier.fee)}</span>
+            `;
+            detailsList.appendChild(itemDiv);
+        });
     },
 
     /**

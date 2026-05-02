@@ -321,10 +321,37 @@
                                 <label class="form-label">份额</label>
                                 <input type="number" id="conv-a-shares" class="form-input" step="0.01" min="0" placeholder="0.00">
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">卖出费率(%)</label>
-                                <input type="number" id="conv-a-sell-rate" class="form-input" step="0.01" min="0" placeholder="0.00">
+                        </div>
+
+                        <div class="form-group" style="margin-top: 12px;">
+                            <label class="form-label">费率模式</label>
+                            <div class="fee-mode-toggle">
+                                <label class="radio-label">
+                                    <input type="radio" name="fee-mode" value="single" checked>
+                                    单费率
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="fee-mode" value="tiered">
+                                    分段费率
+                                </label>
                             </div>
+                        </div>
+
+                        <div id="single-fee-section">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">卖出费率(%)</label>
+                                    <input type="number" id="conv-a-sell-rate" class="form-input" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tiered-fee-section" class="hidden">
+                            <div id="tiered-fee-container"></div>
+                            <button type="button" id="btn-add-tier" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
+                                + 添加费率段
+                            </button>
+                            <div id="tiered-shares-validation" class="validation-message"></div>
                         </div>
                     </div>
 
@@ -405,6 +432,11 @@
                                 <span>总手续费：</span>
                                 <span id="conv-result-total-fee" class="summary-value">-</span>
                             </div>
+                        </div>
+
+                        <div id="sell-fee-details" class="tool-result-section hidden">
+                            <h4>卖出手续费明细</h4>
+                            <div id="sell-fee-details-list"></div>
                         </div>
 
                         <button id="btn-save-conversion" class="btn btn-primary btn-block hidden" type="button">

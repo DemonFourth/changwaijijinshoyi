@@ -2257,3 +2257,108 @@ td.negative {
         grid-template-columns: 1fr;
     }
 }
+
+/* 基金转换 - 分段费率样式 */
+.fee-mode-toggle {
+    display: flex;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.fee-mode-toggle .radio-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.fee-tier-row {
+    margin-bottom: 8px;
+    padding: 8px;
+    background: var(--color-bg-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+}
+
+.fee-tier-row .form-row {
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.fee-tier-row .flex-2 {
+    flex: 2;
+}
+
+.fee-tier-row .flex-1 {
+    flex: 1;
+}
+
+.fee-tier-row .flex-0 {
+    flex: 0 0 40px;
+}
+
+.btn-remove-tier {
+    padding: 6px 10px;
+    font-size: 18px;
+    line-height: 1;
+    min-height: auto;
+}
+
+.validation-message {
+    margin-top: 8px;
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+
+.validation-message.valid {
+    color: var(--color-success);
+    background: rgb(var(--color-success-rgb) / 10%);
+}
+
+.validation-message.invalid {
+    color: var(--color-danger);
+    background: rgb(var(--color-danger-rgb) / 10%);
+}
+
+#sell-fee-details {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--color-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+#sell-fee-details h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: var(--color-text-primary);
+}
+
+.fee-detail-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.fee-detail-item:last-child {
+    border-bottom: none;
+}
+
+.fee-detail-label {
+    color: var(--color-text-secondary);
+    min-width: 50px;
+}
+
+.fee-detail-value {
+    color: var(--color-text-primary);
+    flex: 1;
+}
+
+.fee-detail-fee {
+    color: var(--color-fall);
+    font-weight: 500;
+}
