@@ -2592,14 +2592,16 @@ td.negative {
 
 /* 费率设置弹窗样式 */
 .fee-settings-modal .fee-tiers-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 992px) {
     .fee-settings-modal .fee-tiers-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
     }
 }
 

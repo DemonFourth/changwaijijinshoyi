@@ -165,7 +165,7 @@ const Detail = {
         this.updateFundInfo(fund);
         this.updateHoldingInfo(fund);
         this.updateTradeList(fund);
-        this.renderFeeTiers(fund);
+        // renderFeeTiers已移至弹窗，不需要在这里调用
     },
 
     /**
