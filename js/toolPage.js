@@ -11,6 +11,9 @@ const ToolPage = {
      * 初始化工具页面
      */
     init() {
+        if (ToolPage._initialized) return;
+        ToolPage._initialized = true;
+
         const btnBack = document.getElementById('btn-back-from-tools');
         const toolCard = document.querySelector('.tool-card[data-tool="conversion"]');
         const btnCalc = document.getElementById('btn-calc-conversion');
@@ -244,8 +247,41 @@ const ToolPage = {
             detail.classList.remove('hidden');
             if (toolName === 'conversion') {
                 ToolPage.populateFundSelect();
+                ToolPage.resetTieredFeeUI();
             }
         }
+    },
+
+    /**
+     * 重置分段费率UI状态
+     */
+    resetTieredFeeUI() {
+        ToolPage.tierCount = 0;
+        const container = document.getElementById('tiered-fee-container');
+        if (container) {
+            container.innerHTML = '';
+        }
+
+        // 重置为单费率模式
+        const singleRadio = document.querySelector('input[name="fee-mode"][value="single"]');
+        if (singleRadio) {
+            singleRadio.checked = true;
+        }
+
+        const singleSection = document.getElementById('single-fee-section');
+        const tieredSection = document.getElementById('tiered-fee-section');
+        if (singleSection) singleSection.classList.remove('hidden');
+        if (tieredSection) tieredSection.classList.add('hidden');
+
+        const validationEl = document.getElementById('tiered-shares-validation');
+        if (validationEl) {
+            validationEl.textContent = '';
+            validationEl.className = 'validation-message';
+        }
+
+        // 隐藏计算结果
+        document.getElementById('conv-result')?.classList.add('hidden');
+        ToolPage.currentResult = null;
     },
 
     /**
