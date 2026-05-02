@@ -3,6 +3,8 @@
  * 管理各种弹窗的显示和交互
  */
 
+/* global FeeCalculator */
+
 const Modal = {
     currentType: null,
 
@@ -345,6 +347,8 @@ const Modal = {
         html += '</div>';
         html += '</div>';
 
+        html += '<div id="fee-suggestion-panel" class="fee-suggestion-panel hidden"></div>';
+
         return html;
     },
 
@@ -471,6 +475,96 @@ const Modal = {
         });
 
         amount.addEventListener('input', checkMismatch);
+
+        // 费率自动计算
+        const autoCalcFee = () => {
+            const fundId = data.fundId || (data.trade && data.trade.fundId);
+            if (!fundId) return;
+
+            const fund = DataService.getFund(fundId);
+            if (!fund || !fund.feeTiers) {
+                const panel = document.getElementById('fee-suggestion-panel');
+                if (panel) panel.classList.add('hidden');
+                return;
+            }
+
+            const type = tradeType.value;
+            const nv = parseFloat(netValue.value);
+            const s = parseFloat(shares.value);
+            const dateVal = document.getElementById('input-trade-date').value;
+
+            if (type === 'buy' && nv > 0 && s > 0) {
+                const amountVal = nv * s;
+                const result = FeeCalculator.calculateBuyFee(amountVal, fund.feeTiers.buyTiers);
+
+                const panel = document.getElementById('fee-suggestion-panel');
+                if (result.matchedTier && panel) {
+                    panel.classList.remove('hidden');
+                    panel.innerHTML =
+                        '<div class="fee-suggestion-content">' +
+                            '<div class="fee-suggestion-title">费率参考</div>' +
+                            '<div class="fee-suggestion-body">' +
+                                '金额 ' + Utils.formatMoney(amountVal) + '，匹配买入费率 <strong>' + result.rate + '%</strong>' +
+                            '</div>' +
+                            '<div class="fee-suggestion-fee">' +
+                                '建议手续费：¥' + result.fee.toFixed(2) +
+                                ' <button type="button" class="btn btn-primary btn-xs btn-import-fee" data-fee="' + result.fee.toFixed(2) + '">导入</button>' +
+                            '</div>' +
+                        '</div>';
+
+                    const importBtn = panel.querySelector('.btn-import-fee');
+                    if (importBtn) {
+                        importBtn.addEventListener('click', () => {
+                            fee.value = result.fee.toFixed(2);
+                            calcAmount();
+                        });
+                    }
+                }
+            } else if (type === 'sell' && nv > 0 && s > 0 && dateVal) {
+                const allTrades = DataService.getTradesByFund(fundId);
+                const sellTrade = { date: dateVal, shares: s, netValue: nv, id: data.trade ? data.trade.id : null };
+                const result = FeeCalculator.calculateSellFee(sellTrade, allTrades, fund.feeTiers.sellTiers);
+
+                const panel = document.getElementById('fee-suggestion-panel');
+                if (result.details.length > 0 && panel) {
+                    let detailHtml = '';
+                    result.details.forEach(d => {
+                        detailHtml += '<div>从' + d.fromDate + '买入' + d.shares.toFixed(2) + '份，持有' + d.days + '天，费率' + d.rate + '%，手续费¥' + d.fee.toFixed(2) + '</div>';
+                    });
+
+                    panel.classList.remove('hidden');
+                    panel.innerHTML =
+                        '<div class="fee-suggestion-content">' +
+                            '<div class="fee-suggestion-title">费率参考（FIFO）</div>' +
+                            '<div class="fee-suggestion-body">' + detailHtml + '</div>' +
+                            '<div class="fee-suggestion-fee">' +
+                                '合计手续费：¥' + result.fee.toFixed(2) +
+                                ' <button type="button" class="btn btn-primary btn-xs btn-import-fee" data-fee="' + result.fee.toFixed(2) + '">导入</button>' +
+                            '</div>' +
+                        '</div>';
+
+                    const importBtn = panel.querySelector('.btn-import-fee');
+                    if (importBtn) {
+                        importBtn.addEventListener('click', () => {
+                            fee.value = result.fee.toFixed(2);
+                            calcAmount();
+                        });
+                    }
+                }
+            } else {
+                const panel = document.getElementById('fee-suggestion-panel');
+                if (panel) panel.classList.add('hidden');
+            }
+        };
+
+        netValue.addEventListener('input', autoCalcFee);
+        shares.addEventListener('input', autoCalcFee);
+        tradeType.addEventListener('change', autoCalcFee);
+        document.getElementById('input-trade-date').addEventListener('change', autoCalcFee);
+
+        if (isEdit) {
+            setTimeout(autoCalcFee, 100);
+        }
 
         btnConfirm.addEventListener('click', () => {
             const tradeData = {

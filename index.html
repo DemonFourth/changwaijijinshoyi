@@ -230,6 +230,30 @@
                     </div>
                 </div>
 
+                <!-- 费率设置 -->
+                <div class="fee-tiers-section" id="fee-tiers-section">
+                    <div class="fee-tiers-header" id="fee-tiers-toggle">
+                        <h3>费率设置</h3>
+                        <span class="fee-tiers-arrow">▼</span>
+                    </div>
+                    <div class="fee-tiers-content hidden" id="fee-tiers-content">
+                        <div class="fee-tier-group">
+                            <h4>买入费率（按金额区间）</h4>
+                            <div class="fee-tier-list" id="buy-tier-list"></div>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-add-buy-tier">+ 添加费率段</button>
+                        </div>
+                        <div class="fee-tier-group">
+                            <h4>卖出费率（按持有天数）</h4>
+                            <div class="fee-tier-list" id="sell-tier-list"></div>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-add-sell-tier">+ 添加费率段</button>
+                        </div>
+                        <div class="fee-tiers-actions">
+                            <button type="button" class="btn btn-primary" id="btn-save-fee-tiers">保存</button>
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-fee-tiers">取消</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 交易记录 -->
                 <div class="trade-records">
                     <div class="records-header">
@@ -504,6 +528,7 @@
     <script src="js/cycleGroupRenderer.js"></script>
     <script src="js/cycleTradeDisplay.js"></script>
     <script src="js/overview.js"></script>
+    <script src="js/feeCalculator.js"></script>
     <script src="js/detail.js"></script>
     <script src="js/conversionCalculator.js"></script>
     <script src="js/toolPage.js"></script>

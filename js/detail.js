@@ -13,11 +13,15 @@ const Detail = {
     // 当前筛选条件
     _currentFilters: null,
 
+    // 费率配置展开状态
+    _feeTiersExpanded: false,
+
     /**
      * 初始化详情页
      */
     init() {
         this.bindEvents();
+        Detail.initFeeTiersSection();
         console.log('Detail initialized');
     },
 
@@ -958,6 +962,302 @@ const Detail = {
             resultEl.classList.add('fifo-verify-fail');
             resultEl.textContent = '❌ ' + result.error;
         }
+    },
+
+    /**
+     * 初始化费率配置区域
+     */
+    initFeeTiersSection() {
+        const toggle = document.getElementById('fee-tiers-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                Detail.toggleFeeTiersSection();
+            });
+        }
+
+        const btnAddBuy = document.getElementById('btn-add-buy-tier');
+        if (btnAddBuy) {
+            btnAddBuy.addEventListener('click', () => {
+                Detail.addBuyTier();
+            });
+        }
+
+        const btnAddSell = document.getElementById('btn-add-sell-tier');
+        if (btnAddSell) {
+            btnAddSell.addEventListener('click', () => {
+                Detail.addSellTier();
+            });
+        }
+
+        const btnSave = document.getElementById('btn-save-fee-tiers');
+        if (btnSave) {
+            btnSave.addEventListener('click', () => {
+                Detail.saveFeeTiers();
+            });
+        }
+
+        const btnCancel = document.getElementById('btn-cancel-fee-tiers');
+        if (btnCancel) {
+            btnCancel.addEventListener('click', () => {
+                Detail.cancelFeeTiers();
+            });
+        }
+    },
+
+    /**
+     * 切换费率配置区域展开/收起
+     */
+    toggleFeeTiersSection() {
+        const content = document.getElementById('fee-tiers-content');
+        const arrow = document.querySelector('.fee-tiers-arrow');
+        if (!content || !arrow) return;
+
+        Detail._feeTiersExpanded = !Detail._feeTiersExpanded;
+        content.classList.toggle('hidden', !Detail._feeTiersExpanded);
+        arrow.textContent = Detail._feeTiersExpanded ? '▲' : '▼';
+
+        if (Detail._feeTiersExpanded && Detail.currentFundId) {
+            const fund = FundManager.getFund(Detail.currentFundId);
+            if (fund) {
+                Detail.renderFeeTiers(fund);
+            }
+        }
+    },
+
+    /**
+     * 渲染费率配置表单
+     */
+    renderFeeTiers(fund) {
+        const buyList = document.getElementById('buy-tier-list');
+        const sellList = document.getElementById('sell-tier-list');
+        if (!buyList || !sellList) return;
+
+        const feeTiers = fund.feeTiers || { buyTiers: [], sellTiers: [] };
+
+        buyList.innerHTML = '';
+        (feeTiers.buyTiers || []).forEach((tier, index) => {
+            buyList.appendChild(Detail.createTierRow('buy', index, tier));
+        });
+
+        sellList.innerHTML = '';
+        (feeTiers.sellTiers || []).forEach((tier, index) => {
+            sellList.appendChild(Detail.createTierRow('sell', index, tier));
+        });
+    },
+
+    /**
+     * 创建费率段行
+     */
+    createTierRow(type, index, tier) {
+        const row = document.createElement('div');
+        row.className = 'fee-tier-row';
+
+        if (type === 'buy') {
+            row.innerHTML =
+                '<div class="form-row">' +
+                    '<div class="form-group">' +
+                        '<label class="form-label">最低金额(元)</label>' +
+                        '<input type="number" class="form-input tier-min-amount" value="' + (tier.minAmount || 0) + '" step="1" min="0">' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label class="form-label">最高金额(元)</label>' +
+                        '<input type="number" class="form-input tier-max-amount" value="' + (tier.maxAmount !== null && tier.maxAmount !== undefined ? tier.maxAmount : '') + '" step="1" min="0" placeholder="无上限">' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label class="form-label">费率(%)</label>' +
+                        '<input type="number" class="form-input tier-rate" value="' + (tier.rate || 0) + '" step="0.01" min="0">' +
+                    '</div>' +
+                    '<div class="form-group fee-tier-action">' +
+                        '<label class="form-label">&nbsp;</label>' +
+                        '<button type="button" class="btn btn-danger btn-sm btn-remove-tier" data-type="buy" data-index="' + index + '">×</button>' +
+                    '</div>' +
+                '</div>';
+        } else {
+            row.innerHTML =
+                '<div class="form-row">' +
+                    '<div class="form-group">' +
+                        '<label class="form-label">最低天数</label>' +
+                        '<input type="number" class="form-input tier-min-days" value="' + (tier.minDays || 0) + '" step="1" min="0">' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label class="form-label">最高天数</label>' +
+                        '<input type="number" class="form-input tier-max-days" value="' + (tier.maxDays !== null && tier.maxDays !== undefined ? tier.maxDays : '') + '" step="1" min="0" placeholder="无上限">' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label class="form-label">费率(%)</label>' +
+                        '<input type="number" class="form-input tier-rate" value="' + (tier.rate || 0) + '" step="0.01" min="0">' +
+                    '</div>' +
+                    '<div class="form-group fee-tier-action">' +
+                        '<label class="form-label">&nbsp;</label>' +
+                        '<button type="button" class="btn btn-danger btn-sm btn-remove-tier" data-type="sell" data-index="' + index + '">×</button>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        row.querySelector('.btn-remove-tier').addEventListener('click', (e) => {
+            const t = e.target.dataset.type;
+            const idx = parseInt(e.target.dataset.index);
+            if (t === 'buy') {
+                Detail.removeBuyTier(idx);
+            } else {
+                Detail.removeSellTier(idx);
+            }
+        });
+
+        return row;
+    },
+
+    /**
+     * 添加买入费率段
+     */
+    addBuyTier() {
+        const buyList = document.getElementById('buy-tier-list');
+        if (!buyList) return;
+
+        const fund = FundManager.getFund(Detail.currentFundId);
+        if (!fund) return;
+
+        const feeTiers = fund.feeTiers || { buyTiers: [], sellTiers: [] };
+        feeTiers.buyTiers = feeTiers.buyTiers || [];
+        feeTiers.buyTiers.push({ minAmount: 0, maxAmount: null, rate: 0 });
+
+        buyList.innerHTML = '';
+        feeTiers.buyTiers.forEach((tier, index) => {
+            buyList.appendChild(Detail.createTierRow('buy', index, tier));
+        });
+    },
+
+    /**
+     * 移除买入费率段
+     */
+    removeBuyTier(index) {
+        const fund = FundManager.getFund(Detail.currentFundId);
+        if (!fund) return;
+
+        const feeTiers = fund.feeTiers || { buyTiers: [], sellTiers: [] };
+        feeTiers.buyTiers = feeTiers.buyTiers || [];
+        if (feeTiers.buyTiers.length <= 1) {
+            Utils.showToast('至少保留一个费率段', 'error');
+            return;
+        }
+
+        feeTiers.buyTiers.splice(index, 1);
+        const buyList = document.getElementById('buy-tier-list');
+        buyList.innerHTML = '';
+        feeTiers.buyTiers.forEach((tier, i) => {
+            buyList.appendChild(Detail.createTierRow('buy', i, tier));
+        });
+    },
+
+    /**
+     * 添加卖出费率段
+     */
+    addSellTier() {
+        const sellList = document.getElementById('sell-tier-list');
+        if (!sellList) return;
+
+        const fund = FundManager.getFund(Detail.currentFundId);
+        if (!fund) return;
+
+        const feeTiers = fund.feeTiers || { buyTiers: [], sellTiers: [] };
+        feeTiers.sellTiers = feeTiers.sellTiers || [];
+        feeTiers.sellTiers.push({ minDays: 0, maxDays: null, rate: 0 });
+
+        sellList.innerHTML = '';
+        feeTiers.sellTiers.forEach((tier, index) => {
+            sellList.appendChild(Detail.createTierRow('sell', index, tier));
+        });
+    },
+
+    /**
+     * 移除卖出费率段
+     */
+    removeSellTier(index) {
+        const fund = FundManager.getFund(Detail.currentFundId);
+        if (!fund) return;
+
+        const feeTiers = fund.feeTiers || { buyTiers: [], sellTiers: [] };
+        feeTiers.sellTiers = feeTiers.sellTiers || [];
+        if (feeTiers.sellTiers.length <= 1) {
+            Utils.showToast('至少保留一个费率段', 'error');
+            return;
+        }
+
+        feeTiers.sellTiers.splice(index, 1);
+        const sellList = document.getElementById('sell-tier-list');
+        sellList.innerHTML = '';
+        feeTiers.sellTiers.forEach((tier, i) => {
+            sellList.appendChild(Detail.createTierRow('sell', i, tier));
+        });
+    },
+
+    /**
+     * 收集费率配置表单数据
+     */
+    collectFeeTiersFromForm() {
+        const buyList = document.getElementById('buy-tier-list');
+        const sellList = document.getElementById('sell-tier-list');
+
+        const buyTiers = [];
+        buyList.querySelectorAll('.fee-tier-row').forEach(row => {
+            buyTiers.push({
+                minAmount: parseFloat(row.querySelector('.tier-min-amount').value) || 0,
+                maxAmount: row.querySelector('.tier-max-amount').value ? parseFloat(row.querySelector('.tier-max-amount').value) : null,
+                rate: parseFloat(row.querySelector('.tier-rate').value) || 0
+            });
+        });
+
+        const sellTiers = [];
+        sellList.querySelectorAll('.fee-tier-row').forEach(row => {
+            sellTiers.push({
+                minDays: parseInt(row.querySelector('.tier-min-days').value) || 0,
+                maxDays: row.querySelector('.tier-max-days').value ? parseInt(row.querySelector('.tier-max-days').value) : null,
+                rate: parseFloat(row.querySelector('.tier-rate').value) || 0
+            });
+        });
+
+        return { buyTiers, sellTiers };
+    },
+
+    /**
+     * 保存费率配置
+     */
+    saveFeeTiers() {
+        const fund = FundManager.getFund(Detail.currentFundId);
+        if (!fund) return;
+
+        const feeTiers = Detail.collectFeeTiersFromForm();
+
+        for (let i = 0; i < feeTiers.buyTiers.length; i++) {
+            const tier = feeTiers.buyTiers[i];
+            if (tier.maxAmount !== null && tier.maxAmount <= tier.minAmount) {
+                Utils.showToast('买入费率第' + (i + 1) + '段：最高金额必须大于最低金额', 'error');
+                return;
+            }
+        }
+
+        for (let i = 0; i < feeTiers.sellTiers.length; i++) {
+            const tier = feeTiers.sellTiers[i];
+            if (tier.maxDays !== null && tier.maxDays <= tier.minDays) {
+                Utils.showToast('卖出费率第' + (i + 1) + '段：最高天数必须大于最低天数', 'error');
+                return;
+            }
+        }
+
+        FundManager.updateFund(Detail.currentFundId, { feeTiers: feeTiers });
+        Utils.showToast('费率配置已保存', 'success');
+        Detail.toggleFeeTiersSection();
+    },
+
+    /**
+     * 取消费率配置
+     */
+    cancelFeeTiers() {
+        const fund = FundManager.getFund(Detail.currentFundId);
+        if (fund) {
+            Detail.renderFeeTiers(fund);
+        }
+        Detail.toggleFeeTiersSection();
     }
 };
 

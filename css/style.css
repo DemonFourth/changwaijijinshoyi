@@ -434,6 +434,12 @@ td.negative {
     box-shadow: var(--shadow-sm);
 }
 
+.fee-tier-group h4 {
+    margin-bottom: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
 .chart-detail-grid .chart-item h4 {
     margin-bottom: var(--spacing-sm);
     color: var(--color-text-primary);
@@ -2361,4 +2367,89 @@ td.negative {
 .fee-detail-fee {
     color: var(--color-fall);
     font-weight: 500;
+}
+
+/* 费率配置区域 */
+.fee-tiers-section {
+    margin: var(--spacing-md) 0;
+    background: var(--color-bg-card);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+}
+
+.fee-tiers-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    cursor: pointer;
+    user-select: none;
+}
+
+.fee-tiers-header h3 {
+    margin: 0;
+    font-size: var(--font-size-md);
+}
+
+.fee-tiers-arrow {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    transition: transform 0.2s;
+}
+
+.fee-tiers-content {
+    padding: 0 var(--spacing-md) var(--spacing-md);
+}
+
+.fee-tier-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.fee-tier-action {
+    flex: 0 0 40px;
+}
+
+.fee-tiers-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+/* 费率提示面板 */
+.fee-suggestion-panel {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-brand-primary);
+}
+
+.fee-suggestion-content {
+    font-size: var(--font-size-sm);
+}
+
+.fee-suggestion-title {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.fee-suggestion-body {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.fee-suggestion-fee {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+.btn-xs {
+    padding: 2px 8px;
+    font-size: 12px;
+    min-height: auto;
 }
