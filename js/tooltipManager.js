@@ -341,7 +341,7 @@ const TooltipManager = {
             const target = e.target.closest('[data-full-value]');
             if (target) {
                 const fullValue = target.getAttribute('data-full-value');
-                TooltipManager.show(target, '完整数值：' + fullValue);
+                TooltipManager.show(target, fullValue);
                 return;
             }
 
