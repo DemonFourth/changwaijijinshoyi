@@ -1,3 +1,8 @@
+/* 通用隐藏类 */
+.hidden {
+    display: none !important;
+}
+
 /* 基础样式重置 */
 * {
     margin: 0;
@@ -2460,8 +2465,6 @@ td.negative {
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-md);
-    cursor: pointer;
-    user-select: none;
 }
 
 .fee-tiers-header h3 {
@@ -2469,10 +2472,32 @@ td.negative {
     font-size: var(--font-size-md);
 }
 
-.fee-tiers-arrow {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    transition: transform 0.2s;
+.fee-tiers-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.fee-tiers-header-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    cursor: default;
+}
+
+.fee-tiers-header-actions button {
+    cursor: pointer;
+}
+
+.fee-tier-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.fee-tier-group-header h4 {
+    margin: 0;
 }
 
 .fee-tiers-content {
@@ -2524,12 +2549,6 @@ td.negative {
 
 .fee-tier-action {
     flex: 0 0 40px;
-}
-
-.fee-tiers-actions {
-    display: flex;
-    gap: var(--spacing-sm);
-    margin-top: var(--spacing-md);
 }
 
 /* 费率提示面板 */

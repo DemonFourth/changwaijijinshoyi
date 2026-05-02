@@ -257,12 +257,18 @@ const Storage = {
 
             // 导入基金数据
             if (Array.isArray(data.funds)) {
+                // 为没有 feeTiers 的基金补充默认值（兼容旧数据）
+                const processedFunds = data.funds.map(fund => ({
+                    ...fund,
+                    feeTiers: fund.feeTiers || { buyTiers: [], sellTiers: [] }
+                }));
+
                 if (merge) {
                     const existingFunds = this.loadFunds();
-                    const mergedFunds = this.mergeArrays(existingFunds, data.funds, 'id');
+                    const mergedFunds = this.mergeArrays(existingFunds, processedFunds, 'id');
                     this.saveFunds(mergedFunds);
                 } else {
-                    this.saveFunds(data.funds);
+                    this.saveFunds(processedFunds);
                 }
             }
 

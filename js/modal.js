@@ -481,7 +481,7 @@ const Modal = {
             if (!fundId) return;
 
             const fund = DataService.getFund(fundId);
-            if (!fund || !fund.feeTiers) {
+            if (!fund || !fund.feeTiers || !fund.feeTiers.buyTiers || !fund.feeTiers.sellTiers) {
                 const panel = document.getElementById('fee-suggestion-panel');
                 if (panel) panel.classList.add('hidden');
                 return;

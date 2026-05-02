@@ -13,9 +13,6 @@ const Detail = {
     // 当前筛选条件
     _currentFilters: null,
 
-    // 费率配置展开状态
-    _feeTiersExpanded: false,
-
     /**
      * 初始化详情页
      */
@@ -969,13 +966,6 @@ const Detail = {
      * 初始化费率配置区域
      */
     initFeeTiersSection() {
-        const toggle = document.getElementById('fee-tiers-toggle');
-        if (toggle) {
-            toggle.addEventListener('click', () => {
-                Detail.toggleFeeTiersSection();
-            });
-        }
-
         const btnAddBuy = document.getElementById('btn-add-buy-tier');
         if (btnAddBuy) {
             btnAddBuy.addEventListener('click', () => {
@@ -1002,26 +992,6 @@ const Detail = {
             btnCancel.addEventListener('click', () => {
                 Detail.cancelFeeTiers();
             });
-        }
-    },
-
-    /**
-     * 切换费率配置区域展开/收起
-     */
-    toggleFeeTiersSection() {
-        const content = document.getElementById('fee-tiers-content');
-        const arrow = document.querySelector('.fee-tiers-arrow');
-        if (!content || !arrow) return;
-
-        Detail._feeTiersExpanded = !Detail._feeTiersExpanded;
-        content.classList.toggle('hidden', !Detail._feeTiersExpanded);
-        arrow.textContent = Detail._feeTiersExpanded ? '▲' : '▼';
-
-        if (Detail._feeTiersExpanded && Detail.currentFundId) {
-            const fund = FundManager.getFund(Detail.currentFundId);
-            if (fund) {
-                Detail.renderFeeTiers(fund);
-            }
         }
     },
 
@@ -1269,7 +1239,6 @@ const Detail = {
             const updatedFund = FundManager.getFund(Detail.currentFundId);
             Detail.renderFeeTiers(updatedFund);
             Utils.showToast('费率配置已保存', 'success');
-            Detail.toggleFeeTiersSection();
         }
     },
 
@@ -1281,7 +1250,6 @@ const Detail = {
         if (fund) {
             Detail.renderFeeTiers(fund);
         }
-        Detail.toggleFeeTiersSection();
     }
 };
 
