@@ -1203,11 +1203,22 @@ td.negative {
     background: var(--color-bg-card);
     border-radius: var(--radius-lg);
     width: 90%;
-    max-width: 560px;
+    max-width: 900px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 40px rgb(0 0 0 / 30%);
+}
+
+/* 弹窗精准控制 - 后期可针对具体弹窗优化 */
+.modal-container.modal-fee-settings .modal {
+    max-width: 1000px;
+}
+
+@media (min-width: 1200px) {
+    .modal-container.modal-fee-settings .modal {
+        max-width: 1100px;
+    }
 }
 
 .modal-header {

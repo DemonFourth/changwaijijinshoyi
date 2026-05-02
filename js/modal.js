@@ -16,6 +16,12 @@ const Modal = {
         const body = document.getElementById('modal-body');
         const footer = document.getElementById('modal-footer');
 
+        // 根据弹窗类型设置容器类，预留精准控制
+        container.className = 'modal-container';
+        if (type) {
+            container.classList.add('modal-' + type);
+        }
+
         let result;
 
         switch (type) {
