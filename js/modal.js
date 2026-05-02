@@ -19,7 +19,9 @@ const Modal = {
         // 根据弹窗类型设置容器类，预留精准控制
         container.className = 'modal-container';
         if (type) {
-            container.classList.add('modal-' + type);
+            // 将驼峰命名转为连字符命名（如 feeSettings -> fee-settings）
+            const className = 'modal-' + type.replace(/([A-Z])/g, '-$1').toLowerCase();
+            container.classList.add(className);
         }
 
         let result;

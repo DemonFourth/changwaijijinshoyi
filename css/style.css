@@ -1211,6 +1211,7 @@ td.negative {
 }
 
 /* 弹窗精准控制 - 后期可针对具体弹窗优化 */
+/* 费率设置弹窗（feeSettings -> modal-fee-settings） */
 .modal-container.modal-fee-settings .modal {
     max-width: 1000px;
 }
@@ -1220,6 +1221,10 @@ td.negative {
         max-width: 1100px;
     }
 }
+
+/* 后续可添加其他弹窗的精准控制，例如： */
+/* .modal-container.modal-add-fund .modal { max-width: 600px; } */
+/* .modal-container.modal-add-trade .modal { max-width: 700px; } */
 
 .modal-header {
     padding: 1rem 1.5rem;
@@ -2608,11 +2613,12 @@ td.negative {
     gap: 20px;
 }
 
-@media (min-width: 992px) {
+/* 仅在宽屏(1200px+)显示双列，避免拥挤 */
+@media (min-width: 1200px) {
     .fee-settings-modal .fee-tiers-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 24px;
+        gap: 32px;
     }
 }
 
