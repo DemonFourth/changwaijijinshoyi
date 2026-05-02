@@ -3,9 +3,9 @@
 ## 项目概述
 
 **项目名称**：场外基金收益计算器 (fund-return-calculator)
-**版本**：v2.2.0
+**版本**：v2.3.0
 **类型**：纯前端Web应用（无需后端服务）
-**核心功能**：场外基金（支付宝买卖的基金）收益计算，支持交易记录、加权平均成本法、多轮持仓分组、收益统计
+**核心功能**：场外基金（支付宝买卖的基金）收益计算，支持交易记录、加权平均成本法、多轮持仓分组、收益统计、费率配置与自动计算
 
 ## 项目结构
 
@@ -30,6 +30,7 @@ jijinshouyi/
 │   ├── calculatorV2.js # 计算引擎（加权平均成本法）
 │   ├── fifoCalculator.js # FIFO计算引擎
 │   ├── fifoValidator.js # FIFO验证器
+│   ├── feeCalculator.js # 费率计算引擎（买入金额+卖出FIFO持有天数）
 │   ├── fundManager.js  # 基金管理器
 │   ├── tradeManager.js # 交易管理器
 │   ├── chartManager.js # ECharts图表管理
@@ -45,6 +46,51 @@ jijinshouyi/
 ├── lib/
 │   └── echarts.min.js # ECharts图表库
 └── README.md         # 说明文档
+```
+
+## 数据模型
+
+### Fund（基金对象）
+```javascript
+{
+  id: string,           // 唯一标识
+  name: string,         // 基金名称
+  code: string,         // 基金代码
+  netValue: number,     // 最新净值
+  netValueDate: string, // 净值日期
+  estimatedValue: number,  // 估算净值
+  estimatedGrowth: number, // 估算涨跌幅
+  updateTime: string,   // 更新时间
+  remark: string,       // 备注
+  feeTiers: {           // 费率配置
+    buyTiers: [{        // 买入费率区间（按金额，存储单位：元）
+      minAmount: number,  // 最低金额（元）
+      maxAmount: number|null, // 最高金额（元），null表示无上限
+      rate: number        // 费率百分比
+    }],
+    sellTiers: [{       // 卖出费率区间（按持有天数）
+      minDays: number,    // 最低天数
+      maxDays: number|null, // 最高天数，null表示无上限
+      rate: number        // 费率百分比
+    }]
+  }
+}
+```
+
+### Trade（交易记录）
+```javascript
+{
+  id: string,           // 唯一标识
+  fundId: string,       // 所属基金ID
+  date: string,         // 交易日期
+  type: string,         // 'buy' | 'sell' | 'dividend'
+  netValue: number,     // 净值
+  shares: number,       // 份额
+  amount: number,       // 金额
+  fee: number,          // 手续费
+  remark: string,       // 备注
+  dividendMode: string  // 'cash' | 'reinvest'（分红模式）
+}
 ```
 
 ## DOM结构
@@ -63,10 +109,19 @@ jijinshouyi/
       - `.fund-info` 基金信息卡片
       - `.holding-info` 持仓信息卡片
       - `.cycle-info-section` 持仓周期区域
+      - `.fee-tiers-section` **交易费率设置区域**
+        - `.fee-tiers-header` 可折叠标题
+        - `.fee-tiers-content` 内容区
+          - `.fee-tiers-grid` 两列布局
+            - `.fee-tier-group` 买入费率组（按金额区间，万元单位显示）
+            - `.fee-tier-group` 卖出费率组（按持有天数，左闭右开区间）
+          - `.fee-tiers-actions` 保存/取消按钮
       - `.trade-records` 交易记录表格
       - `.chart-section` 图表分析区
   - `.fab-container` 悬浮按钮（刷新数据）
 - `#modal-container` 弹窗容器
+  - 交易表单弹窗（添加/编辑交易）
+    - 手续费输入框下方含 `#fee-suggestion-panel` 费率参考面板
 - `#loading` 加载提示
 - `#toast` 提示消息
 
@@ -85,11 +140,30 @@ jijinshouyi/
 - 交易记录（买入/卖出/分红，支持备注）
 - 加权平均成本法
 - 多轮持仓分组展示
+- **费率配置与自动计算**
+  - 买入费率：按金额区间设置，支持多档费率，界面显示单位为万元
+  - 卖出费率：按持有天数设置，左闭右开区间 `[minDays, maxDays)`，FIFO逻辑匹配
+  - 自动计算建议：交易弹窗中实时计算建议手续费，支持一键导入
 - 深色/浅色主题切换
 - ECharts专业图表
 - 卡片/列表双视图
 - 大数字格式化（万/亿单位）
 - 数据导入导出
+
+## 费率计算逻辑
+
+### 买入费率计算
+- **匹配规则**：`minAmount <= 买入金额 < maxAmount`（左闭右开）
+- **存储单位**：元（minAmount/maxAmount以元为单位存储）
+- **显示单位**：万元（UI输入显示时÷10000，保存时×10000）
+- **计算公式**：`手续费 = 买入金额 × 费率%`
+
+### 卖出费率计算（FIFO逻辑）
+- **匹配规则**：`minDays <= 持有天数 < maxDays`（左闭右开）
+- **FIFO队列**：按买入时间顺序构建队列，卖出时从最早批次扣减
+- **分批计算**：一笔卖出可能跨多个买入批次，分别计算持有天数和费率
+- **持有天数**：`卖出日期 - 买入日期`（向下取整天数）
+- **计算公式**：`手续费 = 卖出份额 × 净值 × 费率%`
 
 ## 开发规范
 
@@ -107,4 +181,3 @@ jijinshouyi/
 - 禁止在对象方法内部使用`this`调用其他方法，应使用明确的对象名
 - 回答以中文为主，专属名词除外
 - 每次开始分析前，先查询是否有现成Skills可以调用
-
