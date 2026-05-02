@@ -332,6 +332,7 @@ const Modal = {
         html += '<label class="form-label">手续费 *</label>';
         html += '<input type="number" id="input-trade-fee" class="form-input" value="' + (trade.fee !== undefined ? trade.fee : '0') + '" placeholder="请输入手续费" step="0.01" min="0">';
         html += '</div>';
+        html += '<div id="fee-suggestion-panel" class="fee-suggestion-panel hidden"></div>';
         html += '<div class="form-group">';
         html += '<label class="form-label">金额</label>';
         html += '<input type="number" id="input-trade-amount" class="form-input" value="' + (trade.amount || '') + '" placeholder="自动计算，可手动修改" step="0.01" min="0">';
@@ -346,8 +347,6 @@ const Modal = {
         html += '<input type="text" id="input-trade-remark" class="form-input" value="' + (trade.remark || '') + '" placeholder="备注信息（可选）" maxlength="50">';
         html += '</div>';
         html += '</div>';
-
-        html += '<div id="fee-suggestion-panel" class="fee-suggestion-panel hidden"></div>';
 
         return html;
     },
@@ -529,7 +528,7 @@ const Modal = {
                 if (result.details.length > 0 && panel) {
                     let detailHtml = '';
                     result.details.forEach(d => {
-                        detailHtml += '<div>从' + d.fromDate + '买入' + d.shares.toFixed(2) + '份，持有' + d.days + '天，费率' + d.rate + '%，手续费¥' + d.fee.toFixed(2) + '</div>';
+                        detailHtml += '<div>从' + d.fromDate + '买入的' + d.originalBuyShares.toFixed(2) + '份中卖出' + d.shares.toFixed(2) + '份，持有' + d.days + '天，费率' + d.rate + '%，手续费¥' + d.fee.toFixed(2) + '</div>';
                     });
 
                     panel.classList.remove('hidden');

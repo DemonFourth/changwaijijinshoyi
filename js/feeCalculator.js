@@ -76,8 +76,8 @@ const FeeCalculator = {
             const min = parseInt(tier.minDays) || 0;
             const max = tier.maxDays !== null ? parseInt(tier.maxDays) : null;
             const rate = parseFloat(tier.rate) || 0;
-            const meetsMin = days > min - FeeCalculator.EPSILON;
-            const meetsMax = max === null || days < max + FeeCalculator.EPSILON;
+            const meetsMin = days >= min;
+            const meetsMax = max === null || days < max;
             if (meetsMin && meetsMax) {
                 return rate;
             }
@@ -119,6 +119,7 @@ const FeeCalculator = {
                 if (shares > FeeCalculator.EPSILON) {
                     holdingQueue.push({
                         shares: shares,
+                        originalShares: shares,
                         date: trade.date
                     });
                 }
@@ -139,7 +140,7 @@ const FeeCalculator = {
         }
 
         // 按FIFO计算卖出手续费
-        const tempQueue = holdingQueue.map(item => ({ shares: item.shares, date: item.date }));
+        const tempQueue = holdingQueue.map(item => ({ shares: item.shares, originalShares: item.originalShares, date: item.date }));
         let remainingSell = sellShares;
         const details = [];
         let totalFee = 0;
@@ -157,6 +158,7 @@ const FeeCalculator = {
 
             details.push({
                 fromDate: head.date,
+                originalBuyShares: head.originalShares,
                 toDate: sellTrade.date,
                 days: holdingDays,
                 shares: portionShares,

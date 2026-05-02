@@ -2281,34 +2281,111 @@ td.negative {
 
 .fee-tier-row {
     margin-bottom: 8px;
-    padding: 8px;
+    padding: 8px 12px;
+    padding-right: 28px;
     background: var(--color-bg-secondary);
     border-radius: 6px;
     border: 1px solid var(--color-border);
+    position: relative;
+    transition: background 0.2s;
 }
 
-.fee-tier-row .form-row {
-    align-items: flex-end;
-    gap: 8px;
+.fee-tier-row:hover {
+    background: var(--color-bg-hover);
 }
 
-.fee-tier-row .flex-2 {
-    flex: 2;
+.fee-tier-row-inner {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 12px;
+    align-items: center;
 }
 
-.fee-tier-row .flex-1 {
-    flex: 1;
+.tier-field {
+    display: flex;
+    align-items: center;
 }
 
-.fee-tier-row .flex-0 {
-    flex: 0 0 40px;
+.tier-amount-field .tier-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tier-sep {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.tier-unit {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.tier-rate-field {
+    position: relative;
+    width: 90px;
+}
+
+.tier-rate-field .form-input {
+    padding-right: 18px;
+    width: 100%;
+}
+
+.tier-rate-suffix {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    pointer-events: none;
 }
 
 .btn-remove-tier {
-    padding: 6px 10px;
-    font-size: 18px;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    font-size: 14px;
     line-height: 1;
-    min-height: auto;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+    background: var(--color-danger);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fee-tier-row:hover .btn-remove-tier {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .btn-remove-tier {
+        opacity: 1;
+    }
+
+    .fee-tier-row-inner {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .btn-remove-tier {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        position: relative;
+        top: auto;
+        right: auto;
+        align-self: start;
+    }
 }
 
 .validation-message {
@@ -2406,6 +2483,45 @@ td.negative {
     margin-bottom: var(--spacing-md);
 }
 
+.fee-tiers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .fee-tiers-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sell-days-group {
+    min-width: 0;
+}
+
+.sell-days-inline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+}
+
+.sell-days-inline .range-label {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.sell-days-inline .tier-days-input {
+    width: 60px;
+    padding: 4px 6px;
+    font-size: var(--font-size-sm);
+}
+
+.tier-days-field {
+    min-width: 0;
+}
+
 .fee-tier-action {
     flex: 0 0 40px;
 }
@@ -2418,8 +2534,9 @@ td.negative {
 
 /* 费率提示面板 */
 .fee-suggestion-panel {
-    margin-top: var(--spacing-md);
-    padding: var(--spacing-sm);
+    margin-top: 6px;
+    margin-bottom: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
     background: var(--color-bg-secondary);
     border-radius: var(--radius-sm);
     border-left: 3px solid var(--color-brand-primary);

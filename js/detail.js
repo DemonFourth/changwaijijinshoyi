@@ -156,6 +156,7 @@ const Detail = {
         this.updateFundInfo(fund);
         this.updateHoldingInfo(fund);
         this.updateTradeList(fund);
+        this.renderFeeTiers(fund);
     },
 
     /**
@@ -1054,43 +1055,38 @@ const Detail = {
 
         if (type === 'buy') {
             row.innerHTML =
-                '<div class="form-row">' +
-                    '<div class="form-group">' +
-                        '<label class="form-label">最低金额(元)</label>' +
-                        '<input type="number" class="form-input tier-min-amount" value="' + (tier.minAmount || 0) + '" step="1" min="0">' +
+                '<div class="fee-tier-row-inner">' +
+                    '<div class="tier-field tier-amount-field">' +
+                        '<div class="tier-input-group">' +
+                            '<input type="number" class="form-input tier-min-amount tier-amount-input" value="' + ((tier.minAmount || 0) / 10000) + '" step="0.1" min="0" placeholder="最低">' +
+                            '<span class="tier-sep">~</span>' +
+                            '<input type="number" class="form-input tier-max-amount tier-amount-input" value="' + (tier.maxAmount !== null && tier.maxAmount !== undefined ? (tier.maxAmount / 10000) : '') + '" step="0.1" min="0" placeholder="无上限">' +
+                            '<span class="tier-unit">万元</span>' +
+                        '</div>' +
                     '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="form-label">最高金额(元)</label>' +
-                        '<input type="number" class="form-input tier-max-amount" value="' + (tier.maxAmount !== null && tier.maxAmount !== undefined ? tier.maxAmount : '') + '" step="1" min="0" placeholder="无上限">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="form-label">费率(%)</label>' +
+                    '<div class="tier-field tier-rate-field">' +
                         '<input type="number" class="form-input tier-rate" value="' + (tier.rate || 0) + '" step="0.01" min="0">' +
+                        '<span class="tier-rate-suffix">%</span>' +
                     '</div>' +
-                    '<div class="form-group fee-tier-action">' +
-                        '<label class="form-label">&nbsp;</label>' +
-                        '<button type="button" class="btn btn-danger btn-sm btn-remove-tier" data-type="buy" data-index="' + index + '">×</button>' +
-                    '</div>' +
+                    '<button type="button" class="btn-remove-tier" data-type="buy" data-index="' + index + '">×</button>' +
                 '</div>';
         } else {
             row.innerHTML =
-                '<div class="form-row">' +
-                    '<div class="form-group">' +
-                        '<label class="form-label">最低天数</label>' +
-                        '<input type="number" class="form-input tier-min-days" value="' + (tier.minDays || 0) + '" step="1" min="0">' +
+                '<div class="fee-tier-row-inner">' +
+                    '<div class="tier-field tier-days-field">' +
+                        '<div class="sell-days-inline">' +
+                            '<span class="range-label">[</span>' +
+                            '<input type="number" class="form-input tier-min-days tier-days-input" value="' + (tier.minDays || 0) + '" step="1" min="0">' +
+                            '<span class="range-label">) ~ (</span>' +
+                            '<input type="number" class="form-input tier-max-days tier-days-input" value="' + (tier.maxDays !== null && tier.maxDays !== undefined ? tier.maxDays : '') + '" step="1" min="0" placeholder="∞">' +
+                            '<span class="range-label">)</span>' +
+                        '</div>' +
                     '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="form-label">最高天数</label>' +
-                        '<input type="number" class="form-input tier-max-days" value="' + (tier.maxDays !== null && tier.maxDays !== undefined ? tier.maxDays : '') + '" step="1" min="0" placeholder="无上限">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="form-label">费率(%)</label>' +
+                    '<div class="tier-field tier-rate-field">' +
                         '<input type="number" class="form-input tier-rate" value="' + (tier.rate || 0) + '" step="0.01" min="0">' +
+                        '<span class="tier-rate-suffix">%</span>' +
                     '</div>' +
-                    '<div class="form-group fee-tier-action">' +
-                        '<label class="form-label">&nbsp;</label>' +
-                        '<button type="button" class="btn btn-danger btn-sm btn-remove-tier" data-type="sell" data-index="' + index + '">×</button>' +
-                    '</div>' +
+                    '<button type="button" class="btn-remove-tier" data-type="sell" data-index="' + index + '">×</button>' +
                 '</div>';
         }
 
@@ -1114,15 +1110,22 @@ const Detail = {
         const buyList = document.getElementById('buy-tier-list');
         if (!buyList) return;
 
-        const fund = FundManager.getFund(Detail.currentFundId);
-        if (!fund) return;
+        const currentTiers = [];
+        buyList.querySelectorAll('.fee-tier-row').forEach(row => {
+            const minAmount = row.querySelector('.tier-min-amount');
+            const maxAmount = row.querySelector('.tier-max-amount');
+            const rate = row.querySelector('.tier-rate');
+            currentTiers.push({
+                minAmount: (parseFloat(minAmount?.value || 0)) * 10000,
+                maxAmount: maxAmount?.value ? parseFloat(maxAmount.value) * 10000 : null,
+                rate: parseFloat(rate?.value || 0)
+            });
+        });
 
-        const feeTiers = fund.feeTiers || { buyTiers: [], sellTiers: [] };
-        feeTiers.buyTiers = feeTiers.buyTiers || [];
-        feeTiers.buyTiers.push({ minAmount: 0, maxAmount: null, rate: 0 });
+        currentTiers.push({ minAmount: 0, maxAmount: null, rate: 0 });
 
         buyList.innerHTML = '';
-        feeTiers.buyTiers.forEach((tier, index) => {
+        currentTiers.forEach((tier, index) => {
             buyList.appendChild(Detail.createTierRow('buy', index, tier));
         });
     },
@@ -1131,20 +1134,25 @@ const Detail = {
      * 移除买入费率段
      */
     removeBuyTier(index) {
-        const fund = FundManager.getFund(Detail.currentFundId);
-        if (!fund) return;
-
-        const feeTiers = fund.feeTiers || { buyTiers: [], sellTiers: [] };
-        feeTiers.buyTiers = feeTiers.buyTiers || [];
-        if (feeTiers.buyTiers.length <= 1) {
-            Utils.showToast('至少保留一个费率段', 'error');
-            return;
-        }
-
-        feeTiers.buyTiers.splice(index, 1);
         const buyList = document.getElementById('buy-tier-list');
+        if (!buyList) return;
+
+        const currentTiers = [];
+        buyList.querySelectorAll('.fee-tier-row').forEach(row => {
+            const minAmount = row.querySelector('.tier-min-amount');
+            const maxAmount = row.querySelector('.tier-max-amount');
+            const rate = row.querySelector('.tier-rate');
+            currentTiers.push({
+                minAmount: (parseFloat(minAmount?.value || 0)) * 10000,
+                maxAmount: maxAmount?.value ? parseFloat(maxAmount.value) * 10000 : null,
+                rate: parseFloat(rate?.value || 0)
+            });
+        });
+
+        currentTiers.splice(index, 1);
+
         buyList.innerHTML = '';
-        feeTiers.buyTiers.forEach((tier, i) => {
+        currentTiers.forEach((tier, i) => {
             buyList.appendChild(Detail.createTierRow('buy', i, tier));
         });
     },
@@ -1156,15 +1164,22 @@ const Detail = {
         const sellList = document.getElementById('sell-tier-list');
         if (!sellList) return;
 
-        const fund = FundManager.getFund(Detail.currentFundId);
-        if (!fund) return;
+        const currentTiers = [];
+        sellList.querySelectorAll('.fee-tier-row').forEach(row => {
+            const minDays = row.querySelector('.tier-min-days');
+            const maxDays = row.querySelector('.tier-max-days');
+            const rate = row.querySelector('.tier-rate');
+            currentTiers.push({
+                minDays: parseInt(minDays?.value || 0),
+                maxDays: maxDays?.value ? parseInt(maxDays.value) : null,
+                rate: parseFloat(rate?.value || 0)
+            });
+        });
 
-        const feeTiers = fund.feeTiers || { buyTiers: [], sellTiers: [] };
-        feeTiers.sellTiers = feeTiers.sellTiers || [];
-        feeTiers.sellTiers.push({ minDays: 0, maxDays: null, rate: 0 });
+        currentTiers.push({ minDays: 0, maxDays: null, rate: 0 });
 
         sellList.innerHTML = '';
-        feeTiers.sellTiers.forEach((tier, index) => {
+        currentTiers.forEach((tier, index) => {
             sellList.appendChild(Detail.createTierRow('sell', index, tier));
         });
     },
@@ -1173,20 +1188,25 @@ const Detail = {
      * 移除卖出费率段
      */
     removeSellTier(index) {
-        const fund = FundManager.getFund(Detail.currentFundId);
-        if (!fund) return;
-
-        const feeTiers = fund.feeTiers || { buyTiers: [], sellTiers: [] };
-        feeTiers.sellTiers = feeTiers.sellTiers || [];
-        if (feeTiers.sellTiers.length <= 1) {
-            Utils.showToast('至少保留一个费率段', 'error');
-            return;
-        }
-
-        feeTiers.sellTiers.splice(index, 1);
         const sellList = document.getElementById('sell-tier-list');
+        if (!sellList) return;
+
+        const currentTiers = [];
+        sellList.querySelectorAll('.fee-tier-row').forEach(row => {
+            const minDays = row.querySelector('.tier-min-days');
+            const maxDays = row.querySelector('.tier-max-days');
+            const rate = row.querySelector('.tier-rate');
+            currentTiers.push({
+                minDays: parseInt(minDays?.value || 0),
+                maxDays: maxDays?.value ? parseInt(maxDays.value) : null,
+                rate: parseFloat(rate?.value || 0)
+            });
+        });
+
+        currentTiers.splice(index, 1);
+
         sellList.innerHTML = '';
-        feeTiers.sellTiers.forEach((tier, i) => {
+        currentTiers.forEach((tier, i) => {
             sellList.appendChild(Detail.createTierRow('sell', i, tier));
         });
     },
@@ -1201,8 +1221,8 @@ const Detail = {
         const buyTiers = [];
         buyList.querySelectorAll('.fee-tier-row').forEach(row => {
             buyTiers.push({
-                minAmount: parseFloat(row.querySelector('.tier-min-amount').value) || 0,
-                maxAmount: row.querySelector('.tier-max-amount').value ? parseFloat(row.querySelector('.tier-max-amount').value) : null,
+                minAmount: (parseFloat(row.querySelector('.tier-min-amount').value) || 0) * 10000,
+                maxAmount: row.querySelector('.tier-max-amount').value ? parseFloat(row.querySelector('.tier-max-amount').value) * 10000 : null,
                 rate: parseFloat(row.querySelector('.tier-rate').value) || 0
             });
         });
@@ -1244,9 +1264,13 @@ const Detail = {
             }
         }
 
-        FundManager.updateFund(Detail.currentFundId, { feeTiers: feeTiers });
-        Utils.showToast('费率配置已保存', 'success');
-        Detail.toggleFeeTiersSection();
+        const success = FundManager.updateFund(Detail.currentFundId, { feeTiers: feeTiers });
+        if (success) {
+            const updatedFund = FundManager.getFund(Detail.currentFundId);
+            Detail.renderFeeTiers(updatedFund);
+            Utils.showToast('费率配置已保存', 'success');
+            Detail.toggleFeeTiersSection();
+        }
     },
 
     /**
