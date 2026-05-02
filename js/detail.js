@@ -268,18 +268,29 @@ const Detail = {
         const cycleList = document.getElementById('cycle-list');
 
         // 显示基础持仓
-        if (shares) shares.textContent = Utils.formatNumber(currentHolding.shares || 0);
-        if (cost) cost.innerHTML = Utils.formatMoneySmart(currentHolding.cost || 0);
+        if (shares) {
+            shares.textContent = Utils.formatNumber(currentHolding.shares || 0);
+            shares.setAttribute('data-tooltip', '持有份额\n计算公式：未卖出买入交易的份额总和\n说明：当前实际持有的基金份额数量');
+        }
+        if (cost) {
+            cost.innerHTML = Utils.formatMoneySmart(currentHolding.cost || 0);
+            cost.setAttribute('data-tooltip', '持有成本\n计算公式：Σ(买入金额)，含手续费\n说明：当前持仓的总成本');
+        }
         if (costPerShare) {
             const costPrice = isCleared ? 0 : (currentHolding.shares > 0 ? currentHolding.cost / currentHolding.shares : 0);
             costPerShare.textContent = costPrice > 0 ? `¥${Utils.formatNumber(costPrice, 4)}` : '¥0.0000';
+            costPerShare.setAttribute('data-tooltip', '持有成本价\n计算公式：持有成本 ÷ 持有份额\n说明：每股的平均持仓成本');
         }
-        if (value) value.innerHTML = Utils.formatMoneySmart(currentHolding.value || 0);
+        if (value) {
+            value.innerHTML = Utils.formatMoneySmart(currentHolding.value || 0);
+            value.setAttribute('data-tooltip', '当前市值\n计算公式：持有份额 × 最新净值\n说明：按最新净值计算（非估算净值）');
+        }
 
         if (profit) {
             const displayProfit = isCleared ? 0 : (currentHolding.floatingProfit || 0);
             profit.innerHTML = Utils.formatMoneySmart(displayProfit);
             profit.className = `value ${Utils.getValueColor(displayProfit)}`;
+            profit.setAttribute('data-tooltip', '浮动盈亏\n计算公式：当前市值 - 持有成本\n说明：未实现收益，随最新净值波动');
         }
 
         if (rate) {
@@ -292,6 +303,7 @@ const Detail = {
                     : 0;
                 rate.textContent = Utils.formatPercent(holdingRate);
                 rate.className = `value ${Utils.getValueColor(holdingRate)}`;
+                rate.setAttribute('data-tooltip', '持仓收益率\n计算公式：浮动盈亏 ÷ 持有成本 × 100%');
             }
         }
 
@@ -299,18 +311,28 @@ const Detail = {
         if (realizedProfit) {
             realizedProfit.innerHTML = Utils.formatMoneySmart(summary.totalRealizedProfit || 0);
             realizedProfit.className = `value ${Utils.getValueColor(summary.totalRealizedProfit || 0)}`;
+            realizedProfit.setAttribute('data-tooltip', '已实现收益\n计算公式：Σ(卖出到手金额 - 卖出份额×持仓成本价)');
+        }
+
+        // 显示总投入（新增）
+        const totalInvest = document.getElementById('detail-total-invest');
+        if (totalInvest) {
+            totalInvest.innerHTML = Utils.formatMoneySmart(summary.totalInvest || 0);
+            totalInvest.setAttribute('data-tooltip', '总投入\n计算公式：Σ(所有买入金额)，含手续费\n说明：所有持仓周期的投入总和');
         }
 
         // 显示总收益
         if (totalProfit) {
             totalProfit.innerHTML = Utils.formatMoneySmart(summary.totalProfit || 0);
             totalProfit.className = `value ${Utils.getValueColor(summary.totalProfit || 0)}`;
+            totalProfit.setAttribute('data-tooltip', '总收益\n计算公式：已实现收益 + 浮动盈亏\n说明：本列有总投入、总收益、总收益率');
         }
 
         // 显示总收益率
         if (totalRate) {
             totalRate.textContent = Utils.formatPercent(summary.profitRate || 0);
             totalRate.className = `value ${Utils.getValueColor(summary.profitRate || 0)}`;
+            totalRate.setAttribute('data-tooltip', '总收益率\n计算公式：总收益 ÷ 总投入 × 100%\n说明：总投入见本列上方');
         }
 
         // 显示持仓周期统计
