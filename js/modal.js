@@ -122,7 +122,7 @@ const Modal = {
                 '<label class="form-label">基金名称</label>' +
                 '<div class="form-name-preview">' +
                 '<input type="text" id="input-fund-name" class="form-input form-name-preview-input" placeholder="输入代码后自动获取">' +
-                '<button class="btn btn-secondary form-name-preview-refresh" id="btn-refresh-name" title="清除缓存并重新获取">🔄</button>' +
+                '<button class="btn btn-secondary form-name-preview-refresh" id="btn-refresh-name" data-tooltip="清除缓存并重新获取">🔄</button>' +
                 '</div>' +
                 '<div class="form-name-source" id="name-source-info">' +
                 '<span class="form-name-source-badge" id="name-source-badge">等待获取</span>' +

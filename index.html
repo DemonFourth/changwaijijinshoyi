@@ -19,7 +19,7 @@
                 <button id="btn-tools" class="btn btn-secondary" type="button">🧰 工具箱</button>
                 <button id="btn-export" class="btn btn-secondary" type="button">导出数据</button>
                 <button id="btn-import" class="btn btn-secondary" type="button">导入数据</button>
-                <button id="btn-theme" class="btn btn-icon" type="button" title="切换主题">🌙</button>
+                <button id="btn-theme" class="btn btn-icon" type="button" data-tooltip="切换主题">🌙</button>
                 <button id="btn-settings" class="btn btn-icon" type="button">⚙️</button>
             </div>
         </header>
@@ -57,8 +57,8 @@
                         <h2>我的基金</h2>
                         <div class="list-controls">
                             <div class="view-toggle">
-                                <button class="btn-view active" data-view="card" title="卡片视图" type="button">▦</button>
-                                <button class="btn-view" data-view="list" title="列表视图" type="button">☰</button>
+                                <button class="btn-view active" data-view="card" data-tooltip="卡片视图" type="button">▦</button>
+                                <button class="btn-view" data-view="list" data-tooltip="列表视图" type="button">☰</button>
                             </div>
                             <select class="sort-select" id="sort-field">
                                 <option value="profitRate">按收益率</option>
@@ -66,7 +66,7 @@
                                 <option value="marketValue">按市值</option>
                                 <option value="name">按名称</option>
                             </select>
-                            <button class="btn-sort-order" id="sort-order" title="降序" type="button">↓</button>
+                            <button class="btn-sort-order" id="sort-order" data-tooltip="降序" type="button">↓</button>
                             <button id="btn-add-fund" class="btn btn-primary" type="button">+ 添加基金</button>
                         </div>
                     </div>
@@ -244,9 +244,9 @@
                             <option value="sell">卖出</option>
                             <option value="dividend">分红</option>
                         </select>
-                        <input type="date" id="filter-start-date" class="filter-date" title="开始日期">
+                        <input type="date" id="filter-start-date" class="filter-date" data-tooltip="开始日期">
                         <span class="filter-sep">~</span>
-                        <input type="date" id="filter-end-date" class="filter-date" title="结束日期">
+                        <input type="date" id="filter-end-date" class="filter-date" data-tooltip="结束日期">
                         <button class="btn btn-secondary btn-sm" id="btn-clear-filter" type="button">清除筛选</button>
                         <span class="filter-result-count" id="filter-result-count"></span>
                     </div>
@@ -450,7 +450,7 @@
 
         <!-- 悬浮按钮 -->
         <div class="fab-container">
-            <button id="fab-refresh" class="fab" title="刷新数据" type="button">🔄</button>
+            <button id="fab-refresh" class="fab" data-tooltip="刷新数据" type="button">🔄</button>
         </div>
     </div>
 

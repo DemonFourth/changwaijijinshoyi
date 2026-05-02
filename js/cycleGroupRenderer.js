@@ -54,7 +54,7 @@ const CycleGroupRenderer = {
         }
 
         return '<tr class="cycle-group-trade-row" data-trade-id="' + trade.id + '" data-cycle-id="' + cycleId + '" ' +
-            'title="' + remarkTitle + '" style="border-left: 3px solid ' + cycleColor + '; background: ' + bgColor + '; ' + displayStyle + '">' +
+            'data-tooltip="' + remarkTitle + '" style="border-left: 3px solid ' + cycleColor + '; background: ' + bgColor + '; ' + displayStyle + '">' +
             '<td>' + trade.date + '</td>' +
             '<td class="' + typeClass[trade.type] + '">' + typeText[trade.type] + '</td>' +
             '<td>' + priceDisplay + '</td>' +

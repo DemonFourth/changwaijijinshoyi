@@ -214,6 +214,22 @@ const ChartManager = {
         if (!option.textStyle) option.textStyle = {};
         option.textStyle.color = themeConfig.textColor;
 
+        // 统一设置tooltip主题
+        if (!option.tooltip) option.tooltip = {};
+        if (themeConfig.isDark) {
+            // 深色主题
+            option.tooltip.backgroundColor = 'rgba(30, 40, 60, 0.95)';
+            option.tooltip.borderColor = '#4a5a7c';
+            option.tooltip.textStyle = { color: '#e0e0e0', fontSize: 12 };
+            option.tooltip.extraCssText = 'border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);';
+        } else {
+            // 浅色主题
+            option.tooltip.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+            option.tooltip.borderColor = '#dddddd';
+            option.tooltip.textStyle = { color: '#333333', fontSize: 12 };
+            option.tooltip.extraCssText = 'border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);';
+        }
+
         return option;
     },
 
