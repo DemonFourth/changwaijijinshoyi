@@ -1,5 +1,28 @@
 # 场外基金收益计算器
 
+## 参考项目
+
+本项目参考 [DemonFourth/gupiaoshouyi-clac](https://github.com/DemonFourth/gupiaoshouyi-clac.git)（股票收益计算器）进行开发。
+
+**参考项目核心特性**：
+- ✅ 交易记录管理：记录买入、卖出、分红、红利税等操作
+- ✅ FIFO精确计算：使用先进先出法计算持仓成本和收益
+- ✅ 收益统计分析：统一口径统计已实现收益和浮动盈亏
+- ✅ 持仓周期追踪：自动识别建仓、加仓、减仓、清仓操作
+- ✅ 数据可视化：通过图表展示收益趋势和成本变化
+- ✅ 大数字转换：自动将大数字转换为万/亿单位
+- ✅ 云端持久化：Cloudflare D1 数据库存储，跨设备同步
+- ✅ 主题切换：深色/浅色主题切换，localStorage 持久化偏好
+- ✅ 响应式布局：自适应各种屏幕宽度
+- ✅ 代码质量保障：ESLint + stylelint 代码检查
+
+**主要区别**：
+- 参考项目：针对**股票**交易（A股），使用股票交易规则
+- 本项目：针对**支付宝场外基金**，使用场外基金交易规则（T+1确认、净值交易等）
+- 计算引擎：两者均使用加权平均成本法 + FIFO，但本项目增加了场外基金特有的费率配置（按金额区间/持有天数）
+- 架构：模块结构、事件系统、自定义模块注册等核心架构参考了原项目
+- 部署：参考项目使用 Cloudflare Pages + D1，本项目为纯前端本地应用（LocalStorage）
+
 ## 项目概述
 
 **项目名称**：场外基金收益计算器 (fund-return-calculator)
@@ -105,25 +128,23 @@ jijinshouyi/
       - `.fund-list-container` 基金列表容器（卡片/列表双视图）
       - `.chart-container` 图表区域（收益趋势）
     - `#page-detail` 详情页
+      - `.fund-title-area` 基金标题区（含**交易费率设置**按钮）
       - `.detail-actions` 操作按钮区（返回/编辑/删除）
       - `.fund-info` 基金信息卡片
       - `.holding-info` 持仓信息卡片
       - `.cycle-info-section` 持仓周期区域
-      - `.fee-tiers-section` **交易费率设置区域**
-        - `.fee-tiers-header` 可折叠标题
-        - `.fee-tiers-content` 内容区
-          - `.fee-tiers-grid` 两列布局
-            - `.fee-tier-group` 买入费率组（按金额区间，万元单位显示）
-            - `.fee-tier-group` 卖出费率组（按持有天数，左闭右开区间）
-          - `.fee-tiers-actions` 保存/取消按钮
       - `.trade-records` 交易记录表格
       - `.chart-section` 图表分析区
   - `.fab-container` 悬浮按钮（刷新数据）
-- `#modal-container` 弹窗容器
-  - 交易表单弹窗（添加/编辑交易）
-    - 手续费输入框下方含 `#fee-suggestion-panel` 费率参考面板
-- `#loading` 加载提示
-- `#toast` 提示消息
+  - `#modal-container` 弹窗容器
+    - **交易费率设置弹窗**（feeSettings）
+      - 触发按钮：`.fund-title-area` 中的 `#btn-fee-settings`
+      - 买入费率（按金额区间）+ 卖出费率（按持有天数）
+      - 保存/取消按钮在弹窗底部
+    - 交易表单弹窗（添加/编辑交易）
+      - 手续费输入框下方含 `#fee-suggestion-panel` 费率参考面板
+  - `#loading` 加载提示
+  - `#toast` 提示消息
 
 ## 技术栈
 
@@ -177,6 +198,10 @@ jijinshouyi/
 | **卖出处理** | 卖出份额 × 当前成本价 | 按买入批次分别计算持有天数 |
 | **文件** | `calculatorV2.js` | `fifoCalculator.js`、`feeCalculator.js` |
 
+> **参考项目对比**：参考项目（股票收益计算器）使用相同的两种计算方法，但本项目针对场外基金调整了：
+> - 加权平均成本法：场外基金按净值计算，非股票价格
+> - FIFO：卖出费率按持有天数匹配，参考项目按持股数量匹配
+
 ## 核心特性
 
 - 基金管理（添加/编辑/删除）
@@ -224,3 +249,13 @@ jijinshouyi/
 - 禁止在对象方法内部使用`this`调用其他方法，应使用明确的对象名
 - 回答以中文为主，专属名词除外
 - 每次开始分析前，先查询是否有现成Skills可以调用
+
+### 与参考项目的关系
+- 本项目参考 [DemonFourth/gupiaoshouyi-clac](https://github.com/DemonFourth/gupiaoshouyi-clac.git)（股票收益计算器）进行开发
+- **相同点**：模块结构（namespace/moduleRegistry/eventBus）、计算引擎（加权平均成本法/FIFO）、自定义事件系统、路由管理、弹窗管理
+- **不同点**：
+  - 交易对象：股票（A股）vs 场外基金（支付宝）
+  - 交易规则：T+0实时交易 vs T+1净值确认
+  - 费率配置：按持股数量 vs 按金额区间/持有天数
+  - 数据获取：股票API vs 基金API
+- **开发建议**：如需新增功能或修复bug，可参考原项目的实现思路，但需适配场外基金特性
