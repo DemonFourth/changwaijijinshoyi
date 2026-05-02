@@ -20,7 +20,7 @@ const Modal = {
         container.className = 'modal-container';
         if (type) {
             // 将驼峰命名转为连字符命名（如 feeSettings -> fee-settings）
-            const className = 'modal-' + type.replace(/([A-Z])/g, '-$1').toLowerCase();
+            const className = 'modal-' + type.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/--/g, '-');
             container.classList.add(className);
         }
 
