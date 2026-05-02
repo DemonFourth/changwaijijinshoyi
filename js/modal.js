@@ -48,7 +48,10 @@ const Modal = {
             title.textContent = '导出数据';
             result = Modal.renderExportForm();
             break;
-
+        case 'feeSettings':
+            title.textContent = '交易费率设置';
+            result = Modal.renderFeeSettingsForm(data);
+            break;
         default:
             console.error('Unknown modal type:', type);
             return;
@@ -84,6 +87,9 @@ const Modal = {
             break;
         case 'export':
             Modal.bindExportEvents();
+            break;
+        case 'feeSettings':
+            Modal.bindFeeSettingsEvents(data);
             break;
         }
 
@@ -716,6 +722,256 @@ const Modal = {
             Utils.showToast('数据导出成功', 'success');
             Modal.hide();
         });
+    },
+
+    /**
+     * 渲染费率设置弹窗
+     */
+    renderFeeSettingsForm(data) {
+        const fundId = data.fundId;
+        const fund = DataService.getFund(fundId);
+        const feeTiers = fund.feeTiers || { buyTiers: [], sellTiers: [] };
+
+        let buyListHtml = '';
+        (feeTiers.buyTiers || []).forEach((tier, index) => {
+            buyListHtml += Modal.renderTierRow('buy', index, tier);
+        });
+
+        let sellListHtml = '';
+        (feeTiers.sellTiers || []).forEach((tier, index) => {
+            sellListHtml += Modal.renderTierRow('sell', index, tier);
+        });
+
+        const content = `
+            <div class="fee-settings-modal">
+                <div class="fee-tiers-grid">
+                    <div class="fee-tier-group">
+                        <div class="fee-tier-group-header">
+                            <h4>买入费率（按金额区间）</h4>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-add-buy-tier-modal">+ 添加费率段</button>
+                        </div>
+                        <div class="fee-tier-list" id="buy-tier-list-modal">${buyListHtml}</div>
+                    </div>
+                    <div class="fee-tier-group">
+                        <div class="fee-tier-group-header">
+                            <h4>卖出费率（按持有天数）</h4>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-add-sell-tier-modal">+ 添加费率段</button>
+                        </div>
+                        <div class="fee-tier-list" id="sell-tier-list-modal">${sellListHtml}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const actions = `
+            <button type="button" class="btn btn-primary" id="btn-save-fee-modal">保存</button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-fee-modal">取消</button>
+        `;
+
+        return { content, actions };
+    },
+
+    /**
+     * 渲染费率段行
+     */
+    renderTierRow(type, index, tier) {
+        if (type === 'buy') {
+            return `
+                <div class="fee-tier-row" data-index="${index}">
+                    <div class="fee-tier-row-inner">
+                        <div class="tier-field">
+                            <div class="tier-input-group">
+                                <input type="number" class="form-input tier-min-amount tier-amount-input" value="${((tier.minAmount || 0) / 10000)}" step="0.1" min="0" placeholder="最低">
+                                <span class="tier-sep">~</span>
+                                <input type="number" class="form-input tier-max-amount tier-amount-input" value="${tier.maxAmount !== null && tier.maxAmount !== undefined ? (tier.maxAmount / 10000) : ''}" step="0.1" min="0" placeholder="无上限">
+                                <span class="tier-unit">万元</span>
+                            </div>
+                        </div>
+                        <div class="tier-field">
+                            <input type="number" class="form-input tier-rate" value="${tier.rate || 0}" step="0.01" min="0">
+                            <span class="tier-rate-suffix">%</span>
+                        </div>
+                        <button type="button" class="btn-remove-tier" data-type="buy" data-index="${index}">×</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="fee-tier-row" data-index="${index}">
+                    <div class="fee-tier-row-inner">
+                        <div class="tier-field">
+                            <div class="sell-days-inline">
+                                <span class="range-label">[</span>
+                                <input type="number" class="form-input tier-min-days tier-days-input" value="${tier.minDays || 0}" step="1" min="0">
+                                <span class="range-label">) ~ (</span>
+                                <input type="number" class="form-input tier-max-days tier-days-input" value="${tier.maxDays !== null && tier.maxDays !== undefined ? tier.maxDays : ''}" step="1" min="0" placeholder="∞">
+                                <span class="range-label">)</span>
+                            </div>
+                        </div>
+                        <div class="tier-field">
+                            <input type="number" class="form-input tier-rate" value="${tier.rate || 0}" step="0.01" min="0">
+                            <span class="tier-rate-suffix">%</span>
+                        </div>
+                        <button type="button" class="btn-remove-tier" data-type="sell" data-index="${index}">×</button>
+                    </div>
+                </div>
+            `;
+        }
+    },
+
+    /**
+     * 绑定费率设置弹窗事件
+     */
+    bindFeeSettingsEvents(data) {
+        const fundId = data.fundId;
+
+        // 添加买入费率段
+        const btnAddBuy = document.getElementById('btn-add-buy-tier-modal');
+        if (btnAddBuy) {
+            btnAddBuy.addEventListener('click', () => {
+                Modal.addTierInModal('buy');
+            });
+        }
+
+        // 添加卖出费率段
+        const btnAddSell = document.getElementById('btn-add-sell-tier-modal');
+        if (btnAddSell) {
+            btnAddSell.addEventListener('click', () => {
+                Modal.addTierInModal('sell');
+            });
+        }
+
+        // 保存
+        const btnSave = document.getElementById('btn-save-fee-modal');
+        if (btnSave) {
+            btnSave.addEventListener('click', () => {
+                Modal.saveFeeSettings(fundId);
+            });
+        }
+
+        // 取消
+        const btnCancel = document.getElementById('btn-cancel-fee-modal');
+        if (btnCancel) {
+            btnCancel.addEventListener('click', () => {
+                Modal.hide();
+            });
+        }
+
+        // 删除费率段（事件委托）
+        const buyList = document.getElementById('buy-tier-list-modal');
+        if (buyList) {
+            buyList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('btn-remove-tier')) {
+                    e.target.closest('.fee-tier-row').remove();
+                    Modal.reindexTiers('buy');
+                }
+            });
+        }
+
+        const sellList = document.getElementById('sell-tier-list-modal');
+        if (sellList) {
+            sellList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('btn-remove-tier')) {
+                    e.target.closest('.fee-tier-row').remove();
+                    Modal.reindexTiers('sell');
+                }
+            });
+        }
+    },
+
+    /**
+     * 在弹窗中添加费率段
+     */
+    addTierInModal(type) {
+        const listId = type === 'buy' ? 'buy-tier-list-modal' : 'sell-tier-list-modal';
+        const list = document.getElementById(listId);
+        if (!list) return;
+
+        const index = list.children.length;
+        const tier = type === 'buy'
+            ? { minAmount: 0, maxAmount: null, rate: 0 }
+            : { minDays: 0, maxDays: null, rate: 0 };
+
+        list.insertAdjacentHTML('beforeend', Modal.renderTierRow(type, index, tier));
+    },
+
+    /**
+     * 重新索引费率段
+     */
+    reindexTiers(type) {
+        const listId = type === 'buy' ? 'buy-tier-list-modal' : 'sell-tier-list-modal';
+        const list = document.getElementById(listId);
+        if (!list) return;
+
+        list.querySelectorAll('.fee-tier-row').forEach((row, index) => {
+            row.dataset.index = index;
+            const btn = row.querySelector('.btn-remove-tier');
+            if (btn) btn.dataset.index = index;
+        });
+    },
+
+    /**
+     * 从弹窗收集费率数据
+     */
+    collectFeeTiersFromModal() {
+        const buyList = document.getElementById('buy-tier-list-modal');
+        const sellList = document.getElementById('sell-tier-list-modal');
+
+        const buyTiers = [];
+        if (buyList) {
+            buyList.querySelectorAll('.fee-tier-row').forEach(row => {
+                buyTiers.push({
+                    minAmount: (parseFloat(row.querySelector('.tier-min-amount').value) || 0) * 10000,
+                    maxAmount: row.querySelector('.tier-max-amount').value ? parseFloat(row.querySelector('.tier-max-amount').value) * 10000 : null,
+                    rate: parseFloat(row.querySelector('.tier-rate').value) || 0
+                });
+            });
+        }
+
+        const sellTiers = [];
+        if (sellList) {
+            sellList.querySelectorAll('.fee-tier-row').forEach(row => {
+                sellTiers.push({
+                    minDays: parseInt(row.querySelector('.tier-min-days').value) || 0,
+                    maxDays: row.querySelector('.tier-max-days').value ? parseInt(row.querySelector('.tier-max-days').value) : null,
+                    rate: parseFloat(row.querySelector('.tier-rate').value) || 0
+                });
+            });
+        }
+
+        return { buyTiers, sellTiers };
+    },
+
+    /**
+     * 保存费率设置
+     */
+    saveFeeSettings(fundId) {
+        const feeTiers = Modal.collectFeeTiersFromModal();
+        const fund = FundManager.getFund(fundId);
+        if (!fund) return;
+
+        // 验证
+        for (let i = 0; i < feeTiers.buyTiers.length; i++) {
+            const tier = feeTiers.buyTiers[i];
+            if (tier.maxAmount !== null && tier.maxAmount <= tier.minAmount) {
+                Utils.showToast('买入费率第' + (i + 1) + '段：最高金额必须大于最低金额', 'error');
+                return;
+            }
+        }
+
+        for (let i = 0; i < feeTiers.sellTiers.length; i++) {
+            const tier = feeTiers.sellTiers[i];
+            if (tier.maxDays !== null && tier.maxDays <= tier.minDays) {
+                Utils.showToast('卖出费率第' + (i + 1) + '段：最高天数必须大于最低天数', 'error');
+                return;
+            }
+        }
+
+        const success = FundManager.updateFund(fundId, { feeTiers });
+        if (success) {
+            Utils.showToast('费率配置已保存', 'success');
+            Modal.hide();
+        }
     }
 };
 

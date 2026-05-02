@@ -2589,3 +2589,91 @@ td.negative {
     font-size: 12px;
     min-height: auto;
 }
+
+/* 费率设置弹窗样式 */
+.fee-settings-modal .fee-tiers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .fee-settings-modal .fee-tiers-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fee-settings-modal .fee-tier-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.fee-settings-modal .fee-tier-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.fee-settings-modal .fee-tier-group-header h4 {
+    margin: 0;
+}
+
+.fee-settings-modal .fee-tier-list {
+    margin-bottom: var(--spacing-sm);
+}
+
+.fee-settings-modal .fee-tier-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: 8px;
+}
+
+.fee-settings-modal .fee-tier-row-inner {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+}
+
+.fee-settings-modal .tier-field {
+    flex: 1;
+}
+
+.fee-settings-modal .tier-input-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.fee-settings-modal .tier-sep {
+    color: var(--color-text-secondary);
+}
+
+.fee-settings-modal .tier-unit {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.fee-settings-modal .sell-days-inline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+}
+
+.fee-settings-modal .range-label {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.fee-settings-modal .btn-remove-tier {
+    background: none;
+    border: none;
+    color: var(--color-danger);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+}
+}
