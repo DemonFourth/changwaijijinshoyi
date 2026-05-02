@@ -2727,9 +2727,9 @@ td.negative {
 .tooltip-fixed[aria-hidden="false"] {
     opacity: 1;
     visibility: visible;
-}
+ }
 
-/* 数据提示元素样式 */
+/* 数据提示元素样式（大数字转换等） */
 [data-tooltip] {
     cursor: help;
     border-bottom: 1px dotted var(--color-text-tertiary);
@@ -2737,5 +2737,67 @@ td.negative {
 
 [data-tooltip]:hover {
     border-bottom-color: var(--color-brand);
+}
+
+/* Tooltip 问号图标样式 */
+.tooltip-container {
+    position: relative;
+    display: inline-flex;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.tooltip-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--color-brand);
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: help;
+    line-height: 1;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+    min-width: 180px;
+    max-width: 300px;
+    z-index: 2000;
+    white-space: normal;
+    transition: opacity 0.3s;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border-light);
+    pointer-events: none;
+}
+
+.tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--color-bg-secondary) transparent transparent transparent;
+}
+
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
 }
 }

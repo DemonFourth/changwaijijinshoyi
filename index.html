@@ -155,19 +155,51 @@
                             <div class="holding-card-title">持仓概况</div>
                             <div class="holding-card-body">
                                 <div class="holding-stat">
-                                    <span class="stat-label">持有份额</span>
+                                    <span class="stat-label">持有份额
+                                        <span class="tooltip-container">
+                                            <span class="tooltip-icon">?</span>
+                                            <span class="tooltip-text">
+                                                <strong>计算公式：</strong>未卖出买入交易的份额总和<br>
+                                                <strong>说明：</strong>当前实际持有的基金份额数量
+                                            </span>
+                                        </span>
+                                    </span>
                                     <span class="stat-value" id="holding-shares">0</span>
                                 </div>
                                 <div class="holding-stat">
-                                    <span class="stat-label">持有成本价</span>
+                                    <span class="stat-label">持有成本价
+                                        <span class="tooltip-container">
+                                            <span class="tooltip-icon">?</span>
+                                            <span class="tooltip-text">
+                                                <strong>计算公式：</strong>持有成本 ÷ 持有份额<br>
+                                                <strong>说明：</strong>每股的平均持仓成本
+                                            </span>
+                                        </span>
+                                    </span>
                                     <span class="stat-value" id="cost-per-share">¥0.0000</span>
                                 </div>
                                 <div class="holding-stat">
-                                    <span class="stat-label">持有成本</span>
+                                    <span class="stat-label">持有成本
+                                        <span class="tooltip-container">
+                                            <span class="tooltip-icon">?</span>
+                                            <span class="tooltip-text">
+                                                <strong>计算公式：</strong>Σ(买入金额)，含手续费<br>
+                                                <strong>说明：</strong>当前持仓的总成本
+                                            </span>
+                                        </span>
+                                    </span>
                                     <span class="stat-value" id="holding-cost">¥0.00</span>
                                 </div>
                                 <div class="holding-stat">
-                                    <span class="stat-label">当前市值</span>
+                                    <span class="stat-label">当前市值
+                                        <span class="tooltip-container">
+                                            <span class="tooltip-icon">?</span>
+                                            <span class="tooltip-text">
+                                                <strong>计算公式：</strong>持有份额 × 最新净值<br>
+                                                <strong>说明：</strong>按最新净值计算（非估算净值）
+                                            </span>
+                                        </span>
+                                    </span>
                                     <span class="stat-value" id="holding-value">¥0.00</span>
                                 </div>
                             </div>
@@ -178,11 +210,27 @@
                             <div class="holding-card-title">持有收益</div>
                             <div class="holding-card-body">
                                 <div class="holding-stat highlight">
-                                    <span class="stat-label">浮动盈亏</span>
+                                    <span class="stat-label">浮动盈亏
+                                        <span class="tooltip-container">
+                                            <span class="tooltip-icon">?</span>
+                                            <span class="tooltip-text">
+                                                <strong>计算公式：</strong>当前市值 - 持有成本<br>
+                                                <strong>说明：</strong>未实现收益，随最新净值波动
+                                            </span>
+                                        </span>
+                                    </span>
                                     <span class="stat-value" id="holding-profit">¥0.00</span>
                                 </div>
                                 <div class="holding-stat">
-                                    <span class="stat-label">持仓收益率</span>
+                                    <span class="stat-label">持仓收益率
+                                        <span class="tooltip-container">
+                                            <span class="tooltip-icon">?</span>
+                                            <span class="tooltip-text">
+                                                <strong>计算公式：</strong>浮动盈亏 ÷ 持有成本 × 100%<br>
+                                                <strong>说明：</strong>浮动盈亏占持有成本的比例
+                                            </span>
+                                        </span>
+                                    </span>
                                     <span class="stat-value" id="holding-rate">0.00%</span>
                                 </div>
                             </div>
