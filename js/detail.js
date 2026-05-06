@@ -489,8 +489,21 @@ const Detail = {
 
         CycleTradeDisplay.renderFlatMode();
 
+        // 为扁平视图的交易设置 cycleId
+        const tradeCycleMap = {};
+        for (const cycle of cycles) {
+            for (const trade of cycle.trades) {
+                tradeCycleMap[trade.id] = cycle.id;
+            }
+        }
+
         // 按日期倒序排列
         const sortedTrades = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // 为每笔交易设置 cycleId
+        for (const trade of sortedTrades) {
+            trade.cycleId = tradeCycleMap[trade.id] || 0;
+        }
 
         // 创建或更新分页实例
         Detail._tradePaginator = Paginator.create({
