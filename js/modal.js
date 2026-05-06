@@ -606,39 +606,6 @@ const Modal = {
         const amount = document.getElementById('input-trade-amount');
         const hintAmount = document.getElementById('hint-amount');
 
-        // 首次添加交易时，如果基金未配置费率，用设置默认费率填充
-        if (!isEdit) {
-            const fundId = data.fundId || (data.trade && data.trade.fundId);
-            if (fundId) {
-                const fund = DataService.getFund(fundId);
-                if (fund) {
-                    const settings = Storage.loadSettings();
-                    const hasBuyTiers = fund.feeTiers && fund.feeTiers.buyTiers && fund.feeTiers.buyTiers.length > 0;
-                    const hasSellTiers = fund.feeTiers && fund.feeTiers.sellTiers && fund.feeTiers.sellTiers.length > 0;
-
-                    if (!hasBuyTiers && settings.defaultBuyFeeRate > 0) {
-                        if (!fund.feeTiers) fund.feeTiers = { buyTiers: [], sellTiers: [] };
-                        fund.feeTiers.buyTiers = [{
-                            minAmount: 0,
-                            maxAmount: 1000000,
-                            rate: settings.defaultBuyFeeRate
-                        }];
-                        DataService.updateFund(fund);
-                    }
-
-                    if (!hasSellTiers && settings.defaultSellFeeRate > 0) {
-                        if (!fund.feeTiers) fund.feeTiers = { buyTiers: [], sellTiers: [] };
-                        fund.feeTiers.sellTiers = [{
-                            minDays: 0,
-                            maxDays: 7,
-                            rate: settings.defaultSellFeeRate
-                        }];
-                        DataService.updateFund(fund);
-                    }
-                }
-            }
-        }
-
         const updateFieldsVisibility = function() {
             const type = tradeType.value;
             const divMode = dividendMode ? dividendMode.value : 'cash';
@@ -1133,6 +1100,42 @@ const Modal = {
      */
     bindFeeSettingsEvents(data) {
         const fundId = data.fundId;
+        const fund = DataService.getFund(fundId);
+
+        // 首次打开时，如果基金未配置费率，用"设置→交易默认"填充
+        const settings = Storage.loadSettings();
+        const hasBuyTiers = fund.feeTiers && fund.feeTiers.buyTiers && fund.feeTiers.buyTiers.length > 0;
+        const hasSellTiers = fund.feeTiers && fund.feeTiers.sellTiers && fund.feeTiers.sellTiers.length > 0;
+
+        let needSave = false;
+
+        if (!hasBuyTiers && settings.defaultBuyFeeRate > 0) {
+            if (!fund.feeTiers) fund.feeTiers = { buyTiers: [], sellTiers: [] };
+            fund.feeTiers.buyTiers = [{
+                minAmount: 0,
+                maxAmount: 1000000,
+                rate: settings.defaultBuyFeeRate
+            }];
+            needSave = true;
+        }
+
+        if (!hasSellTiers && settings.defaultSellFeeRate > 0) {
+            if (!fund.feeTiers) fund.feeTiers = { buyTiers: [], sellTiers: [] };
+            fund.feeTiers.sellTiers = [{
+                minDays: 0,
+                maxDays: 7,
+                rate: settings.defaultSellFeeRate
+            }];
+            needSave = true;
+        }
+
+        if (needSave) {
+            DataService.updateFund(fund);
+            // 重新渲染弹窗内容以显示填充的值
+            Modal.renderModal('feeSettings', { fundId: fundId });
+            Modal.bindFeeSettingsEvents({ fundId: fundId });
+            return;
+        }
 
         // 添加买入费率段
         const btnAddBuy = document.getElementById('btn-add-buy-tier-modal');
