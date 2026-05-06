@@ -556,8 +556,8 @@ const Modal = {
         html += '</div>';
         html += '<div class="form-group">';
         html += '<label class="form-label">手续费 *</label>';
-        const defaultFee = isEdit ? trade.fee : (trade.type === 'buy' ? (settings.defaultBuyFee || 0) : (settings.defaultSellFee || 0));
-        html += '<input type="number" id="input-trade-fee" class="form-input" value="' + (trade.fee !== undefined ? trade.fee : defaultFee) + '" placeholder="请输入手续费" step="0.01" min="0">';
+        const defaultFee = isEdit ? trade.fee : 0;
+        html += '<input type="number" id="input-trade-fee" class="form-input" value="' + (trade.fee !== undefined && trade.fee !== '' ? trade.fee : defaultFee) + '" placeholder="请输入手续费" step="0.01" min="0">';
         html += '</div>';
         html += '<div id="fee-suggestion-panel" class="fee-suggestion-panel hidden"></div>';
         html += '<div class="form-group">';
@@ -705,6 +705,7 @@ const Modal = {
         amount.addEventListener('input', checkMismatch);
 
         // 费率自动计算
+        let isFeeAutoCalculated = false;
         const autoCalcFee = () => {
             const fundId = data.fundId || (data.trade && data.trade.fundId);
             if (!fundId) return;
@@ -744,8 +745,15 @@ const Modal = {
                     if (importBtn) {
                         importBtn.addEventListener('click', () => {
                             fee.value = result.fee.toFixed(2);
+                            isFeeAutoCalculated = false;
                             calcAmount();
                         });
+                    }
+
+                    if (result.fee > 0 && !isFeeAutoCalculated) {
+                        fee.value = result.fee.toFixed(2);
+                        isFeeAutoCalculated = true;
+                        calcAmount();
                     }
                 }
             } else if (type === 'sell' && nv > 0 && s > 0 && dateVal) {
@@ -775,8 +783,15 @@ const Modal = {
                     if (importBtn) {
                         importBtn.addEventListener('click', () => {
                             fee.value = result.fee.toFixed(2);
+                            isFeeAutoCalculated = false;
                             calcAmount();
                         });
+                    }
+
+                    if (result.fee > 0 && !isFeeAutoCalculated) {
+                        fee.value = result.fee.toFixed(2);
+                        isFeeAutoCalculated = true;
+                        calcAmount();
                     }
                 }
             } else {
@@ -787,8 +802,16 @@ const Modal = {
 
         netValue.addEventListener('input', autoCalcFee);
         shares.addEventListener('input', autoCalcFee);
-        tradeType.addEventListener('change', autoCalcFee);
+        tradeType.addEventListener('change', () => {
+            isFeeAutoCalculated = false;
+            autoCalcFee();
+        });
         document.getElementById('input-trade-date').addEventListener('change', autoCalcFee);
+
+        fee.addEventListener('input', () => {
+            isFeeAutoCalculated = false;
+            calcAmount();
+        });
 
         if (isEdit) {
             setTimeout(autoCalcFee, 100);
