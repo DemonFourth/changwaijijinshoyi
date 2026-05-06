@@ -93,6 +93,12 @@ const Overview = {
         EventBus.on(EventType.TRADE_ADDED, () => this.refresh());
         EventBus.on(EventType.TRADE_UPDATED, () => this.refresh());
         EventBus.on(EventType.TRADE_DELETED, () => this.refresh());
+
+        // 监听设置变化事件
+        EventBus.on(EventType.SETTINGS_CHANGED, () => {
+            Overview._viewPrefs = null;
+            Overview.refresh();
+        });
     },
 
     /**

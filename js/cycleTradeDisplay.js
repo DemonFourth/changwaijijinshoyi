@@ -232,7 +232,7 @@ const CycleTradeDisplay = {
 
         CycleTradeDisplay._groupedPaginator = Paginator.create({
             data: flatTrades,
-            pageSize: Config.get('ui.defaultPageSize', 10),
+            pageSize: CycleTradeDisplay._getPageSize(),
             onPageChange: function(pageData) {
                 CycleTradeDisplay.renderGroupedPage(pageData, filteredCycles);
             }
@@ -529,6 +529,11 @@ const CycleTradeDisplay = {
         CycleTradeDisplay._cycles = CalculatorV2.identifyHoldingCycles(sortedAsc);
         CycleTradeDisplay._tradeCycleMap = CycleTradeDisplay.buildTradeCycleMap(CycleTradeDisplay._cycles);
         CycleTradeDisplay._initialized = true;
+    },
+
+    _getPageSize() {
+        const settings = Storage.loadSettings() || {};
+        return settings.defaultPageSize || Config.get('ui.defaultPageSize', 10);
     },
 
     destroy() {

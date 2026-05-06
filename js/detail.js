@@ -89,6 +89,11 @@ const Detail = {
         EventBus.on(EventType.TRADE_DELETED, () => this.refresh());
         EventBus.on(EventType.CALCULATION_UPDATED, () => this.refresh());
 
+        // 监听设置变化事件
+        EventBus.on(EventType.SETTINGS_CHANGED, () => {
+            Detail.refresh();
+        });
+
         // 交易记录筛选
         const filterTradeType = document.getElementById('filter-trade-type');
         if (filterTradeType) {
@@ -510,7 +515,7 @@ const Detail = {
         // 创建或更新分页实例
         Detail._tradePaginator = Paginator.create({
             data: sortedTrades,
-            pageSize: Config.get('ui.defaultPageSize', 10),
+            pageSize: Detail._getPageSize(),
             onPageChange: (pageData) => {
                 Detail.renderTradePage(pageData, profitMap);
             },
@@ -1021,6 +1026,15 @@ const Detail = {
             resultEl.classList.add('fifo-verify-fail');
             resultEl.textContent = '❌ ' + result.error;
         }
+    },
+
+    /**
+     * 从设置中读取每页条数
+     * @returns {number}
+     */
+    _getPageSize() {
+        const settings = Storage.loadSettings() || {};
+        return settings.defaultPageSize || Config.get('ui.defaultPageSize', 10);
     }
 };
 

@@ -218,10 +218,12 @@ const Storage = {
      */
     loadViewPrefs() {
         const saved = this.load('fund_calculator_view_prefs');
+        const settings = this.loadSettings() || {};
+
         return {
-            viewMode: (saved && saved.viewMode) || Config.get('ui.defaultViewMode', 'card'),
-            sortField: (saved && saved.sortField) || Config.get('ui.defaultSortField', 'profitRate'),
-            sortOrder: (saved && saved.sortOrder) || Config.get('ui.defaultSortOrder', 'desc'),
+            viewMode: (saved && saved.viewMode) || settings.defaultViewMode || Config.get('ui.defaultViewMode', 'card'),
+            sortField: (saved && saved.sortField) || settings.defaultSortField || Config.get('ui.defaultSortField', 'profitRate'),
+            sortOrder: (saved && saved.sortOrder) || settings.defaultSortOrder || Config.get('ui.defaultSortOrder', 'desc'),
             tradeDisplayMode: (saved && saved.tradeDisplayMode) || null,
             cycleExpandState: (saved && saved.cycleExpandState) || {}
         };

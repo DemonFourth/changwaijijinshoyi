@@ -512,6 +512,7 @@ const Modal = {
         const isEdit = data && data.trade;
         const trade = isEdit ? data.trade : {};
         const dateVal = isEdit ? trade.date : Utils.formatDate(new Date());
+        const settings = Storage.loadSettings() || {};
 
         let html = '';
 
@@ -532,7 +533,7 @@ const Modal = {
         html += '<div class="form-group" id="dividend-mode-group"' + (trade.type === 'dividend' ? '' : ' style="display:none;"') + '>';
         html += '<label class="form-label">分红模式 *</label>';
         html += '<select id="input-dividend-mode" class="form-select">';
-        const divMode = trade.dividendMode || 'cash';
+        const divMode = trade.dividendMode || settings.defaultDividendMode || 'cash';
         html += '<option value="cash"' + (divMode === 'cash' ? ' selected' : '') + '>现金分红</option>';
         html += '<option value="reinvest"' + (divMode === 'reinvest' ? ' selected' : '') + '>分红再投资</option>';
         html += '</select>';
@@ -551,7 +552,8 @@ const Modal = {
         html += '</div>';
         html += '<div class="form-group">';
         html += '<label class="form-label">手续费 *</label>';
-        html += '<input type="number" id="input-trade-fee" class="form-input" value="' + (trade.fee !== undefined ? trade.fee : '0') + '" placeholder="请输入手续费" step="0.01" min="0">';
+        const defaultFee = isEdit ? trade.fee : (trade.type === 'buy' ? (settings.defaultBuyFee || 0) : (settings.defaultSellFee || 0));
+        html += '<input type="number" id="input-trade-fee" class="form-input" value="' + (trade.fee !== undefined ? trade.fee : defaultFee) + '" placeholder="请输入手续费" step="0.01" min="0">';
         html += '</div>';
         html += '<div id="fee-suggestion-panel" class="fee-suggestion-panel hidden"></div>';
         html += '<div class="form-group">';
