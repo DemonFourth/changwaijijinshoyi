@@ -118,9 +118,19 @@ const Detail = {
             });
         }
 
-        // 轮次筛选（始终使用分组视图）
+        // 展示模式切换按钮（事件委托）
         const filterBar = document.querySelector('.trade-filter-bar');
         if (filterBar) {
+            filterBar.addEventListener('click', (e) => {
+                const modeBtn = e.target.closest('.display-mode-btn');
+                if (modeBtn) {
+                    const mode = modeBtn.dataset.mode;
+                    if (mode && mode !== CycleTradeDisplay.getDisplayMode()) {
+                        CycleTradeDisplay.toggleDisplayMode();
+                    }
+                }
+            });
+
             filterBar.addEventListener('change', (e) => {
                 if (e.target.id === 'filter-cycle') {
                     const cycleId = e.target.value ? parseInt(e.target.value) : null;
@@ -455,6 +465,7 @@ const Detail = {
     updateTradeList(fund) {
         const trades = TradeManager.getTradesByFund(fund.id);
         const tradeList = document.getElementById('trade-list');
+        const paginationContainer = document.getElementById('trade-pagination-container');
 
         if (!tradeList) return;
 
@@ -471,8 +482,72 @@ const Detail = {
 
         CycleTradeDisplay.init(fund.id, tradeList, profitMap, cycles);
 
-        // 始终使用分组视图，分页由 CycleTradeDisplay 处理
-        CycleTradeDisplay.renderTradeSection();
+        // 根据显示模式渲染
+        if (CycleTradeDisplay.getDisplayMode() === 'grouped') {
+            CycleTradeDisplay.renderTradeSection();
+            return;
+        }
+
+        // 列表视图：扁平模式
+        CycleTradeDisplay.renderFlatMode();
+
+        // 为扁平视图的交易设置 cycleId
+        const tradeCycleMap = {};
+        for (const cycle of cycles) {
+            for (const trade of cycle.trades) {
+                tradeCycleMap[trade.id] = cycle.id;
+            }
+        }
+
+        // 按日期倒序排列
+        const sortedTrades = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // 为每笔交易设置 cycleId
+        for (const trade of sortedTrades) {
+            trade.cycleId = tradeCycleMap[trade.id] || 0;
+        }
+
+        // 创建或更新分页实例
+        Detail._tradePaginator = Paginator.create({
+            data: sortedTrades,
+            pageSize: Config.get('ui.defaultPageSize', 10),
+            onPageChange: (pageData) => {
+                Detail.renderTradePage(pageData, profitMap);
+            },
+            onFilterChange: (inst) => {
+                const pageData = Paginator.getCurrentPageData(inst);
+                Detail.renderTradePage(pageData, profitMap);
+                if (paginationContainer) {
+                    paginationContainer.innerHTML = Paginator.renderControls(inst);
+                    Detail.bindPaginationEvents();
+                }
+                const filterCount = document.getElementById('filter-result-count');
+                if (filterCount) {
+                    filterCount.textContent = `共 ${inst.filteredData.length} 条记录`;
+                }
+            }
+        });
+
+        // 应用当前筛选条件
+        if (Detail._currentFilters) {
+            Paginator.applyFilters(Detail._tradePaginator, Detail._currentFilters);
+        }
+
+        // 渲染第一页
+        const pageData = Paginator.getCurrentPageData(Detail._tradePaginator);
+        Detail.renderTradePage(pageData, profitMap);
+
+        // 渲染分页控件
+        if (paginationContainer) {
+            paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
+            Detail.bindPaginationEvents();
+        }
+
+        // 更新筛选结果数量
+        const filterCount = document.getElementById('filter-result-count');
+        if (filterCount) {
+            filterCount.textContent = `共 ${Detail._tradePaginator.filteredData.length} 条记录`;
+        }
     },
 
     /**

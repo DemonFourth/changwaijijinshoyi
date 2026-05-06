@@ -30,7 +30,9 @@ const CycleTradeDisplay = {
         CycleTradeDisplay._containerEl = containerEl;
         CycleTradeDisplay._profitMap = profitMap;
         CycleTradeDisplay._uncategorizedTrades = null;
-        CycleTradeDisplay._displayMode = 'grouped';
+
+        // 从偏好设置读取显示模式
+        CycleTradeDisplay.loadViewPrefs();
 
         // 使用传入的 cycles，或自行计算
         if (cycles) {
@@ -253,10 +255,15 @@ const CycleTradeDisplay = {
     renderFilterBarControls(filterBar) {
         if (!filterBar) return;
 
-        // 移除切换按钮渲染（始终使用分组视图）
+        // 切换按钮
         const existingToggle = filterBar.querySelector('.display-mode-toggle');
-        if (existingToggle) {
-            existingToggle.remove();
+        if (!existingToggle) {
+            const toggleHtml = CycleGroupRenderer.renderModeToggle(CycleTradeDisplay._displayMode);
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = toggleHtml;
+            filterBar.insertBefore(tempDiv.firstChild, filterBar.firstChild);
+        } else {
+            existingToggle.outerHTML = CycleGroupRenderer.renderModeToggle(CycleTradeDisplay._displayMode);
         }
 
         const existingCycleFilter = filterBar.querySelector('#filter-cycle');
