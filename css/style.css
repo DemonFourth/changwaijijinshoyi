@@ -888,17 +888,6 @@ td.negative {
     border-left-color: var(--color-success);
 }
 
-/* 收益列颜色 - 适配主题：正收益红色，负收益绿色 */
-.trade-table .trade-profit-positive {
-    color: var(--color-rise) !important;
-    font-weight: 600;
-}
-
-.trade-table .trade-profit-negative {
-    color: var(--color-fall) !important;
-    font-weight: 600;
-}
-
 /* 操作按钮优化 */
 .trade-table .btn-sm {
     padding: 0.375rem 0.75rem;

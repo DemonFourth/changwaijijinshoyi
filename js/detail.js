@@ -567,7 +567,7 @@ const Detail = {
                 const profitSign = profitData.profit >= 0 ? '+' : '';
                 const rateSign = profitData.profitRate >= 0 ? '+' : '';
                 profitDisplay = profitSign + Utils.formatMoneySmart(profitData.profit) + ' / ' + rateSign + Utils.formatNumber(profitData.profitRate, 2) + '%';
-                profitClass = profitData.profit >= 0 ? 'trade-profit-positive' : 'trade-profit-negative';
+                profitClass = profitData.profit >= 0 ? 'trade-profit--positive' : 'trade-profit--negative';
             }
         }
         const cycleLabel = trade.cycleId > 0 ? '第' + trade.cycleId + '轮' : '-';
