@@ -295,15 +295,44 @@ const Utils = {
      * @param {string} type - 类型 ('success', 'error', 'info')
      */
     showToast(message, type = 'info') {
-        const toast = document.getElementById('toast');
-        if (!toast) return;
+        const container = document.getElementById('toast-container');
+        const iconEl = document.getElementById('toast-icon');
+        const messageEl = document.getElementById('toast-message');
+        const closeBtn = document.getElementById('toast-close');
+        const progressEl = document.getElementById('toast-progress');
 
-        toast.textContent = message;
-        toast.className = `toast ${type}`;
+        if (!container || !messageEl) return;
 
-        setTimeout(() => {
-            toast.classList.add('hidden');
-        }, Config.get('ui.toastDuration', 3000));
+        const duration = Config.get('ui.toastDuration', 3000);
+
+        const icons = {
+            success: '✓',
+            error: '✕',
+            info: 'ℹ'
+        };
+
+        container.className = `toast-container ${type}`;
+        container.style.setProperty('--toast-duration', `${duration}ms`);
+
+        if (iconEl) iconEl.textContent = icons[type] || icons.info;
+        messageEl.textContent = message;
+
+        if (progressEl) {
+            progressEl.style.animation = 'none';
+            progressEl.offsetHeight;
+            progressEl.style.animation = '';
+        }
+
+        const timer = setTimeout(() => {
+            container.classList.add('hidden');
+        }, duration);
+
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                clearTimeout(timer);
+                container.classList.add('hidden');
+            };
+        }
     },
 
     /**
