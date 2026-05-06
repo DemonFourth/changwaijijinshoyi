@@ -55,9 +55,9 @@
     --transition-normal: 0.3s ease;
 
     /* 持仓轮次配色 - 浅色主题 */
-    --color-cycle-1: #c3fae8;  /* 浅绿 */
-    --color-cycle-2: #38b2ac;  /* 青色 */
-    --color-cycle-3: #667eea;  /* 蓝紫 */
+    --color-cycle-1: #b2f2bb;  /* 浅绿 */
+    --color-cycle-2: #ffa94d;  /* 橙色 */
+    --color-cycle-3: #63b3ed;  /* 明亮蓝 */
     --color-cycle-4: #ed64a6;  /* 粉红 */
     --color-cycle-bg-even: var(--color-bg-tertiary);
     --color-cycle-bg-odd: var(--color-bg-secondary);
@@ -113,9 +113,9 @@
     --shadow-lg: 0 6px 20px rgb(159 122 234 / 30%);
 
     /* 持仓轮次配色 - 深色主题 */
-    --color-cycle-1: #81e6d9;  /* 浅青色 */
-    --color-cycle-2: #4fd1c5;   /* 青色 */
-    --color-cycle-3: #a78bfa;   /* 紫色 */
+    --color-cycle-1: #68d391;  /* 亮绿 */
+    --color-cycle-2: #f6ad55;  /* 亮橙 */
+    --color-cycle-3: #63b3ed;  /* 明亮蓝 */
     --color-cycle-4: #f687b3;  /* 粉色 */
     --color-cycle-bg-even: var(--color-bg-tertiary);
     --color-cycle-bg-odd: var(--color-bg-secondary);
