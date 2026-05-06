@@ -23,10 +23,12 @@ const CycleTradeDisplay = {
     _toggleDebounceTimer: null,
     _initialized: false,
     _uncategorizedTrades: null,
+    _profitMap: null,
 
-    init(fundId, containerEl) {
+    init(fundId, containerEl, profitMap = new Map()) {
         CycleTradeDisplay._fundId = fundId;
         CycleTradeDisplay._containerEl = containerEl;
+        CycleTradeDisplay._profitMap = profitMap;
         CycleTradeDisplay._uncategorizedTrades = null;
 
         const trades = TradeManager.getTradesByFund(fundId);
@@ -279,7 +281,7 @@ const CycleTradeDisplay = {
         }
 
         const renderItems = CycleTradeDisplay.rebuildGroupsFromPageData(pageTrades);
-        tradeList.innerHTML = CycleGroupRenderer.renderGroupedView(renderItems);
+        tradeList.innerHTML = CycleGroupRenderer.renderGroupedView(renderItems, CycleTradeDisplay._profitMap);
 
         CycleTradeDisplay.bindGroupedEvents();
         Detail.bindTradeActions();

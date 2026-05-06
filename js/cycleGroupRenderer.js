@@ -35,7 +35,7 @@ const CycleGroupRenderer = {
         return '';
     },
 
-    renderTradeRow(trade, cycleColor, isExpanded, cycleId, cycleIndex) {
+    renderTradeRow(trade, cycleColor, isExpanded, cycleId, cycleIndex, profitMap = new Map()) {
         const typeText = { buy: '买入', sell: '卖出', dividend: '分红' };
         const typeClass = { buy: 'trade-type-buy', sell: 'trade-type-sell', dividend: 'trade-type-dividend' };
         const priceDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
@@ -46,11 +46,14 @@ const CycleGroupRenderer = {
         const labelColor = cycleId > 0 ? cycleColor : 'var(--color-text-tertiary)';
         let profitDisplay = '-';
         let profitClass = '';
-        if (trade.type === 'sell' && trade.profitAmount !== undefined) {
-            const profitSign = trade.profitAmount >= 0 ? '+' : '';
-            const rateSign = trade.profitRate >= 0 ? '+' : '';
-            profitDisplay = profitSign + Utils.formatMoneySmart(trade.profitAmount) + ' / ' + rateSign + Utils.formatNumber(trade.profitRate, 2) + '%';
-            profitClass = trade.profitAmount >= 0 ? 'trade-profit--positive' : 'trade-profit--negative';
+        if (trade.type === 'sell') {
+            const profitData = profitMap.get(trade.id);
+            if (profitData) {
+                const profitSign = profitData.profit >= 0 ? '+' : '';
+                const rateSign = profitData.profitRate >= 0 ? '+' : '';
+                profitDisplay = profitSign + Utils.formatMoneySmart(profitData.profit) + ' / ' + rateSign + Utils.formatNumber(profitData.profitRate, 2) + '%';
+                profitClass = profitData.profit >= 0 ? 'trade-profit--positive' : 'trade-profit--negative';
+            }
         }
 
         return '<tr class="cycle-group-trade-row" data-trade-id="' + trade.id + '" data-cycle-id="' + cycleId + '" ' +
@@ -70,7 +73,7 @@ const CycleGroupRenderer = {
             '</tr>';
     },
 
-    renderGroupedView(renderItems) {
+    renderGroupedView(renderItems, profitMap = new Map()) {
         if (!renderItems || renderItems.length === 0) {
             return CycleGroupRenderer.renderEmptyState('暂无交易记录');
         }
@@ -84,7 +87,7 @@ const CycleGroupRenderer = {
                 );
             } else if (item.type === 'trade') {
                 html += CycleGroupRenderer.renderTradeRow(
-                    item.trade, item.color, item.isExpanded, item.cycleId, item.cycleIndex
+                    item.trade, item.color, item.isExpanded, item.cycleId, item.cycleIndex, profitMap
                 );
             }
         }
@@ -95,13 +98,13 @@ const CycleGroupRenderer = {
         return '<tr><td colspan="9" style="text-align: center; color: var(--color-text-tertiary); padding: 20px;">' + message + '</td></tr>';
     },
 
-    renderUncategorizedGroup(trades) {
+    renderUncategorizedGroup(trades, profitMap = new Map()) {
         if (!trades || trades.length === 0) return '';
         let html = '<tr class="cycle-group-header-row" style="border-left: 3px dashed var(--color-warning); background: var(--color-cycle-bg-odd);">' +
             '<td colspan="8"><div class="cycle-group-header"><span class="cycle-group-label" style="color: var(--color-warning);">未分类</span>' +
             '<span style="font-size: var(--font-size-xs); color: var(--color-text-tertiary);">数据可能存在异常</span></div></td></tr>';
         for (let i = 0; i < trades.length; i++) {
-            html += CycleGroupRenderer.renderTradeRow(trades[i], 'var(--color-warning)', true, -1, 0);
+            html += CycleGroupRenderer.renderTradeRow(trades[i], 'var(--color-warning)', true, -1, 0, profitMap);
         }
         return html;
     }

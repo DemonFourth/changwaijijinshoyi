@@ -480,7 +480,7 @@ const Detail = {
         const sortedAsc = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
         const cycles = CalculatorV2.identifyHoldingCycles(sortedAsc);
 
-        CycleTradeDisplay.init(fund.id, tradeList);
+        CycleTradeDisplay.init(fund.id, tradeList, profitMap);
 
         if (cycles.length >= 2 || CycleTradeDisplay.getDisplayMode() === 'grouped') {
             CycleTradeDisplay.renderTradeSection();
