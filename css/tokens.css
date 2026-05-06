@@ -8,6 +8,7 @@
     /* 语义色 - 清新现代风 */
     --color-success: #48bb78;        /* 绿色 - 买入 */
     --color-danger: #ed8936;         /* 珊瑚橙 - 卖出 */
+    --color-danger-text: #ffffff;    /* 按钮文字色 */
     --color-warning: #4299e1;       /* 天蓝 - 分红 */
     --color-info: #4299e1;
     --color-profit: #48bb78;         /* 绿色 - 收益 */
@@ -82,6 +83,7 @@
     /* 语义色 - 亮色保证对比度 */
     --color-success: #68d391;        /* 亮绿 - 买入 */
     --color-danger: #fc8181;         /* 浅红 - 卖出 */
+    --color-danger-text: #ffffff;    /* 按钮文字色 */
     --color-warning: #fbd38d;
     --color-info: #b794f4;          /* 淡紫 - 分红 */
     --color-profit: #68d391;         /* 亮绿 */
