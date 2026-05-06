@@ -54,10 +54,10 @@ const Config = {
 
     // 计算配置
     calculation: {
-        // 手续费默认值（买入）
-        defaultBuyFee: 0,
-        // 手续费默认值（卖出）
-        defaultSellFee: 0,
+        // 手续费默认费率（买入，区间固定为 0~100 万元）
+        defaultBuyFeeRate: 0,
+        // 手续费默认费率（卖出，区间固定为 0~7 天）
+        defaultSellFeeRate: 0,
         // 计算方法（加权平均成本法）
         useWeightedAverage: true
     },

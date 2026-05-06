@@ -181,7 +181,21 @@ const Storage = {
      */
     loadSettings() {
         const key = Config.get('storage.settingsKey');
-        return this.load(key) || {};
+        const settings = this.load(key) || {};
+
+        // 旧数据迁移：defaultBuyFee/defaultSellFee -> defaultBuyFeeRate/defaultSellFeeRate
+        if (settings.defaultBuyFee !== undefined && settings.defaultBuyFeeRate === undefined) {
+            settings.defaultBuyFeeRate = settings.defaultBuyFee;
+            delete settings.defaultBuyFee;
+            this.save(key, settings);
+        }
+        if (settings.defaultSellFee !== undefined && settings.defaultSellFeeRate === undefined) {
+            settings.defaultSellFeeRate = settings.defaultSellFee;
+            delete settings.defaultSellFee;
+            this.save(key, settings);
+        }
+
+        return settings;
     },
 
     /**

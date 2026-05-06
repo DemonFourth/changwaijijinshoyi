@@ -606,6 +606,39 @@ const Modal = {
         const amount = document.getElementById('input-trade-amount');
         const hintAmount = document.getElementById('hint-amount');
 
+        // 首次添加交易时，如果基金未配置费率，用设置默认费率填充
+        if (!isEdit) {
+            const fundId = data.fundId || (data.trade && data.trade.fundId);
+            if (fundId) {
+                const fund = DataService.getFund(fundId);
+                if (fund) {
+                    const settings = Storage.loadSettings();
+                    const hasBuyTiers = fund.feeTiers && fund.feeTiers.buyTiers && fund.feeTiers.buyTiers.length > 0;
+                    const hasSellTiers = fund.feeTiers && fund.feeTiers.sellTiers && fund.feeTiers.sellTiers.length > 0;
+
+                    if (!hasBuyTiers && settings.defaultBuyFeeRate > 0) {
+                        if (!fund.feeTiers) fund.feeTiers = { buyTiers: [], sellTiers: [] };
+                        fund.feeTiers.buyTiers = [{
+                            minAmount: 0,
+                            maxAmount: 1000000,
+                            rate: settings.defaultBuyFeeRate
+                        }];
+                        DataService.updateFund(fund);
+                    }
+
+                    if (!hasSellTiers && settings.defaultSellFeeRate > 0) {
+                        if (!fund.feeTiers) fund.feeTiers = { buyTiers: [], sellTiers: [] };
+                        fund.feeTiers.sellTiers = [{
+                            minDays: 0,
+                            maxDays: 7,
+                            rate: settings.defaultSellFeeRate
+                        }];
+                        DataService.updateFund(fund);
+                    }
+                }
+            }
+        }
+
         const updateFieldsVisibility = function() {
             const type = tradeType.value;
             const divMode = dividendMode ? dividendMode.value : 'cash';
@@ -711,18 +744,16 @@ const Modal = {
             if (!fundId) return;
 
             const fund = DataService.getFund(fundId);
-            if (!fund || !fund.feeTiers || !fund.feeTiers.buyTiers || !fund.feeTiers.sellTiers) {
-                const panel = document.getElementById('fee-suggestion-panel');
-                if (panel) panel.classList.add('hidden');
-                return;
-            }
-
             const type = tradeType.value;
             const nv = parseFloat(netValue.value);
             const s = parseFloat(shares.value);
             const dateVal = document.getElementById('input-trade-date').value;
 
-            if (type === 'buy' && nv > 0 && s > 0) {
+            const hasBuyTiers = fund && fund.feeTiers && fund.feeTiers.buyTiers && fund.feeTiers.buyTiers.length > 0;
+            const hasSellTiers = fund && fund.feeTiers && fund.feeTiers.sellTiers && fund.feeTiers.sellTiers.length > 0;
+
+            // 优先使用基金费率
+            if (type === 'buy' && nv > 0 && s > 0 && hasBuyTiers) {
                 const amountVal = nv * s;
                 const result = FeeCalculator.calculateBuyFee(amountVal, fund.feeTiers.buyTiers);
 
@@ -756,7 +787,21 @@ const Modal = {
                         calcAmount();
                     }
                 }
-            } else if (type === 'sell' && nv > 0 && s > 0 && dateVal) {
+            } else if (type === 'buy' && nv > 0 && s > 0 && !hasBuyTiers) {
+                // 基金未配置买入费率，使用设置默认费率
+                const settings = Storage.loadSettings();
+                const rate = settings.defaultBuyFeeRate || 0;
+                const panel = document.getElementById('fee-suggestion-panel');
+                if (panel) panel.classList.add('hidden');
+
+                if (rate > 0 && !isFeeAutoCalculated) {
+                    const amountVal = nv * s;
+                    const calculatedFee = amountVal * rate / 100;
+                    fee.value = calculatedFee.toFixed(2);
+                    isFeeAutoCalculated = true;
+                    calcAmount();
+                }
+            } else if (type === 'sell' && nv > 0 && s > 0 && dateVal && hasSellTiers) {
                 const allTrades = DataService.getTradesByFund(fundId);
                 const sellTrade = { date: dateVal, shares: s, netValue: nv, id: data.trade ? data.trade.id : null };
                 const result = FeeCalculator.calculateSellFee(sellTrade, allTrades, fund.feeTiers.sellTiers);
@@ -793,6 +838,20 @@ const Modal = {
                         isFeeAutoCalculated = true;
                         calcAmount();
                     }
+                }
+            } else if (type === 'sell' && nv > 0 && s > 0 && dateVal && !hasSellTiers) {
+                // 基金未配置卖出费率，使用设置默认费率（简单计算，无 FIFO）
+                const settings = Storage.loadSettings();
+                const rate = settings.defaultSellFeeRate || 0;
+                const panel = document.getElementById('fee-suggestion-panel');
+                if (panel) panel.classList.add('hidden');
+
+                if (rate > 0 && !isFeeAutoCalculated) {
+                    const amountVal = nv * s;
+                    const calculatedFee = amountVal * rate / 100;
+                    fee.value = calculatedFee.toFixed(2);
+                    isFeeAutoCalculated = true;
+                    calcAmount();
                 }
             } else {
                 const panel = document.getElementById('fee-suggestion-panel');
@@ -1233,8 +1292,8 @@ const Modal = {
             bigNumberEnabled: true,
             bigNumberWanThreshold: 10000,
             bigNumberYiThreshold: 100000000,
-            defaultBuyFee: 0,
-            defaultSellFee: 0,
+            defaultBuyFeeRate: 0,
+            defaultSellFeeRate: 0,
             defaultDividendMode: 'cash',
             defaultViewMode: 'card',
             defaultSortField: 'profitRate',
@@ -1284,19 +1343,21 @@ const Modal = {
                     <div class="settings-tab-panel" data-panel="trade">
                         <div class="settings-group">
                             <div class="settings-label">默认买入费率</div>
-                            <div class="settings-input-group">
-                                <input type="number" class="settings-input" id="settings-default-buy-fee" value="${s.defaultBuyFee}" step="0.01">
+                            <div class="settings-tier-row">
+                                <span class="tier-interval-fixed">0 ~ 100 万元</span>
+                                <input type="number" class="settings-input" id="settings-default-buy-rate" value="${s.defaultBuyFeeRate}" step="0.01">
                                 <span class="input-suffix">%</span>
                             </div>
-                            <div class="settings-desc">新增交易时的默认买入手续费率</div>
+                            <div class="settings-desc">区间固定为 0~100 万元，更多区间请到交易费率设置</div>
                         </div>
                         <div class="settings-group">
                             <div class="settings-label">默认卖出费率</div>
-                            <div class="settings-input-group">
-                                <input type="number" class="settings-input" id="settings-default-sell-fee" value="${s.defaultSellFee}" step="0.01">
+                            <div class="settings-tier-row">
+                                <span class="tier-interval-fixed">0 ~ 7 天</span>
+                                <input type="number" class="settings-input" id="settings-default-sell-rate" value="${s.defaultSellFeeRate}" step="0.01">
                                 <span class="input-suffix">%</span>
                             </div>
-                            <div class="settings-desc">新增交易时的默认卖出手续费率</div>
+                            <div class="settings-desc">区间固定为 0~7 天，更多区间请到交易费率设置</div>
                         </div>
                     </div>
                     <!-- 分红设置 -->
@@ -1417,8 +1478,8 @@ const Modal = {
                     bigNumberEnabled: document.getElementById('settings-big-number-enabled')?.checked ?? true,
                     bigNumberWanThreshold: parseInt(document.getElementById('settings-wan-threshold')?.value) || 10000,
                     bigNumberYiThreshold: parseInt(document.getElementById('settings-yi-threshold')?.value) || 100000000,
-                    defaultBuyFee: parseFloat(document.getElementById('settings-default-buy-fee')?.value) || 0,
-                    defaultSellFee: parseFloat(document.getElementById('settings-default-sell-fee')?.value) || 0,
+                    defaultBuyFeeRate: parseFloat(document.getElementById('settings-default-buy-rate')?.value) || 0,
+                    defaultSellFeeRate: parseFloat(document.getElementById('settings-default-sell-rate')?.value) || 0,
                     defaultDividendMode: document.querySelector('input[name="settings-dividend-mode"]:checked')?.value || 'cash',
                     defaultViewMode: document.getElementById('settings-view-mode')?.value || 'card',
                     defaultSortField: document.getElementById('settings-sort-field')?.value || 'profitRate',
