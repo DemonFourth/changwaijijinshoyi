@@ -1648,11 +1648,13 @@ td.negative {
 /* Toast 提示 */
 .toast-container {
     position: fixed;
-    top: 1rem;
-    right: 1rem;
+    top: 4rem;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 3000;
     animation: toastSlideIn 0.3s ease;
     max-width: 400px;
+    width: calc(100% - 2rem);
 }
 
 .toast-container.hidden {
@@ -1737,12 +1739,23 @@ td.negative {
 
 @keyframes toastSlideIn {
     from {
-        transform: translateX(100%);
+        transform: translateX(-50%) translateY(-100%);
         opacity: 0;
     }
     to {
-        transform: translateX(0);
+        transform: translateX(-50%) translateY(0);
         opacity: 1;
+    }
+}
+
+@keyframes toastSlideOut {
+    from {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(-50%) translateX(100%);
+        opacity: 0;
     }
 }
 

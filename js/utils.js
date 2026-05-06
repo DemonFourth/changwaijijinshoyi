@@ -323,14 +323,20 @@ const Utils = {
             progressEl.style.animation = '';
         }
 
-        const timer = setTimeout(() => {
-            container.classList.add('hidden');
-        }, duration);
+        const hideToast = () => {
+            container.style.animation = 'toastSlideOut 0.3s ease forwards';
+            setTimeout(() => {
+                container.classList.add('hidden');
+                container.style.animation = '';
+            }, 300);
+        };
+
+        const timer = setTimeout(hideToast, duration);
 
         if (closeBtn) {
             closeBtn.onclick = () => {
                 clearTimeout(timer);
-                container.classList.add('hidden');
+                hideToast();
             };
         }
     },
