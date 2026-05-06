@@ -5,6 +5,18 @@
 
 const BigNumberFormatter = {
     /**
+     * 加载当前设置中的阈值配置
+     */
+    _getThresholds() {
+        const settings = Storage.loadSettings() || {};
+        return {
+            wanThreshold: settings.bigNumberWanThreshold ?? 10000,
+            yiThreshold: settings.bigNumberYiThreshold ?? 100000000,
+            enabled: settings.bigNumberEnabled ?? true
+        };
+    },
+
+    /**
      * 格式化大数字
      * @param {number} amount - 金额
      * @param {number} decimals - 小数位，默认2
@@ -13,14 +25,15 @@ const BigNumberFormatter = {
     format(amount, decimals = 2) {
         if (amount === null || amount === undefined || isNaN(amount)) return '¥0.00';
 
+        const thresholds = BigNumberFormatter._getThresholds();
         const abs = Math.abs(amount);
         const sign = amount < 0 ? '-' : '';
 
-        if (abs >= 100000000) {
+        if (abs >= thresholds.yiThreshold) {
             // 亿级
             const value = (abs / 100000000).toFixed(decimals);
             return `${sign}¥${value}亿`;
-        } else if (abs >= 10000) {
+        } else if (abs >= thresholds.wanThreshold) {
             // 万级
             const value = (abs / 10000).toFixed(decimals);
             return `${sign}¥${value}万`;
@@ -54,7 +67,8 @@ const BigNumberFormatter = {
      * @returns {boolean}
      */
     isBigNumber(amount) {
-        return Math.abs(amount || 0) >= 10000;
+        const thresholds = BigNumberFormatter._getThresholds();
+        return Math.abs(amount || 0) >= thresholds.wanThreshold;
     },
 
     /**
@@ -64,6 +78,10 @@ const BigNumberFormatter = {
      * @returns {string} HTML字符串
      */
     formatWithTooltip(amount, decimals = 2) {
+        const thresholds = BigNumberFormatter._getThresholds();
+        if (!thresholds.enabled) {
+            return BigNumberFormatter.formatFull(amount, decimals);
+        }
         if (!BigNumberFormatter.isBigNumber(amount)) {
             return BigNumberFormatter.formatFull(amount, decimals);
         }
