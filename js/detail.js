@@ -480,53 +480,10 @@ const Detail = {
         const sortedAsc = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
         const cycles = CalculatorV2.identifyHoldingCycles(sortedAsc);
 
-        CycleTradeDisplay.init(fund.id, tradeList, profitMap);
+        CycleTradeDisplay.init(fund.id, tradeList, profitMap, cycles);
 
-        if (cycles.length >= 2 || CycleTradeDisplay.getDisplayMode() === 'grouped') {
-            CycleTradeDisplay.renderTradeSection();
-            return;
-        }
-
-        CycleTradeDisplay.renderFlatMode();
-
-        // 为扁平视图的交易设置 cycleId
-        const tradeCycleMap = {};
-        for (const cycle of cycles) {
-            for (const trade of cycle.trades) {
-                tradeCycleMap[trade.id] = cycle.id;
-            }
-        }
-
-        // 按日期倒序排列
-        const sortedTrades = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        // 为每笔交易设置 cycleId
-        for (const trade of sortedTrades) {
-            trade.cycleId = tradeCycleMap[trade.id] || 0;
-        }
-
-        // 创建或更新分页实例
-        Detail._tradePaginator = Paginator.create({
-            data: sortedTrades,
-            pageSize: Config.get('ui.defaultPageSize', 10),
-            onPageChange: (pageData) => {
-                Detail.renderTradePage(pageData, profitMap);
-            },
-            onFilterChange: (inst) => {
-                const pageData = Paginator.getCurrentPageData(inst);
-                Detail.renderTradePage(pageData, profitMap);
-                // 更新分页控件
-                if (paginationContainer) {
-                    paginationContainer.innerHTML = Paginator.renderControls(inst);
-                    Detail.bindPaginationEvents();
-                }
-                // 更新筛选结果数量
-                const filterCount = document.getElementById('filter-result-count');
-                if (filterCount) {
-                    filterCount.textContent = `共 ${inst.filteredData.length} 条记录`;
-                }
-            }
-        });
+        // 始终使用分组视图
+        CycleTradeDisplay.renderTradeSection();
 
         // 应用当前筛选条件
         if (Detail._currentFilters) {

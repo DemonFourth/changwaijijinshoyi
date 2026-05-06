@@ -25,11 +25,22 @@ const CycleTradeDisplay = {
     _uncategorizedTrades: null,
     _profitMap: null,
 
-    init(fundId, containerEl, profitMap = new Map()) {
+    init(fundId, containerEl, profitMap = new Map(), cycles = null) {
         CycleTradeDisplay._fundId = fundId;
         CycleTradeDisplay._containerEl = containerEl;
         CycleTradeDisplay._profitMap = profitMap;
         CycleTradeDisplay._uncategorizedTrades = null;
+        CycleTradeDisplay._displayMode = 'grouped';
+
+        // 使用传入的 cycles，或自行计算
+        if (cycles) {
+            CycleTradeDisplay._cycles = cycles;
+        } else {
+            const sortedAsc = TradeManager.getTradesByFund(fundId).slice().sort(function(a, b) {
+                return new Date(a.date) - new Date(b.date);
+            });
+            CycleTradeDisplay._cycles = CalculatorV2.identifyHoldingCycles(sortedAsc);
+        }
 
         const trades = TradeManager.getTradesByFund(fundId);
         if (!trades || trades.length === 0) {
