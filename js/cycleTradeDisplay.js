@@ -471,8 +471,10 @@ const CycleTradeDisplay = {
         }
 
         const tradeRows = tradeList.querySelectorAll('.cycle-group-trade-row[data-cycle-id="' + cycleId + '"]');
-        for (let i = 0; i < tradeRows.length; i++) {
-            tradeRows[i].style.display = newState ? '' : 'none';
+        const remarkRows = tradeList.querySelectorAll('.trade-remark-row[data-cycle-id="' + cycleId + '"]');
+        const allRows = Array.prototype.slice.call(tradeRows).concat(Array.prototype.slice.call(remarkRows));
+        for (let i = 0; i < allRows.length; i++) {
+            allRows[i].style.display = newState ? '' : 'none';
         }
     },
 
