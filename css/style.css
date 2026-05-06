@@ -889,13 +889,13 @@ td.negative {
 }
 
 /* 收益列颜色 - 适配主题：正收益红色，负收益绿色 */
-.trade-profit-positive {
-    color: var(--color-rise);
+.trade-table .trade-profit-positive {
+    color: var(--color-rise) !important;
     font-weight: 600;
 }
 
-.trade-profit-negative {
-    color: var(--color-fall);
+.trade-table .trade-profit-negative {
+    color: var(--color-fall) !important;
     font-weight: 600;
 }
 
