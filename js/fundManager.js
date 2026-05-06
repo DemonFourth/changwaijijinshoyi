@@ -259,16 +259,11 @@ const FundManager = {
     },
 
     /**
-     * 获取基金统计信息（带缓存）
+     * 获取基金统计信息
      * @param {string} fundId - 基金ID
      * @returns {object}
      */
     getFundStats(fundId) {
-        // 检查缓存
-        if (this._statsCache.has(fundId)) {
-            return this._statsCache.get(fundId);
-        }
-
         const fund = DataService.getFund(fundId);
         if (!fund) {
             return null;
@@ -280,7 +275,8 @@ const FundManager = {
         // 使用CalculatorV2计算
         const stats = CalculatorV2.calculateFundProfit(trades, netValue);
 
-        // 存入缓存
+        // 清除缓存以获取最新数据
+        this._statsCache.delete(fundId);
         this._statsCache.set(fundId, stats);
 
         return stats;

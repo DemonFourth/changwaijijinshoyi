@@ -459,7 +459,7 @@ const Detail = {
     },
 
     /**
-     * 更新交易记录列表
+     * 更新交易记录
      * @param {object} fund - 基金对象
      */
     updateTradeList(fund) {
@@ -468,6 +468,14 @@ const Detail = {
         const paginationContainer = document.getElementById('trade-pagination-container');
 
         if (!tradeList) return;
+
+        // 获取收益数据
+        const stats = FundManager.getFundStats(fund.id);
+        const realizedDetails = stats?.realized?.details || [];
+        const profitMap = new Map();
+        for (const detail of realizedDetails) {
+            profitMap.set(detail.tradeId, detail);
+        }
 
         const sortedAsc = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
         const cycles = CalculatorV2.identifyHoldingCycles(sortedAsc);
@@ -482,18 +490,18 @@ const Detail = {
         CycleTradeDisplay.renderFlatMode();
 
         // 按日期倒序排列
-        const sortedTrades = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const sortedTrades = [...trades].sort((a, b) => new Date(b.date) - new Date(b.date));
 
         // 创建或更新分页实例
         Detail._tradePaginator = Paginator.create({
             data: sortedTrades,
             pageSize: Config.get('ui.defaultPageSize', 10),
             onPageChange: (pageData) => {
-                Detail.renderTradePage(pageData);
+                Detail.renderTradePage(pageData, profitMap);
             },
             onFilterChange: (inst) => {
                 const pageData = Paginator.getCurrentPageData(inst);
-                Detail.renderTradePage(pageData);
+                Detail.renderTradePage(pageData, profitMap);
                 // 更新分页控件
                 if (paginationContainer) {
                     paginationContainer.innerHTML = Paginator.renderControls(inst);
@@ -514,7 +522,7 @@ const Detail = {
 
         // 渲染第一页
         const pageData = Paginator.getCurrentPageData(Detail._tradePaginator);
-        Detail.renderTradePage(pageData);
+        Detail.renderTradePage(pageData, profitMap);
 
         // 渲染分页控件
         if (paginationContainer) {
@@ -532,9 +540,10 @@ const Detail = {
     /**
      * 渲染交易记录行
      * @param {object} trade - 交易对象
+     * @param {Map} profitMap - 收益数据映射
      * @returns {string}
      */
-    renderTradeRow(trade) {
+    renderTradeRow(trade, profitMap = new Map()) {
         const typeText = {
             buy: '买入',
             sell: '卖出',
@@ -550,11 +559,16 @@ const Detail = {
         const priceDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
         let profitDisplay = '-';
         let profitClass = '';
-        if (trade.type === 'sell' && trade.profitAmount !== undefined) {
-            const profitSign = trade.profitAmount >= 0 ? '+' : '';
-            const rateSign = trade.profitRate >= 0 ? '+' : '';
-            profitDisplay = profitSign + Utils.formatMoneySmart(trade.profitAmount) + ' / ' + rateSign + Utils.formatNumber(trade.profitRate, 2) + '%';
-            profitClass = trade.profitAmount >= 0 ? 'trade-profit-positive' : 'trade-profit-negative';
+
+        // 从 profitMap 中查找对应交易的收益数据
+        if (trade.type === 'sell') {
+            const profitData = profitMap.get(trade.id);
+            if (profitData) {
+                const profitSign = profitData.profit >= 0 ? '+' : '';
+                const rateSign = profitData.profitRate >= 0 ? '+' : '';
+                profitDisplay = profitSign + Utils.formatMoneySmart(profitData.profit) + ' / ' + rateSign + Utils.formatNumber(profitData.profitRate, 2) + '%';
+                profitClass = profitData.profit >= 0 ? 'trade-profit-positive' : 'trade-profit-negative';
+            }
         }
         const cycleLabel = trade.cycleId > 0 ? '第' + trade.cycleId + '轮' : '-';
 
@@ -596,8 +610,9 @@ const Detail = {
     /**
      * 渲染当前页交易记录
      * @param {Array} pageData - 当前页数据
+     * @param {Map} profitMap - 收益数据映射
      */
-    renderTradePage(pageData) {
+    renderTradePage(pageData, profitMap = new Map()) {
         const tradeList = document.getElementById('trade-list');
         if (!tradeList) return;
 
@@ -606,7 +621,7 @@ const Detail = {
             return;
         }
 
-        const rows = pageData.map(trade => Detail.renderTradeRow(trade));
+        const rows = pageData.map(trade => Detail.renderTradeRow(trade, profitMap));
         tradeList.innerHTML = rows.join('');
         Detail.bindTradeActions();
     },
