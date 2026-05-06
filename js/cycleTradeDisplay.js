@@ -73,7 +73,7 @@ const CycleTradeDisplay = {
         CycleTradeDisplay.checkUncategorizedTrades(trades);
         CycleTradeDisplay.loadViewPrefs();
 
-        if (!CycleTradeDisplay._displayMode || CycleTradeDisplay._displayMode === 'flat') {
+        if (!CycleTradeDisplay._displayMode) {
             CycleTradeDisplay._displayMode = CycleTradeDisplay.determineDefaultMode(CycleTradeDisplay._cycles);
         }
 
