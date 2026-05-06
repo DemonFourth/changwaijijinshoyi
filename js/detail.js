@@ -465,7 +465,6 @@ const Detail = {
     updateTradeList(fund) {
         const trades = TradeManager.getTradesByFund(fund.id);
         const tradeList = document.getElementById('trade-list');
-        const paginationContainer = document.getElementById('trade-pagination-container');
 
         if (!tradeList) return;
 
@@ -482,29 +481,8 @@ const Detail = {
 
         CycleTradeDisplay.init(fund.id, tradeList, profitMap, cycles);
 
-        // 始终使用分组视图
+        // 始终使用分组视图，分页由 CycleTradeDisplay 处理
         CycleTradeDisplay.renderTradeSection();
-
-        // 应用当前筛选条件
-        if (Detail._currentFilters) {
-            Paginator.applyFilters(Detail._tradePaginator, Detail._currentFilters);
-        }
-
-        // 渲染第一页
-        const pageData = Paginator.getCurrentPageData(Detail._tradePaginator);
-        Detail.renderTradePage(pageData, profitMap);
-
-        // 渲染分页控件
-        if (paginationContainer) {
-            paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
-            Detail.bindPaginationEvents();
-        }
-
-        // 更新筛选结果数量
-        const filterCount = document.getElementById('filter-result-count');
-        if (filterCount) {
-            filterCount.textContent = `共 ${Detail._tradePaginator.filteredData.length} 条记录`;
-        }
     },
 
     /**
@@ -601,14 +579,15 @@ const Detail = {
      */
     bindPaginationEvents() {
         const paginationContainer = document.getElementById('trade-pagination-container');
-        if (!paginationContainer || !Detail._tradePaginator) return;
+        const paginator = CycleTradeDisplay._groupedPaginator;
+        if (!paginationContainer || !paginator) return;
 
         // 页码按钮
         paginationContainer.querySelectorAll('.page-btn[data-page]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const page = parseInt(btn.dataset.page);
-                Paginator.goToPage(Detail._tradePaginator, page);
-                paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
+                Paginator.goToPage(paginator, page);
+                paginationContainer.innerHTML = Paginator.renderControls(paginator);
                 Detail.bindPaginationEvents();
             });
         });
@@ -618,11 +597,11 @@ const Detail = {
             btn.addEventListener('click', () => {
                 const action = btn.dataset.action;
                 if (action === 'prev') {
-                    Paginator.goToPage(Detail._tradePaginator, Detail._tradePaginator.currentPage - 1);
+                    Paginator.goToPage(paginator, paginator.currentPage - 1);
                 } else if (action === 'next') {
-                    Paginator.goToPage(Detail._tradePaginator, Detail._tradePaginator.currentPage + 1);
+                    Paginator.goToPage(paginator, paginator.currentPage + 1);
                 }
-                paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
+                paginationContainer.innerHTML = Paginator.renderControls(paginator);
                 Detail.bindPaginationEvents();
             });
         });
@@ -630,8 +609,8 @@ const Detail = {
         // 每页条数
         paginationContainer.querySelectorAll('.page-size-select').forEach(select => {
             select.addEventListener('change', () => {
-                Paginator.setPageSize(Detail._tradePaginator, parseInt(select.value));
-                paginationContainer.innerHTML = Paginator.renderControls(Detail._tradePaginator);
+                Paginator.setPageSize(paginator, parseInt(select.value));
+                paginationContainer.innerHTML = Paginator.renderControls(paginator);
                 Detail.bindPaginationEvents();
             });
         });
