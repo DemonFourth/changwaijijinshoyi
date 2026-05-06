@@ -1649,11 +1649,12 @@ td.negative {
 .toast-container {
     position: fixed;
     top: 4rem;
-    right: 2rem;
+    right: 1rem;
     z-index: 3000;
     animation: toastSlideIn 0.3s ease;
+    width: auto;
+    min-width: fit-content;
     max-width: 400px;
-    width: calc(100% - 2rem);
 }
 
 .toast-container.hidden {
