@@ -48,7 +48,7 @@ const Detail = {
         const btnEditFund = document.getElementById('btn-edit-fund');
         if (btnEditFund) {
             btnEditFund.addEventListener('click', () => {
-                Detail.showEditMenu();
+                Modal.show('editFund', { fundId: Detail.currentFundId });
             });
         }
 

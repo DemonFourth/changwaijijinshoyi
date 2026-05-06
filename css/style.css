@@ -2789,3 +2789,295 @@ td.negative {
     visibility: visible;
     opacity: 1;
 }
+
+/* 设置弹窗样式 */
+.settings-modal {
+    min-height: 350px;
+}
+
+.settings-tabs-nav {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px;
+    background: var(--color-bg-elevated);
+    border-bottom: 1px solid var(--color-border-primary);
+    overflow-x: auto;
+}
+
+.settings-tab-btn {
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.settings-tab-btn:hover {
+    background: var(--color-border-secondary);
+}
+
+.settings-tab-btn.active {
+    background: var(--color-brand-secondary);
+    color: #2d5a45;
+}
+
+.settings-tabs-content {
+    padding: 20px 24px;
+}
+
+.settings-tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.settings-tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.settings-group {
+    margin-bottom: 20px;
+}
+
+.settings-group:last-child {
+    margin-bottom: 0;
+}
+
+.settings-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.settings-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.settings-label-row .settings-label {
+    margin-bottom: 0;
+}
+
+.settings-desc {
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    margin-top: 4px;
+}
+
+.settings-input-group {
+    display: flex;
+    align-items: center;
+}
+
+.settings-input {
+    padding: 10px 14px;
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    width: 160px;
+    transition: all 0.2s;
+    background: var(--color-bg-card);
+}
+
+.settings-input:focus {
+    outline: none;
+    border-color: var(--color-brand-primary);
+    box-shadow: 0 0 0 3px rgba(136, 216, 176, 0.15);
+}
+
+.input-suffix {
+    color: var(--color-text-tertiary);
+    font-size: 0.85rem;
+    margin-left: 8px;
+}
+
+.settings-select {
+    padding: 10px 14px;
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    width: 160px;
+    cursor: pointer;
+    background: var(--color-bg-card);
+    transition: all 0.2s;
+}
+
+.settings-select:focus {
+    outline: none;
+    border-color: var(--color-brand-primary);
+}
+
+.settings-toggle {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    display: inline-block;
+}
+
+.settings-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.settings-toggle .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--color-border-primary);
+    border-radius: 26px;
+    transition: 0.3s;
+}
+
+.settings-toggle .toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.settings-toggle input:checked + .toggle-slider {
+    background: var(--color-brand-primary);
+}
+
+.settings-toggle input:checked + .toggle-slider::before {
+    transform: translateX(22px);
+}
+
+.settings-radio-group {
+    display: flex;
+    gap: 16px;
+}
+
+.settings-radio-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.settings-radio-item input {
+    display: none;
+}
+
+.settings-radio-item .radio-circle {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-border-primary);
+    border-radius: 50%;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.settings-radio-item input:checked + .radio-circle {
+    border-color: var(--color-brand-primary);
+}
+
+.settings-radio-item input:checked + .radio-circle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    background: var(--color-brand-primary);
+    border-radius: 50%;
+}
+
+.settings-radio-item .radio-label {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+
+.settings-data-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.settings-data-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-card);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.settings-data-btn:hover {
+    border-color: var(--color-brand-primary);
+    background: var(--color-bg-elevated);
+}
+
+.settings-data-btn-danger:hover {
+    border-color: var(--color-danger);
+}
+
+.settings-data-btn .data-btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.settings-data-btn:nth-child(1) .data-btn-icon {
+    background: rgba(104, 211, 145, 0.15);
+    color: #38a169;
+}
+
+.settings-data-btn:nth-child(2) .data-btn-icon {
+    background: rgba(66, 153, 225, 0.15);
+    color: #3182ce;
+}
+
+.settings-data-btn:nth-child(3) .data-btn-icon {
+    background: rgba(252, 129, 129, 0.15);
+    color: #e53e3e;
+}
+
+.settings-data-btn .data-btn-text {
+    flex: 1;
+}
+
+.settings-data-btn .data-btn-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.settings-data-btn .data-btn-desc {
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+}
+
+.modal-container.modal-settings .modal {
+    max-width: 600px;
+}

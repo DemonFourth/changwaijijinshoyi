@@ -54,6 +54,9 @@ const App = {
             // 绑定工具箱按钮
             this.setupToolsButton();
 
+            // 绑定设置按钮
+            this.setupSettingsButton();
+
             // 监听路由变化
             this.setupRouteListener();
 
@@ -109,6 +112,18 @@ const App = {
         if (btnTools) {
             btnTools.addEventListener('click', () => {
                 Router.navigate('tools');
+            });
+        }
+    },
+
+    /**
+     * 设置设置按钮
+     */
+    setupSettingsButton() {
+        const btnSettings = document.getElementById('btn-settings');
+        if (btnSettings) {
+            btnSettings.addEventListener('click', () => {
+                Modal.show('settings');
             });
         }
     },

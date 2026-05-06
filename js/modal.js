@@ -60,6 +60,14 @@ const Modal = {
             title.textContent = '交易费率设置';
             result = Modal.renderFeeSettingsForm(data);
             break;
+        case 'settings':
+            title.textContent = '⚙️ 设置';
+            result = Modal.renderSettingsForm();
+            break;
+        case 'editFund':
+            title.textContent = '✏️ 编辑基金';
+            result = Modal.renderEditFundForm(data);
+            break;
         default:
             console.error('Unknown modal type:', type);
             return;
@@ -99,6 +107,12 @@ const Modal = {
         case 'feeSettings':
             Modal.bindFeeSettingsEvents(data);
             break;
+        case 'settings':
+            Modal.bindSettingsEvents();
+            break;
+        case 'editFund':
+            Modal.bindEditFundEvents(data);
+            break;
         }
 
         EventBus.emit(EventType.MODAL_OPENED, { type, data });
@@ -111,6 +125,205 @@ const Modal = {
         EventBus.emit(EventType.MODAL_CLOSED);
     },
 
+    /**
+     * 渲染基金名称字段HTML（公共方法）
+     * @param {object} options - 配置选项
+     * @param {string} options.idPrefix - ID前缀
+     * @param {string} options.label - 标签文本
+     * @param {string} options.placeholder - 占位符
+     * @param {string} options.value - 当前值
+     * @param {string} options.source - 来源(api/cache/manual)
+     * @param {string} options.updateTime - 更新时间
+     * @param {boolean} options.disabled - 是否禁用
+     * @returns {string} HTML字符串
+     */
+    renderFundNameFieldHtml(options) {
+        const {
+            idPrefix = 'name',
+            label = '基金名称',
+            placeholder = '输入代码后自动获取',
+            value = '',
+            source = '',
+            updateTime = '',
+            disabled = false
+        } = options;
+
+        const sourceText = source === 'api' ? 'API获取' :
+            source === 'cache' ? '缓存' :
+                source === 'manual' ? '手动修改' : '等待获取';
+        const sourceClass = source === 'api' ? 'form-name-source-badge--api' :
+            source === 'cache' ? 'form-name-source-badge--cache' :
+                source === 'manual' ? 'form-name-source-badge--manual' : '';
+
+        const timeInfo = updateTime ? `<span class="form-name-status">更新时间: ${updateTime.slice(0, 10)}</span>` : '';
+        const statusId = idPrefix === 'edit' ? 'edit-name-status' : 'name-status';
+        const statusSpan = idPrefix === 'edit' ? '' : `<span class="form-name-status" id="${statusId}"></span>`;
+
+        return `
+            <div class="form-group">
+                <label class="form-label">${label}</label>
+                <div class="form-name-preview">
+                    <input type="text" id="input-${idPrefix}-fund-name" class="form-input form-name-preview-input"
+                           value="${value}" placeholder="${placeholder}" ${disabled ? 'disabled' : ''}>
+                    <button class="btn btn-secondary form-name-preview-refresh" id="btn-${idPrefix}-refresh-name"
+                            data-tooltip="清除缓存并重新获取" ${disabled ? 'disabled' : ''}>🔄</button>
+                </div>
+                <div class="form-name-source" id="${idPrefix}-name-source-info">
+                    <span class="form-name-source-badge ${sourceClass}" id="${idPrefix}-name-source-badge">${sourceText}</span>
+                    ${timeInfo}
+                    ${statusSpan}
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * 设置基金名称字段事件（公共方法）
+     * @param {object} options - 配置选项
+     * @param {string} options.idPrefix - ID前缀
+     * @param {string} options.fundCode - 基金代码(添加时需要，编辑时可选)
+     * @param {function} options.onCodeChange - 代码变化回调
+     * @param {function} options.onNameChange - 名称变化回调
+     * @param {function} options.onRefresh - 刷新回调
+     * @returns {object} { currentCode, currentName, currentSource }
+     */
+    setupFundNameField(options) {
+        const {
+            idPrefix,
+            fundCode: initialCode = '',
+            onCodeChange,
+            onNameChange,
+            onRefresh
+        } = options;
+
+        const inputName = document.getElementById(`input-${idPrefix}-fund-name`);
+        const btnRefresh = document.getElementById(`btn-${idPrefix}-refresh-name`);
+        const sourceBadge = document.getElementById(`${idPrefix}-name-source-badge`);
+        const statusSpan = document.getElementById(`${idPrefix}-name-status`);
+        const nameInfo = document.getElementById(`${idPrefix}-name-source-info`);
+
+        let currentCode = initialCode;
+        let currentName = '';
+        let currentSource = '';
+
+        const updateNameUI = function(name, source, isGarbled) {
+            if (inputName) inputName.value = name || '';
+            currentName = name || '';
+            currentSource = source || '';
+
+            if (sourceBadge) {
+                sourceBadge.textContent = source === 'api' ? 'API获取' :
+                    source === 'cache' ? '缓存' :
+                        source === 'manual' ? '手动修改' : '等待获取';
+                sourceBadge.className = 'form-name-source-badge';
+                if (source === 'api') sourceBadge.classList.add('form-name-source-badge--api');
+                else if (source === 'cache') sourceBadge.classList.add('form-name-source-badge--cache');
+                else if (source === 'manual') sourceBadge.classList.add('form-name-source-badge--manual');
+            }
+
+            if (statusSpan) {
+                if (isGarbled) {
+                    statusSpan.textContent = '⚠️ 可能是乱码';
+                    statusSpan.className = 'form-name-status form-name-status--garbled';
+                    if (inputName) inputName.style.borderColor = 'var(--color-warning)';
+                } else if (name) {
+                    statusSpan.textContent = '✓ 名称有效';
+                    statusSpan.className = 'form-name-status form-name-status--valid';
+                    if (inputName) inputName.style.borderColor = '';
+                } else {
+                    statusSpan.textContent = '';
+                    if (inputName) inputName.style.borderColor = '';
+                }
+            }
+        };
+
+        const fetchName = async function(code, forceRefresh = false) {
+            if (!code || !Utils.isValidFundCode(code)) {
+                updateNameUI('', '', false);
+                return;
+            }
+
+            try {
+                if (forceRefresh) {
+                    FundAPI.clearCacheForFund(code);
+                    NameCache.remove(code);
+                }
+
+                const cachedEntry = NameCache.get(code);
+                if (cachedEntry && !forceRefresh) {
+                    const isGarbled = NameValidator.detectGarbled(cachedEntry.name).isGarbled;
+                    updateNameUI(cachedEntry.name, 'cache', isGarbled);
+                    EventBus.emit(EventType.NAME_CACHE_HIT, { code: code, name: cachedEntry.name });
+                    return;
+                }
+
+                const name = await FundAPI.fetchNameOnly(code);
+                const validation = NameValidator.detectGarbled(name);
+                updateNameUI(name, 'api', validation.isGarbled);
+
+                if (!validation.isGarbled) {
+                    NameCache.set(code, name, 'api');
+                }
+
+                EventBus.emit(EventType.NAME_FETCHED, { code: code, name: name, isGarbled: validation.isGarbled });
+            } catch (error) {
+                console.error('Failed to fetch name:', error);
+                updateNameUI('', '', false);
+            }
+        };
+
+        if (onCodeChange) {
+            let debounceTimer = null;
+            onCodeChange((code) => {
+                currentCode = code;
+                if (debounceTimer) clearTimeout(debounceTimer);
+                if (!code || !Utils.isValidFundCode(code)) {
+                    updateNameUI('', '', false);
+                    return;
+                }
+                debounceTimer = setTimeout(() => fetchName(code, false), 500);
+            });
+        }
+
+        if (inputName) {
+            inputName.addEventListener('input', function() {
+                const name = inputName.value.trim();
+                if (name !== currentName) {
+                    const validation = NameValidator.detectGarbled(name);
+                    updateNameUI(name, 'manual', validation.isGarbled);
+                    if (onNameChange) {
+                        onNameChange(name, currentCode);
+                    }
+                }
+            });
+        }
+
+        if (btnRefresh) {
+            btnRefresh.addEventListener('click', async function() {
+                if (!currentCode) return;
+
+                btnRefresh.disabled = true;
+                btnRefresh.textContent = '...';
+
+                await fetchName(currentCode, true);
+
+                btnRefresh.disabled = false;
+                btnRefresh.textContent = '🔄';
+
+                if (onRefresh) {
+                    onRefresh(currentCode, currentName, currentSource);
+                }
+                EventBus.emit(EventType.NAME_REFRESH_REQUESTED, { code: currentCode });
+            });
+        }
+
+        if (initialCode && Utils.isValidFundCode(initialCode)) {
+            fetchName(initialCode, false);
+        }
+
+        return { currentCode, currentName, currentSource, updateNameUI, fetchName };
+    },
+
     renderAddFundForm() {
         return {
             content: '<div class="form-group">' +
@@ -118,17 +331,11 @@ const Modal = {
                 '<input type="text" id="input-fund-code" class="form-input" placeholder="请输入6位基金代码" maxlength="6">' +
                 '<div id="error-fund-code" class="form-error"></div>' +
                 '</div>' +
-                '<div class="form-group">' +
-                '<label class="form-label">基金名称</label>' +
-                '<div class="form-name-preview">' +
-                '<input type="text" id="input-fund-name" class="form-input form-name-preview-input" placeholder="输入代码后自动获取">' +
-                '<button class="btn btn-secondary form-name-preview-refresh" id="btn-refresh-name" data-tooltip="清除缓存并重新获取">🔄</button>' +
-                '</div>' +
-                '<div class="form-name-source" id="name-source-info">' +
-                '<span class="form-name-source-badge" id="name-source-badge">等待获取</span>' +
-                '<span class="form-name-status" id="name-status"></span>' +
-                '</div>' +
-                '</div>' +
+                Modal.renderFundNameFieldHtml({
+                    idPrefix: '',
+                    label: '基金名称',
+                    placeholder: '输入代码后自动获取'
+                }) +
                 '<div class="form-group">' +
                 '<label class="form-label">备注</label>' +
                 '<input type="text" id="input-fund-remark" class="form-input" placeholder="添加备注（可选）" maxlength="50">' +
@@ -979,6 +1186,441 @@ const Modal = {
         if (success) {
             Utils.showToast('费率配置已保存', 'success');
             Modal.hide();
+        }
+    },
+
+    /**
+     * 渲染设置表单
+     */
+    renderSettingsForm() {
+        const settings = Storage.loadSettings() || {};
+        const defaults = {
+            bigNumberEnabled: true,
+            bigNumberWanThreshold: 10000,
+            bigNumberYiThreshold: 100000000,
+            defaultBuyFee: 0,
+            defaultSellFee: 0,
+            defaultDividendMode: 'cash',
+            defaultViewMode: 'card',
+            defaultSortField: 'profitRate',
+            defaultSortOrder: 'desc',
+            defaultPageSize: 10
+        };
+        const s = { ...defaults, ...settings };
+
+        const content = `
+            <div class="settings-modal">
+                <div class="settings-tabs-nav">
+                    <button class="settings-tab-btn active" data-tab="number">数字显示</button>
+                    <button class="settings-tab-btn" data-tab="trade">交易默认</button>
+                    <button class="settings-tab-btn" data-tab="dividend">分红设置</button>
+                    <button class="settings-tab-btn" data-tab="display">显示设置</button>
+                    <button class="settings-tab-btn" data-tab="data">数据管理</button>
+                </div>
+                <div class="settings-tabs-content">
+                    <!-- 数字显示 -->
+                    <div class="settings-tab-panel active" data-panel="number">
+                        <div class="settings-group">
+                            <div class="settings-label-row">
+                                <span class="settings-label">大数字转换</span>
+                                <label class="settings-toggle">
+                                    <input type="checkbox" id="settings-big-number-enabled" ${s.bigNumberEnabled ? 'checked' : ''}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="settings-desc">超过阈值自动转换为"万"/"亿"单位显示</div>
+                        </div>
+                        <div class="settings-group">
+                            <div class="settings-label">万级阈值</div>
+                            <div class="settings-input-group">
+                                <input type="number" class="settings-input" id="settings-wan-threshold" value="${s.bigNumberWanThreshold}">
+                                <span class="input-suffix">元</span>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <div class="settings-label">亿级阈值</div>
+                            <div class="settings-input-group">
+                                <input type="number" class="settings-input" id="settings-yi-threshold" value="${s.bigNumberYiThreshold}">
+                                <span class="input-suffix">元</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 交易默认 -->
+                    <div class="settings-tab-panel" data-panel="trade">
+                        <div class="settings-group">
+                            <div class="settings-label">默认买入费率</div>
+                            <div class="settings-input-group">
+                                <input type="number" class="settings-input" id="settings-default-buy-fee" value="${s.defaultBuyFee}" step="0.01">
+                                <span class="input-suffix">%</span>
+                            </div>
+                            <div class="settings-desc">新增交易时的默认买入手续费率</div>
+                        </div>
+                        <div class="settings-group">
+                            <div class="settings-label">默认卖出费率</div>
+                            <div class="settings-input-group">
+                                <input type="number" class="settings-input" id="settings-default-sell-fee" value="${s.defaultSellFee}" step="0.01">
+                                <span class="input-suffix">%</span>
+                            </div>
+                            <div class="settings-desc">新增交易时的默认卖出手续费率</div>
+                        </div>
+                    </div>
+                    <!-- 分红设置 -->
+                    <div class="settings-tab-panel" data-panel="dividend">
+                        <div class="settings-group">
+                            <div class="settings-label">默认分红方式</div>
+                            <div class="settings-radio-group">
+                                <label class="settings-radio-item">
+                                    <input type="radio" name="settings-dividend-mode" value="cash" ${s.defaultDividendMode === 'cash' ? 'checked' : ''}>
+                                    <span class="radio-circle"></span>
+                                    <span class="radio-label">现金分红</span>
+                                </label>
+                                <label class="settings-radio-item">
+                                    <input type="radio" name="settings-dividend-mode" value="reinvest" ${s.defaultDividendMode === 'reinvest' ? 'checked' : ''}>
+                                    <span class="radio-circle"></span>
+                                    <span class="radio-label">红利再投</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 显示设置 -->
+                    <div class="settings-tab-panel" data-panel="display">
+                        <div class="settings-group">
+                            <div class="settings-label">默认视图模式</div>
+                            <select class="settings-select" id="settings-view-mode">
+                                <option value="card" ${s.defaultViewMode === 'card' ? 'selected' : ''}>卡片视图</option>
+                                <option value="list" ${s.defaultViewMode === 'list' ? 'selected' : ''}>列表视图</option>
+                            </select>
+                        </div>
+                        <div class="settings-group">
+                            <div class="settings-label">默认排序字段</div>
+                            <select class="settings-select" id="settings-sort-field">
+                                <option value="profitRate" ${s.defaultSortField === 'profitRate' ? 'selected' : ''}>收益率</option>
+                                <option value="marketValue" ${s.defaultSortField === 'marketValue' ? 'selected' : ''}>市值</option>
+                                <option value="fundCode" ${s.defaultSortField === 'fundCode' ? 'selected' : ''}>基金代码</option>
+                                <option value="investAmount" ${s.defaultSortField === 'investAmount' ? 'selected' : ''}>投入金额</option>
+                            </select>
+                        </div>
+                        <div class="settings-group">
+                            <div class="settings-label">排序方向</div>
+                            <div class="settings-radio-group">
+                                <label class="settings-radio-item">
+                                    <input type="radio" name="settings-sort-order" value="asc" ${s.defaultSortOrder === 'asc' ? 'checked' : ''}>
+                                    <span class="radio-circle"></span>
+                                    <span class="radio-label">升序</span>
+                                </label>
+                                <label class="settings-radio-item">
+                                    <input type="radio" name="settings-sort-order" value="desc" ${s.defaultSortOrder === 'desc' ? 'checked' : ''}>
+                                    <span class="radio-circle"></span>
+                                    <span class="radio-label">降序</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <div class="settings-label">每页显示条数</div>
+                            <select class="settings-select" id="settings-page-size">
+                                <option value="10" ${s.defaultPageSize === 10 ? 'selected' : ''}>10条</option>
+                                <option value="20" ${s.defaultPageSize === 20 ? 'selected' : ''}>20条</option>
+                                <option value="50" ${s.defaultPageSize === 50 ? 'selected' : ''}>50条</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- 数据管理 -->
+                    <div class="settings-tab-panel" data-panel="data">
+                        <div class="settings-data-buttons">
+                            <button class="settings-data-btn" id="btn-settings-export">
+                                <div class="data-btn-icon">📤</div>
+                                <div class="data-btn-text">
+                                    <div class="data-btn-title">导出数据</div>
+                                    <div class="data-btn-desc">下载所有基金和交易记录为JSON文件</div>
+                                </div>
+                            </button>
+                            <button class="settings-data-btn" id="btn-settings-import">
+                                <div class="data-btn-icon">📥</div>
+                                <div class="data-btn-text">
+                                    <div class="data-btn-title">导入数据</div>
+                                    <div class="data-btn-desc">从JSON文件导入数据（支持合并/覆盖）</div>
+                                </div>
+                            </button>
+                            <button class="settings-data-btn settings-data-btn-danger" id="btn-settings-clear">
+                                <div class="data-btn-icon">🗑️</div>
+                                <div class="data-btn-text">
+                                    <div class="data-btn-title">清除所有数据</div>
+                                    <div class="data-btn-desc">删除所有基金和交易记录，此操作不可恢复</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return {
+            content: content,
+            actions: '<button class="btn btn-secondary" onclick="Modal.hide()">取消</button>' +
+                     '<button class="btn btn-primary" id="btn-save-settings">保存设置</button>'
+        };
+    },
+
+    /**
+     * 绑定设置弹窗事件
+     */
+    bindSettingsEvents() {
+        document.querySelectorAll('.settings-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.settings-tab-panel').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                const tabId = this.dataset.tab;
+                document.querySelector(`.settings-tab-panel[data-panel="${tabId}"]`).classList.add('active');
+            });
+        });
+
+        const btnSave = document.getElementById('btn-save-settings');
+        if (btnSave) {
+            btnSave.addEventListener('click', () => {
+                const settings = {
+                    bigNumberEnabled: document.getElementById('settings-big-number-enabled')?.checked ?? true,
+                    bigNumberWanThreshold: parseInt(document.getElementById('settings-wan-threshold')?.value) || 10000,
+                    bigNumberYiThreshold: parseInt(document.getElementById('settings-yi-threshold')?.value) || 100000000,
+                    defaultBuyFee: parseFloat(document.getElementById('settings-default-buy-fee')?.value) || 0,
+                    defaultSellFee: parseFloat(document.getElementById('settings-default-sell-fee')?.value) || 0,
+                    defaultDividendMode: document.querySelector('input[name="settings-dividend-mode"]:checked')?.value || 'cash',
+                    defaultViewMode: document.getElementById('settings-view-mode')?.value || 'card',
+                    defaultSortField: document.getElementById('settings-sort-field')?.value || 'profitRate',
+                    defaultSortOrder: document.querySelector('input[name="settings-sort-order"]:checked')?.value || 'desc',
+                    defaultPageSize: parseInt(document.getElementById('settings-page-size')?.value) || 10
+                };
+                Storage.saveSettings(settings);
+                Modal.hide();
+                Utils.showToast('设置已保存');
+                EventBus.emit(EventType.SETTINGS_CHANGED, settings);
+            });
+        }
+
+        const btnExport = document.getElementById('btn-settings-export');
+        if (btnExport) {
+            btnExport.addEventListener('click', () => {
+                const data = Storage.exportAll();
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `基金计算器数据_${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                Utils.showToast('数据导出成功');
+            });
+        }
+
+        const btnImport = document.getElementById('btn-settings-import');
+        if (btnImport) {
+            btnImport.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    try {
+                        const text = await file.text();
+                        const data = JSON.parse(text);
+                        const success = Storage.importAll(data, false);
+                        if (success) {
+                            Utils.showToast('数据导入成功');
+                            EventBus.emit(EventType.DATA_IMPORTED);
+                        } else {
+                            Utils.showToast('数据格式错误', 'error');
+                        }
+                    } catch (err) {
+                        Utils.showToast('导入失败: ' + err.message, 'error');
+                    }
+                };
+                input.click();
+            });
+        }
+
+        const btnClear = document.getElementById('btn-settings-clear');
+        if (btnClear) {
+            btnClear.addEventListener('click', () => {
+                if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
+                    localStorage.clear();
+                    Utils.showToast('数据已清除');
+                    EventBus.emit(EventType.DATA_CLEARED);
+                    location.reload();
+                }
+            });
+        }
+    },
+
+    /**
+     * 渲染编辑基金表单
+     */
+    renderEditFundForm(data) {
+        const fundId = data.fundId;
+        const fund = FundManager.getFund(fundId);
+        if (!fund) {
+            return { content: '<p>基金不存在</p>', actions: '<button class="btn btn-secondary" onclick="Modal.hide()">关闭</button>' };
+        }
+
+        const code = fund.code || '';
+        const name = fund.name || '';
+        const remark = fund.remark || '';
+        const nameSource = fund.nameSource || '';
+        const nameUpdateTime = fund.nameUpdateTime || '';
+
+        const content = `
+            <div class="form-group">
+                <label class="form-label">基金代码</label>
+                <div class="form-value">${code}</div>
+            </div>
+            ${Modal.renderFundNameFieldHtml({
+                idPrefix: 'edit',
+                label: '基金名称 *',
+                placeholder: '输入名称或点击刷新按钮获取',
+                value: name,
+                source: nameSource,
+                updateTime: nameUpdateTime
+            })}
+            <div class="form-group">
+                <label class="form-label">备注</label>
+                <input type="text" id="input-edit-fund-remark" class="form-input" value="${remark}" placeholder="添加备注（可选）" maxlength="50">
+            </div>
+        `;
+
+        return {
+            content: content,
+            actions: '<button class="btn btn-secondary" onclick="Modal.hide()">取消</button>' +
+                     '<button class="btn btn-primary" id="btn-confirm-edit-fund">保存</button>'
+        };
+    },
+
+    /**
+     * 绑定编辑基金弹窗事件
+     */
+    bindEditFundEvents(data) {
+        const fundId = data.fundId;
+        const fund = FundManager.getFund(fundId);
+        if (!fund) return;
+
+        const inputName = document.getElementById('input-edit-fund-name');
+        const btnRefreshName = document.getElementById('btn-edit-refresh-name');
+        const sourceBadge = document.getElementById('edit-name-source-badge');
+        const statusSpan = document.getElementById('edit-name-status');
+
+        const updateNameUI = function(name, source, isGarbled = false) {
+            if (inputName) inputName.value = name || '';
+            if (sourceBadge) {
+                sourceBadge.textContent = source === 'api' ? 'API获取' :
+                    source === 'cache' ? '缓存' :
+                        source === 'manual' ? '手动修改' : '等待获取';
+                sourceBadge.className = 'form-name-source-badge';
+                if (source === 'api') sourceBadge.classList.add('form-name-source-badge--api');
+                else if (source === 'cache') sourceBadge.classList.add('form-name-source-badge--cache');
+                else if (source === 'manual') sourceBadge.classList.add('form-name-source-badge--manual');
+            }
+            if (statusSpan) {
+                if (isGarbled) {
+                    statusSpan.textContent = '⚠️ 可能是乱码';
+                    statusSpan.className = 'form-name-status form-name-status--garbled';
+                } else if (name) {
+                    statusSpan.textContent = '✓ 名称有效';
+                    statusSpan.className = 'form-name-status form-name-status--valid';
+                } else {
+                    statusSpan.textContent = '';
+                }
+            }
+        };
+
+        if (btnRefreshName) {
+            btnRefreshName.addEventListener('click', async function() {
+                const code = fund.code;
+                if (!code) return;
+
+                btnRefreshName.disabled = true;
+                btnRefreshName.textContent = '...';
+
+                try {
+                    const cachedEntry = NameCache.get(code);
+                    if (cachedEntry) {
+                        const isGarbled = NameValidator.detectGarbled(cachedEntry.name).isGarbled;
+                        updateNameUI(cachedEntry.name, 'cache', isGarbled);
+                        btnRefreshName.disabled = false;
+                        btnRefreshName.textContent = '🔄';
+                        return;
+                    }
+
+                    const name = await FundAPI.fetchNameOnly(code);
+                    const validation = NameValidator.detectGarbled(name);
+                    updateNameUI(name, 'api', validation.isGarbled);
+
+                    if (!validation.isGarbled) {
+                        NameCache.set(code, name, 'api');
+                    }
+
+                    Utils.showToast(validation.isGarbled ? '名称可能是乱码，请手动确认' : '名称已刷新', validation.isGarbled ? 'warning' : 'success');
+                } catch (error) {
+                    console.error('Fetch fund name error:', error);
+                    Utils.showToast('获取名称失败', 'error');
+                } finally {
+                    btnRefreshName.disabled = false;
+                    btnRefreshName.textContent = '🔄';
+                }
+            });
+        }
+
+        if (inputName) {
+            inputName.addEventListener('input', function() {
+                const name = inputName.value.trim();
+                if (name) {
+                    const validation = NameValidator.detectGarbled(name);
+                    updateNameUI(name, 'manual', validation.isGarbled);
+                }
+            });
+        }
+
+        const btnConfirm = document.getElementById('btn-confirm-edit-fund');
+        if (btnConfirm) {
+            btnConfirm.addEventListener('click', async function() {
+                const newName = inputName ? inputName.value.trim() : '';
+                const newRemark = document.getElementById('input-edit-fund-remark')?.value.trim() || '';
+
+                if (!newName) {
+                    Utils.showToast('基金名称不能为空', 'error');
+                    return;
+                }
+
+                const currentFund = FundManager.getFund(fundId);
+                const nameChanged = newName !== (currentFund.name || '');
+                const remarkChanged = newRemark !== (currentFund.remark || '');
+
+                if (!nameChanged && !remarkChanged) {
+                    Modal.hide();
+                    Utils.showToast('未做任何修改');
+                    return;
+                }
+
+                const updateData = {};
+                if (nameChanged) {
+                    updateData.name = newName;
+                    updateData.nameSource = 'manual';
+                    updateData.nameUpdateTime = new Date().toISOString();
+                    NameCache.set(fund.code, newName, 'manual');
+                }
+                if (remarkChanged) {
+                    updateData.remark = newRemark;
+                }
+
+                const success = FundManager.updateFund(fundId, updateData);
+                if (success) {
+                    Modal.hide();
+                    Utils.showToast('基金信息已更新', 'success');
+                    EventBus.emit(EventType.FUND_UPDATED, { fundId });
+                    Detail.refresh();
+                } else {
+                    Utils.showToast('保存失败', 'error');
+                }
+            });
         }
     }
 };
