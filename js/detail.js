@@ -144,8 +144,16 @@ const Detail = {
      * 加载基金详情
      * @param {string} fundId - 基金ID
      */
-    load(fundId) {
+    async load(fundId) {
         this.currentFundId = fundId;
+
+        // 自动刷新基金数据（从API获取最新净值）
+        try {
+            await FundManager.refreshFund(fundId);
+        } catch (e) {
+            console.warn('自动刷新失败，使用缓存数据', e);
+        }
+
         this.refresh();
     },
 
