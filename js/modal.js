@@ -786,6 +786,7 @@ const Modal = {
 
         if (isEdit) {
             setTimeout(autoCalcFee, 100);
+            setTimeout(calcAmount, 100);
         }
 
         btnConfirm.addEventListener('click', () => {
