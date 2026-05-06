@@ -38,13 +38,6 @@ const Detail = {
      * 绑定事件
      */
     bindEvents() {
-        const btnBack = document.getElementById('btn-back');
-        if (btnBack) {
-            btnBack.addEventListener('click', () => {
-                Router.navigate('overview');
-            });
-        }
-
         const btnEditFund = document.getElementById('btn-edit-fund');
         if (btnEditFund) {
             btnEditFund.addEventListener('click', () => {

@@ -14,16 +14,9 @@ const ToolPage = {
         if (ToolPage._initialized) return;
         ToolPage._initialized = true;
 
-        const btnBack = document.getElementById('btn-back-from-tools');
         const toolCard = document.querySelector('.tool-card[data-tool="conversion"]');
         const btnCalc = document.getElementById('btn-calc-conversion');
         const btnSave = document.getElementById('btn-save-conversion');
-
-        if (btnBack) {
-            btnBack.addEventListener('click', () => {
-                Router.navigate('overview');
-            });
-        }
 
         if (toolCard) {
             toolCard.addEventListener('click', () => {

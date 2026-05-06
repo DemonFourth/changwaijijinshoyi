@@ -14,7 +14,10 @@
     <div id="app">
         <!-- 标题栏 -->
         <header class="header">
-            <h1 class="title">场外基金收益计算器</h1>
+            <div class="header-left">
+                <button id="btn-header-back" class="btn btn-header-back hidden" type="button">← 返回</button>
+                <h1 class="title" id="header-title">场外基金收益计算器</h1>
+            </div>
             <div class="header-actions">
                 <button id="btn-tools" class="btn btn-secondary" type="button">🧰 工具箱</button>
                 <button id="btn-export" class="btn btn-secondary" type="button">导出数据</button>
@@ -85,7 +88,6 @@
             <!-- 详情页 -->
             <div id="page-detail" class="page">
                 <div class="detail-actions" style="margin-bottom: 1rem;">
-                    <button id="btn-back" class="btn btn-back" type="button">← 返回</button>
                     <div style="margin-left: auto; display: flex; gap: 0.5rem;">
                         <button id="btn-edit-fund" class="btn btn-secondary" type="button">编辑</button>
                         <button id="btn-delete-fund" class="btn btn-danger" type="button">删除</button>
@@ -381,11 +383,6 @@
 
             <!-- 工具箱页 -->
             <div id="page-tools" class="page">
-                <div class="tool-header">
-                    <button id="btn-back-from-tools" class="btn btn-back" type="button">← 返回</button>
-                    <h2 style="margin: 0;">工具箱</h2>
-                </div>
-
                 <div class="tool-grid">
                     <div class="tool-card" data-tool="conversion">
                         <div class="tool-icon">🔄</div>

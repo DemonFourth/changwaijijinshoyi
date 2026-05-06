@@ -57,6 +57,9 @@ const App = {
             // 绑定设置按钮
             this.setupSettingsButton();
 
+            // 绑定 header 返回按钮
+            this.setupHeaderBackButton();
+
             // 监听路由变化
             this.setupRouteListener();
 
@@ -129,10 +132,49 @@ const App = {
     },
 
     /**
+     * 设置 header 返回按钮
+     */
+    setupHeaderBackButton() {
+        const btnBack = document.getElementById('btn-header-back');
+        if (btnBack) {
+            btnBack.addEventListener('click', () => {
+                Router.navigate('overview');
+            });
+        }
+    },
+
+    /**
+     * 更新 header 状态
+     */
+    updateHeader(route) {
+        const btnBack = document.getElementById('btn-header-back');
+        const headerTitle = document.getElementById('header-title');
+
+        if (!btnBack || !headerTitle) return;
+
+        if (route.name === 'detail') {
+            btnBack.classList.remove('hidden');
+            const fund = DataService.getFund(route.params.fundId);
+            if (fund) {
+                headerTitle.textContent = `${fund.name}（${fund.code}）`;
+            }
+        } else if (route.name === 'tools') {
+            btnBack.classList.remove('hidden');
+            headerTitle.textContent = '工具箱';
+        } else {
+            btnBack.classList.add('hidden');
+            headerTitle.textContent = '场外基金收益计算器';
+        }
+    },
+
+    /**
      * 显示当前页面
      */
     showCurrentPage() {
         const route = Router.getCurrentRoute();
+
+        // 更新 header 状态
+        this.updateHeader(route);
 
         // 隐藏所有页面
         document.querySelectorAll('.page').forEach(page => {
