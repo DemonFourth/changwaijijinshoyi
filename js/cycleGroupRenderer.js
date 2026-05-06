@@ -71,7 +71,7 @@ const CycleGroupRenderer = {
             '</tr>';
 
         if (trade.remark) {
-            html += '<tr class="trade-remark-row cycle-remark-row" data-trade-id="' + trade.id + '" data-cycle-id="' + cycleId + '" style="' + displayStyle + '">' +
+            html += '<tr class="trade-remark-row cycle-remark-row" data-trade-id="' + trade.id + '" data-cycle-id="' + cycleId + '" style="border-left: 3px solid ' + cycleColor + '; ' + displayStyle + '">' +
                 '<td colspan="9">' +
                 '<div class="remark-content">' +
                 '<span class="remark-icon">💬</span>' +
