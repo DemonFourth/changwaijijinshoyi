@@ -634,7 +634,7 @@ const Modal = {
 
         let autoCalcAmount = null;
 
-        const calcAmount = () => {
+        const calcAmount = (skipSetValue = false) => {
             const nv = parseFloat(netValue.value);
             const s = parseFloat(shares.value);
             const f = parseFloat(fee.value) || 0;
@@ -648,7 +648,9 @@ const Modal = {
                 } else {
                     autoCalcAmount = nv * s;
                 }
-                amount.value = autoCalcAmount.toFixed(2);
+                if (!skipSetValue) {
+                    amount.value = autoCalcAmount.toFixed(2);
+                }
                 hintAmount.textContent = type === 'buy'
                     ? '自动计算：净值×份额+手续费 = ' + autoCalcAmount.toFixed(2)
                     : type === 'sell'
@@ -786,7 +788,10 @@ const Modal = {
 
         if (isEdit) {
             setTimeout(autoCalcFee, 100);
-            setTimeout(calcAmount, 100);
+            setTimeout(() => {
+                calcAmount(true);
+                checkMismatch();
+            }, 100);
         }
 
         btnConfirm.addEventListener('click', () => {
