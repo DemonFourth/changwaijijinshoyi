@@ -528,11 +528,18 @@ td.negative {
 /* 基金标题区 */
 .fund-title-area {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 1rem;
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
     border-bottom: 2px solid var(--color-border-primary);
+    flex-wrap: wrap;
+}
+
+.title-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
 }
 
 .fund-name {
@@ -1919,6 +1926,17 @@ td.negative {
     .btn {
         padding: 0.4rem 0.8rem;
         font-size: 0.8rem;
+    }
+
+    .fund-title-area {
+        gap: 0.5rem;
+    }
+
+    .title-actions {
+        gap: 0.375rem;
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-end;
     }
 
     .main-content {

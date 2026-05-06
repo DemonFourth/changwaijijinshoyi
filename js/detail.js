@@ -813,7 +813,7 @@ const Detail = {
             '<div class="edit-menu-item" id="menu-refresh-name">🔄 刷新名称</div>' +
             '</div></div>';
 
-        const actionsEl = document.querySelector('.detail-actions');
+        const actionsEl = document.querySelector('.fund-title-area');
         if (!actionsEl) return;
 
         actionsEl.insertAdjacentHTML('beforeend', menuHtml);

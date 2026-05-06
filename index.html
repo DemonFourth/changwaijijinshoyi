@@ -87,20 +87,17 @@
 
             <!-- 详情页 -->
             <div id="page-detail" class="page">
-                <div class="detail-actions" style="margin-bottom: 1rem;">
-                    <div style="margin-left: auto; display: flex; gap: 0.5rem;">
-                        <button id="btn-edit-fund" class="btn btn-secondary" type="button">编辑</button>
-                        <button id="btn-delete-fund" class="btn btn-danger" type="button">删除</button>
-                    </div>
-                </div>
-
                 <!-- 基金信息 - 优化后的数据仪表盘风格 -->
                 <div class="fund-info">
                     <!-- 基金标题区 -->
                     <div class="fund-title-area">
                         <div class="fund-name" id="detail-fund-name">基金详情</div>
                         <div class="fund-code" id="detail-fund-code"></div>
-                        <button id="btn-fee-settings" class="btn btn-secondary btn-sm" type="button" style="margin-left: auto;">交易费率设置</button>
+                        <div class="title-actions">
+                            <button id="btn-edit-fund" class="btn btn-secondary btn-sm" type="button">编辑</button>
+                            <button id="btn-delete-fund" class="btn btn-danger btn-sm" type="button">删除</button>
+                            <button id="btn-fee-settings" class="btn btn-secondary btn-sm" type="button">交易费率设置</button>
+                        </div>
                     </div>
                     
                     <!-- 核心数据区 -->
