@@ -37,7 +37,7 @@ const CycleGroupRenderer = {
 
     renderTradeRow(trade, cycleColor, isExpanded, cycleId, cycleIndex, profitMap = new Map()) {
         const typeText = { buy: '买入', sell: '卖出', dividend: '分红' };
-        const typeClass = { buy: 'trade-type-buy', sell: 'trade-type-sell', dividend: 'trade-type-dividend' };
+        const typeClass = { buy: 'trade-type-badge trade-type-buy', sell: 'trade-type-badge trade-type-sell', dividend: 'trade-type-badge trade-type-dividend' };
         const priceDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
         const remarkTitle = trade.remark || '';
         const bgColor = (cycleIndex % 2 === 0) ? 'var(--color-cycle-bg-odd)' : 'var(--color-cycle-bg-even)';
