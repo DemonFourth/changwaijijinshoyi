@@ -67,6 +67,9 @@
     --color-fall: #48bb78;
     --color-rise-bg: rgb(237 137 54 / 15%);
     --color-fall-bg: rgb(72 187 120 / 15%);
+
+    /* Tooltip 问号颜色 */
+    --color-tooltip: #667eea;
 }
 
 /* CSS设计令牌 - 深色主题 - 暗紫轻奢风 */
@@ -122,6 +125,9 @@
     --color-fall: #68d391;
     --color-rise-bg: rgb(252 129 129 / 15%);
     --color-fall-bg: rgb(104 211 145 / 15%);
+
+    /* Tooltip 问号颜色 */
+    --color-tooltip: #667eea;
 
     /* 间距 */
     --spacing-xs: 0.25rem;

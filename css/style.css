@@ -2751,15 +2751,15 @@ td.negative {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    background: var(--color-brand);
-    color: var(--color-text-on-brand);
-    font-size: 12px;
+    background: var(--color-tooltip);
+    color: white;
+    font-size: 11px;
     font-weight: bold;
     cursor: help;
-    line-height: 1;
+    vertical-align: middle;
 }
 
 .tooltip-text {
