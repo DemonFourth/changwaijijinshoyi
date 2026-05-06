@@ -280,6 +280,13 @@ const Overview = {
                         <span class="fund-stat-label">最新净值</span>
                         <span class="fund-stat-value">${Utils.formatNumber(fund.netValue || 0, 4)}</span>
                     </div>
+                    <div class="fund-stat">
+                        <span class="fund-stat-label">估算净值</span>
+                        <span class="fund-stat-value ${fund.estimatedGrowth > 0 ? 'positive' : fund.estimatedGrowth < 0 ? 'negative' : ''}">
+                            ${fund.estimatedValue ? Utils.formatNumber(fund.estimatedValue, 4) : '-'}
+                            ${fund.estimatedGrowth ? `<span class="fund-stat-change ${fund.estimatedGrowth > 0 ? 'positive' : fund.estimatedGrowth < 0 ? 'negative' : ''}">${fund.estimatedGrowth >= 0 ? '↑+' : '↓'}${parseFloat(fund.estimatedGrowth).toFixed(2)}%</span>` : ''}
+                        </span>
+                    </div>
                 </div>
             </div>
         `;
@@ -339,7 +346,7 @@ const Overview = {
         }
 
         let html = '<table class="fund-list-table"><thead><tr>';
-        html += '<th>基金名称</th><th>代码</th><th>收益率</th><th>收益额</th><th>持仓市值</th><th>最新净值</th>';
+        html += '<th>基金名称</th><th>代码</th><th>收益率</th><th>收益额</th><th>持仓市值</th><th>最新净值</th><th>估算净值</th>';
         html += '</tr></thead><tbody>';
 
         funds.forEach(fund => {
@@ -349,6 +356,7 @@ const Overview = {
             const profitRate = summary.profitRate || 0;
             const profitAmount = summary.totalProfit || 0;
             const marketValue = holding.value || 0;
+            const growthClass = fund.estimatedGrowth > 0 ? 'positive' : fund.estimatedGrowth < 0 ? 'negative' : '';
 
             html += `<tr class="fund-row" data-fund-id="${fund.id}" style="cursor:pointer;">`;
             html += `<td class="fund-name-cell">${fund.name}</td>`;
@@ -357,6 +365,7 @@ const Overview = {
             html += `<td class="${Utils.getValueColor(profitAmount)}">${Utils.formatMoneySmart(profitAmount)}</td>`;
             html += `<td>${Utils.formatMoneySmart(marketValue)}</td>`;
             html += `<td>${Utils.formatNumber(fund.netValue || 0, 4)}</td>`;
+            html += `<td class="${growthClass}">${fund.estimatedValue ? Utils.formatNumber(fund.estimatedValue, 4) : '-'}${fund.estimatedGrowth ? `<span class="fund-stat-change ${growthClass}">${fund.estimatedGrowth >= 0 ? '↑+' : '↓'}${parseFloat(fund.estimatedGrowth).toFixed(2)}%</span>` : ''}</td>`;
             html += '</tr>';
         });
 

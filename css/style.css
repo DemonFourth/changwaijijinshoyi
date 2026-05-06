@@ -423,6 +423,21 @@ td.negative {
     color: var(--color-fall);
 }
 
+.fund-stat-change {
+    display: inline-block;
+    font-size: 0.75rem;
+    margin-left: 0.375rem;
+    font-weight: 400;
+}
+
+.fund-stat-change.positive {
+    color: var(--color-rise);
+}
+
+.fund-stat-change.negative {
+    color: var(--color-fall);
+}
+
 /* 图表区域 - 清新现代风 */
 .chart-container {
     background: var(--color-bg-card);
