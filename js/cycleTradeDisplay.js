@@ -253,14 +253,10 @@ const CycleTradeDisplay = {
     renderFilterBarControls(filterBar) {
         if (!filterBar) return;
 
+        // 移除切换按钮渲染（始终使用分组视图）
         const existingToggle = filterBar.querySelector('.display-mode-toggle');
-        if (!existingToggle) {
-            const toggleHtml = CycleGroupRenderer.renderModeToggle(CycleTradeDisplay._displayMode);
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = toggleHtml;
-            filterBar.insertBefore(tempDiv.firstChild, filterBar.firstChild);
-        } else {
-            existingToggle.outerHTML = CycleGroupRenderer.renderModeToggle(CycleTradeDisplay._displayMode);
+        if (existingToggle) {
+            existingToggle.remove();
         }
 
         const existingCycleFilter = filterBar.querySelector('#filter-cycle');

@@ -118,19 +118,9 @@ const Detail = {
             });
         }
 
-        // 展示模式切换按钮（事件委托）
+        // 轮次筛选（始终使用分组视图）
         const filterBar = document.querySelector('.trade-filter-bar');
         if (filterBar) {
-            filterBar.addEventListener('click', (e) => {
-                const modeBtn = e.target.closest('.display-mode-btn');
-                if (modeBtn) {
-                    const mode = modeBtn.dataset.mode;
-                    if (mode && mode !== CycleTradeDisplay.getDisplayMode()) {
-                        CycleTradeDisplay.toggleDisplayMode();
-                    }
-                }
-            });
-
             filterBar.addEventListener('change', (e) => {
                 if (e.target.id === 'filter-cycle') {
                     const cycleId = e.target.value ? parseInt(e.target.value) : null;
