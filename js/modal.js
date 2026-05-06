@@ -148,6 +148,8 @@ const Modal = {
             disabled = false
         } = options;
 
+        const prefix = idPrefix ? idPrefix + '-' : '';
+
         const sourceText = source === 'api' ? 'API获取' :
             source === 'cache' ? '缓存' :
                 source === 'manual' ? '手动修改' : '等待获取';
@@ -156,20 +158,20 @@ const Modal = {
                 source === 'manual' ? 'form-name-source-badge--manual' : '';
 
         const timeInfo = updateTime ? `<span class="form-name-status">更新时间: ${updateTime.slice(0, 10)}</span>` : '';
-        const statusId = idPrefix === 'edit' ? 'edit-name-status' : 'name-status';
+        const statusId = prefix ? prefix + 'name-status' : 'name-status';
         const statusSpan = idPrefix === 'edit' ? '' : `<span class="form-name-status" id="${statusId}"></span>`;
 
         return `
             <div class="form-group">
                 <label class="form-label">${label}</label>
                 <div class="form-name-preview">
-                    <input type="text" id="input-${idPrefix}-fund-name" class="form-input form-name-preview-input"
+                    <input type="text" id="input-${prefix}fund-name" class="form-input form-name-preview-input"
                            value="${value}" placeholder="${placeholder}" ${disabled ? 'disabled' : ''}>
-                    <button class="btn btn-secondary form-name-preview-refresh" id="btn-${idPrefix}-refresh-name"
+                    <button class="btn btn-secondary form-name-preview-refresh" id="btn-${prefix}refresh-name"
                             data-tooltip="清除缓存并重新获取" ${disabled ? 'disabled' : ''}>🔄</button>
                 </div>
-                <div class="form-name-source" id="${idPrefix}-name-source-info">
-                    <span class="form-name-source-badge ${sourceClass}" id="${idPrefix}-name-source-badge">${sourceText}</span>
+                <div class="form-name-source" id="${prefix}name-source-info">
+                    <span class="form-name-source-badge ${sourceClass}" id="${prefix}name-source-badge">${sourceText}</span>
                     ${timeInfo}
                     ${statusSpan}
                 </div>
@@ -196,11 +198,13 @@ const Modal = {
             onRefresh
         } = options;
 
-        const inputName = document.getElementById(`input-${idPrefix}-fund-name`);
-        const btnRefresh = document.getElementById(`btn-${idPrefix}-refresh-name`);
-        const sourceBadge = document.getElementById(`${idPrefix}-name-source-badge`);
-        const statusSpan = document.getElementById(`${idPrefix}-name-status`);
-        const nameInfo = document.getElementById(`${idPrefix}-name-source-info`);
+        const prefix = idPrefix ? idPrefix + '-' : '';
+
+        const inputName = document.getElementById(`input-${prefix}fund-name`);
+        const btnRefresh = document.getElementById(`btn-${prefix}refresh-name`);
+        const sourceBadge = document.getElementById(`${prefix}name-source-badge`);
+        const statusSpan = document.getElementById(`${prefix}name-status`);
+        const nameInfo = document.getElementById(`${prefix}name-source-info`);
 
         let currentCode = initialCode;
         let currentName = '';
