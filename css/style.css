@@ -888,14 +888,14 @@ td.negative {
     border-left-color: var(--color-success);
 }
 
-/* 收益列颜色 */
+/* 收益列颜色 - 适配主题：正收益红色，负收益绿色 */
 .trade-profit-positive {
-    color: var(--color-success);
+    color: var(--color-rise);
     font-weight: 600;
 }
 
 .trade-profit-negative {
-    color: var(--color-danger);
+    color: var(--color-fall);
     font-weight: 600;
 }
 
