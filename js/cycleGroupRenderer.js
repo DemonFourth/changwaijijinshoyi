@@ -39,7 +39,6 @@ const CycleGroupRenderer = {
         const typeText = { buy: '买入', sell: '卖出', dividend: '分红' };
         const typeClass = { buy: 'trade-type-buy', sell: 'trade-type-sell', dividend: 'trade-type-dividend' };
         const priceDisplay = trade.netValue ? Utils.formatNumber(trade.netValue, 4) : '-';
-        const remarkTitle = trade.remark || '';
         const bgColor = (cycleIndex % 2 === 0) ? 'var(--color-cycle-bg-odd)' : 'var(--color-cycle-bg-even)';
         const displayStyle = isExpanded ? '' : 'display:none;';
         const cycleLabel = cycleId > 0 ? '第' + cycleId + '轮' : '-';
@@ -56,8 +55,7 @@ const CycleGroupRenderer = {
             }
         }
 
-        return '<tr class="cycle-group-trade-row" data-trade-id="' + trade.id + '" data-cycle-id="' + cycleId + '" ' +
-            'data-tooltip="' + remarkTitle + '" style="border-left: 3px solid ' + cycleColor + '; background: ' + bgColor + '; ' + displayStyle + '">' +
+        let html = '<tr class="cycle-group-trade-row" data-trade-id="' + trade.id + '" data-cycle-id="' + cycleId + '" style="border-left: 3px solid ' + cycleColor + '; background: ' + bgColor + '; ' + displayStyle + '">' +
             '<td>' + trade.date + '</td>' +
             '<td class="' + typeClass[trade.type] + '">' + typeText[trade.type] + '</td>' +
             '<td>' + priceDisplay + '</td>' +
@@ -71,6 +69,19 @@ const CycleGroupRenderer = {
             '<button class="btn btn-danger btn-delete-trade" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">删除</button>' +
             '</td>' +
             '</tr>';
+
+        if (trade.remark) {
+            html += '<tr class="trade-remark-row cycle-remark-row" data-trade-id="' + trade.id + '" data-cycle-id="' + cycleId + '" style="' + displayStyle + '">' +
+                '<td colspan="9">' +
+                '<div class="remark-content">' +
+                '<span class="remark-icon">💬</span>' +
+                '<span class="remark-text">' + trade.remark + '</span>' +
+                '</div>' +
+                '</td>' +
+                '</tr>';
+        }
+
+        return html;
     },
 
     renderGroupedView(renderItems, profitMap = new Map()) {
