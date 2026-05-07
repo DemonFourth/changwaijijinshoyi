@@ -186,6 +186,7 @@ const App = {
             const detailPage = document.getElementById('page-detail');
             if (detailPage) {
                 detailPage.classList.add('active');
+                window.scrollTo(0, 0);
                 Detail.load(route.params.fundId);
             }
         } else if (route.name === 'tools') {
