@@ -212,7 +212,7 @@ body {
     box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .stat-card::before {
@@ -2917,9 +2917,10 @@ td.negative {
     visibility: hidden;
     opacity: 0;
     position: absolute;
-    bottom: 125%;
+    bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
+    margin-bottom: 8px;
     background: var(--color-bg-secondary);
     color: var(--color-text-primary);
     padding: 8px 10px;
