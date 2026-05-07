@@ -371,7 +371,7 @@ const ChartManager = {
             textStyle: { color: themeConfig.textColor },
             tooltip: { trigger: 'axis' },
             legend: {
-                data: ['累计投入', '累计卖出', '当前市值'],
+                data: ['持仓份额'],
                 textStyle: { color: themeConfig.textColor }
             },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
