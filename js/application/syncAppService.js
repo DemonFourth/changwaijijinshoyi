@@ -40,9 +40,12 @@ const SyncAppService = {
     async startBackgroundSync() {
         const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
 
-        const authStatus = await adapter.checkAuthStatus();
-        if (authStatus.authEnabled && !authStatus.authenticated) {
-            return { needPassword: true, authStatus };
+        // 检查 adapter 是否支持 checkAuthStatus 方法（CloudflareD1SyncAdapter 特有）
+        if (typeof adapter.checkAuthStatus === 'function') {
+            const authStatus = await adapter.checkAuthStatus();
+            if (authStatus.authEnabled && !authStatus.authenticated) {
+                return { needPassword: true, authStatus };
+            }
         }
 
         return this._executePull();

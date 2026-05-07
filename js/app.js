@@ -253,6 +253,12 @@ const App = {
             }
 
             const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
+            if (typeof adapter.login !== 'function') {
+                errorMsg.textContent = '未配置云同步服务';
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
             const result = await adapter.login(password);
 
             if (result.success) {
