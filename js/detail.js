@@ -998,26 +998,15 @@ const Detail = {
         }
 
         const result = FIFOValidator.verifyFund(Detail.currentFundId);
-        const resultEl = document.getElementById('fifo-verify-result');
-        if (!resultEl) return;
-
-        resultEl.style.display = 'inline-block';
-        resultEl.className = 'fifo-verify-result';
 
         if (result.success && result.consistent) {
-            resultEl.classList.add('fifo-verify-success');
-            resultEl.textContent = '✅ 验证通过';
-            setTimeout(function() {
-                resultEl.style.display = 'none';
-            }, 3000);
+            Utils.showToast('✅ 验证通过：FIFO与移动加权平均结果一致', 'success');
         } else if (result.success && !result.consistent) {
-            resultEl.classList.add('fifo-verify-fail');
-            resultEl.textContent = '❌ 结果不一致';
+            Utils.showToast('❌ 结果不一致', 'error');
             const message = FIFOValidator.formatResult(result);
             alert(message);
         } else {
-            resultEl.classList.add('fifo-verify-fail');
-            resultEl.textContent = '❌ ' + result.error;
+            Utils.showToast('❌ ' + result.error, 'error');
         }
     },
 
