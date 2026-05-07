@@ -3592,3 +3592,70 @@ td.negative {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
+
+/* 冲突处理弹窗 */
+.conflict-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.conflict-item {
+    border: 1px solid var(--color-border-primary);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: var(--color-bg-primary);
+}
+
+.conflict-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border-primary);
+}
+
+.conflict-type {
+    font-weight: bold;
+    color: var(--color-text-primary);
+}
+
+.conflict-id {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+}
+
+.conflict-versions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.version {
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--color-bg-secondary);
+}
+
+.version label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.version-time {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-left: auto;
+}
+
+.version-detail {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.detail-row {
+    margin-bottom: 4px;
+}
