@@ -125,8 +125,8 @@ const Overview = {
 
         // 累计（全部）数据
         let totalInvest = 0;
-        let totalValue = 0;
         let totalProfit = 0;
+        let totalFee = 0;
         let totalProfitRate = 0;
 
         funds.forEach(fund => {
@@ -139,8 +139,8 @@ const Overview = {
 
                 // 累计
                 totalInvest += stats.summary.totalInvest;
-                totalValue += stats.summary.currentHolding.value;
                 totalProfit += stats.summary.totalProfit;
+                totalFee += stats.summary.totalFee;
             }
         });
 
@@ -180,7 +180,7 @@ const Overview = {
 
         // 更新累计统计卡片
         const totalInvestAllEl = document.getElementById('total-invest-all');
-        const totalValueAllEl = document.getElementById('total-value-all');
+        const totalFeeAllEl = document.getElementById('total-fee-all');
         const totalProfitAllEl = document.getElementById('total-profit-all');
         const totalRateAllEl = document.getElementById('total-rate-all');
 
@@ -188,8 +188,8 @@ const Overview = {
             totalInvestAllEl.innerHTML = Utils.formatMoneySmart(totalInvest);
         }
 
-        if (totalValueAllEl) {
-            totalValueAllEl.innerHTML = Utils.formatMoneySmart(totalValue);
+        if (totalFeeAllEl) {
+            totalFeeAllEl.innerHTML = Utils.formatMoneySmart(totalFee);
         }
 
         if (totalProfitAllEl) {
