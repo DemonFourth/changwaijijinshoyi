@@ -250,9 +250,8 @@ const Detail = {
         const summary = stats.summary;
         const currentHolding = summary.currentHolding;
 
-        // 判断是否已清仓
-        const EPSILON = 0.0001;
-        const isCleared = currentHolding.shares <= EPSILON;
+        const holdingView = window.DetailHoldingHelper.buildHoldingViewModel(summary);
+        const isCleared = holdingView.isCleared;
 
         // 基础持仓信息
         const shares = document.getElementById('holding-shares');
@@ -789,7 +788,8 @@ const Detail = {
                 const trade = TradeManager.getTrade(tradeId);
 
                 if (trade) {
-                    Modal.show('editTrade', { trade });
+                    const payload = window.DetailTradeActionHelper.buildEditTradePayload(trade);
+                    Modal.show(payload.type, payload.data);
                 }
             });
         });
@@ -800,12 +800,8 @@ const Detail = {
                 const row = e.target.closest('tr');
                 const tradeId = row.dataset.tradeId;
 
-                Modal.show('deleteConfirm', {
-                    message: '确定要删除该交易记录吗？',
-                    onConfirm: () => {
-                        TradeManager.deleteTrade(tradeId);
-                    }
-                });
+                const payload = window.DetailTradeActionHelper.buildDeleteTradePayload(tradeId);
+                Modal.show(payload.type, payload.data);
             });
         });
     },
@@ -819,9 +815,7 @@ const Detail = {
 
         const currentName = fund.name || '';
 
-        nameEl.innerHTML = '<input type="text" id="input-edit-fund-name" class="form-input" value="' + currentName + '" style="font-size:inherit;font-weight:inherit;width:300px;">' +
-            '<button class="btn btn-primary btn-sm" id="btn-save-fund-name">保存</button>' +
-            '<button class="btn btn-secondary btn-sm" id="btn-cancel-fund-name">取消</button>';
+        nameEl.innerHTML = window.DetailEditHelper.renderNameEditHtml(currentName);
 
         const input = document.getElementById('input-edit-fund-name');
         const btnSave = document.getElementById('btn-save-fund-name');
@@ -843,12 +837,7 @@ const Detail = {
     },
 
     showEditMenu() {
-        const menuHtml = '<div class="edit-menu-overlay" id="edit-menu-overlay">' +
-            '<div class="edit-menu">' +
-            '<div class="edit-menu-item" id="menu-edit-name">✏️ 编辑名称</div>' +
-            '<div class="edit-menu-item" id="menu-edit-remark">📝 编辑备注</div>' +
-            '<div class="edit-menu-item" id="menu-refresh-name">🔄 刷新名称</div>' +
-            '</div></div>';
+        const menuHtml = window.DetailMenuHelper.renderEditMenuHtml();
 
         const actionsEl = document.querySelector('.fund-title-area');
         if (!actionsEl) return;
@@ -902,11 +891,10 @@ const Detail = {
             return;
         }
 
-        const success = FundManager.updateFund(Detail.currentFundId, {
-            name: newName,
-            nameSource: 'manual',
-            nameUpdateTime: new Date().toISOString()
-        });
+        const success = FundManager.updateFund(
+            Detail.currentFundId,
+            window.DetailFundUpdateHelper.buildNameUpdatePayload(newName)
+        );
 
         if (success) {
             NameCache.set(FundManager.getFund(Detail.currentFundId).code, newName, 'manual');
@@ -934,9 +922,7 @@ const Detail = {
 
         const currentRemark = fund.remark || '';
 
-        remarkEl.innerHTML = '<input type="text" id="input-edit-fund-remark" class="form-input" value="' + currentRemark + '" style="font-size:inherit;font-weight:inherit;width:300px;" maxlength="50">' +
-            '<button class="btn btn-primary btn-sm" id="btn-save-fund-remark">保存</button>' +
-            '<button class="btn btn-secondary btn-sm" id="btn-cancel-fund-remark">取消</button>';
+        remarkEl.innerHTML = window.DetailEditHelper.renderRemarkEditHtml(currentRemark);
 
         const input = document.getElementById('input-edit-fund-remark');
         const btnSave = document.getElementById('btn-save-fund-remark');
@@ -963,9 +949,10 @@ const Detail = {
 
         const newRemark = input.value.trim();
 
-        const success = FundManager.updateFund(Detail.currentFundId, {
-            remark: newRemark
-        });
+        const success = FundManager.updateFund(
+            Detail.currentFundId,
+            window.DetailFundUpdateHelper.buildRemarkUpdatePayload(newRemark)
+        );
 
         if (success) {
             Detail.refresh();
@@ -1054,7 +1041,7 @@ const Detail = {
      * @returns {number}
      */
     _getPageSize() {
-        const settings = Storage.loadSettings() || {};
+        const settings = window.AppSettingsService.loadSettings() || {};
         return settings.defaultPageSize || Config.get('ui.defaultPageSize', 10);
     }
 };

@@ -18,7 +18,7 @@ const TradeManager = {
      * @returns {array}
      */
     getTradesByFund(fundId) {
-        return DataService.getTradesByFund(fundId);
+        return window.TradeAppService.getTradesByFund(fundId);
     },
 
     /**
@@ -27,8 +27,7 @@ const TradeManager = {
      * @returns {object|null}
      */
     getTrade(tradeId) {
-        const trades = DataService.loadTrades();
-        return trades.find(t => t.id === tradeId) || null;
+        return window.TradeAppService.getTrade(tradeId);
     },
 
     /**
@@ -68,7 +67,15 @@ const TradeManager = {
         }
 
         // 保存交易记录
-        const success = DataService.addTrade(trade);
+        const success = window.TradeAppService.addTrade(trade);
+
+        if (success) {
+            DataService.tradesCache = null;
+            DataService.invalidateCache(trade.fundId);
+            EventBus.emit(EventType.TRADE_ADDED, { trade });
+            EventBus.emit(EventType.TRADE_UPDATED, { trade });
+            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: trade.fundId });
+        }
 
         if (success) {
             Utils.showToast('交易记录添加成功', 'success');
@@ -103,7 +110,14 @@ const TradeManager = {
         }
 
         // 保存更新
-        const success = DataService.updateTrade(tradeId, updates);
+        const success = window.TradeAppService.updateTrade(tradeId, updates);
+
+        if (success) {
+            DataService.tradesCache = null;
+            DataService.invalidateCache(updatedTrade.fundId);
+            EventBus.emit(EventType.TRADE_UPDATED, { trade: window.TradeAppService.getTrade(tradeId) });
+            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: updatedTrade.fundId });
+        }
 
         if (success) {
             Utils.showToast('交易记录更新成功', 'success');
@@ -120,7 +134,15 @@ const TradeManager = {
      * @returns {boolean}
      */
     deleteTrade(tradeId) {
-        const success = DataService.deleteTrade(tradeId);
+        const trade = window.TradeAppService.getTrade(tradeId);
+        const success = window.TradeAppService.deleteTrade(tradeId);
+
+        if (success && trade) {
+            DataService.tradesCache = null;
+            DataService.invalidateCache(trade.fundId);
+            EventBus.emit(EventType.TRADE_DELETED, { trade });
+            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: trade.fundId });
+        }
 
         if (success) {
             Utils.showToast('交易记录删除成功', 'success');

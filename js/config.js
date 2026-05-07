@@ -33,7 +33,9 @@ const Config = {
         // 应用设置存储键
         settingsKey: 'fund_calculator_settings',
         // 主题设置存储键
-        themeKey: 'fund_calculator_theme'
+        themeKey: 'fund_calculator_theme',
+        // 统一快照存储键
+        snapshotKey: 'fund_calculator_snapshot'
     },
 
     // 应用配置

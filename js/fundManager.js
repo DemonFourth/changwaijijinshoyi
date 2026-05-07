@@ -3,6 +3,9 @@
  * 管理基金信息的增删改查
  */
 
+const fundAppServiceModule = window.FundAppService;
+const tradeAppServiceModule = window.TradeAppService;
+
 const FundManager = {
     // 统计数据缓存
     _statsCache: new Map(),
@@ -39,7 +42,7 @@ const FundManager = {
      * @returns {array}
      */
     getAllFunds() {
-        return DataService.loadFunds();
+        return fundAppServiceModule.getAllFunds();
     },
 
     /**
@@ -48,7 +51,7 @@ const FundManager = {
      * @returns {object|null}
      */
     getFund(fundId) {
-        return DataService.getFund(fundId);
+        return fundAppServiceModule.getFund(fundId);
     },
 
     /**
@@ -120,7 +123,13 @@ const FundManager = {
                 NameCache.set(fundData.code, fundName, nameSource);
             }
 
-            const success = DataService.addFund(fund);
+            const success = fundAppServiceModule.addFund(fund);
+
+            if (success) {
+                DataService.fundsCache = null;
+                EventBus.emit(EventType.FUND_ADDED, { fund });
+                EventBus.emit(EventType.FUND_UPDATED, { fund });
+            }
 
             if (!success) {
                 throw new Error('保存基金失败');
@@ -150,7 +159,12 @@ const FundManager = {
             updates.updateTime = new Date().toISOString();
         }
 
-        const success = DataService.updateFund(fundId, updates);
+        const success = fundAppServiceModule.updateFund(fundId, updates);
+
+        if (success) {
+            DataService.fundsCache = null;
+            EventBus.emit(EventType.FUND_UPDATED, { fund: fundAppServiceModule.getFund(fundId) });
+        }
 
         if (success) {
             Utils.showToast('基金更新成功', 'success');
@@ -167,7 +181,17 @@ const FundManager = {
      * @returns {boolean}
      */
     deleteFund(fundId) {
-        const success = DataService.deleteFund(fundId);
+        const deletedFund = fundAppServiceModule.getFund(fundId);
+        const success = fundAppServiceModule.deleteFund(fundId);
+
+        if (success) {
+            DataService.fundsCache = null;
+            DataService.tradesCache = null;
+            DataService.invalidateCache(fundId);
+            EventBus.emit(EventType.FUND_DELETED, { fund: deletedFund });
+            EventBus.emit(EventType.TRADE_UPDATED, { fundId });
+            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
+        }
 
         if (success) {
             Utils.showToast('基金删除成功', 'success');
@@ -264,12 +288,12 @@ const FundManager = {
      * @returns {object}
      */
     getFundStats(fundId) {
-        const fund = DataService.getFund(fundId);
+        const fund = fundAppServiceModule.getFund(fundId);
         if (!fund) {
             return null;
         }
 
-        const trades = DataService.getTradesByFund(fundId);
+        const trades = tradeAppServiceModule.getTradesByFund(fundId);
         const currentNetValue = fund.estimatedValue || fund.netValue || 0;
 
         // 汇总页当前持仓相关统计：估算净值优先，空时回退最新净值

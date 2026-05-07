@@ -250,6 +250,33 @@ jijinshouyi/
 - 回答以中文为主，专属名词除外
 - 每次开始分析前，先查询是否有现成Skills可以调用
 
+### 重构后的统一管理约定
+- 页面层（如 `overview.js`、`detail.js`、`modal.js`）只负责页面编排、事件绑定、调用 helper/service，不直接承担底层存储细节
+- 业务写操作统一优先走 application 层：`js/application/*.js`
+  - 基金相关：`FundAppService`
+  - 交易相关：`TradeAppService`
+  - 设置/导入导出相关：`AppSettingsService`
+- 数据读取统一优先通过 manager 或 repository：
+  - 页面/UI 侧优先调用 `FundManager`、`TradeManager`
+  - application 层和 data 聚合层可调用 `FundRepository`、`TradeRepository`
+- 持久化统一通过 `LocalStorageAdapter` 与 `StorageSchema` 管理，不允许新增代码直接散落读写旧 `fundsKey/tradesKey` 结构
+- 核心同步入口统一使用：
+  - `LocalStorageAdapter.getCurrentSyncAdapter()`
+  - `SyncAdapterRegistry`
+  - 后续新增云端 provider 时，必须按 adapter 方式接入，禁止把云端调用直接写进页面层或 manager 层
+- 页面内重复 HTML/交互逻辑优先抽到 helper：
+  - `js/modal/` 放 modal 相关 helper
+  - `js/detail/` 放 detail 页相关 helper
+  - 新增大段拼接 HTML、payload 构造、纯显示逻辑时，优先抽 helper 再接回页面
+- 计算结果（持仓、收益、手续费建议、分组结果）保持运行时生成，不持久化到业务数据模型
+- 云端同步范围仅限核心业务数据：`funds`、`trades`、`syncMeta`；主题、视图偏好、筛选状态、本地缓存保留本地
+- 修改数据模型、存储、application 层、detail/modal/overview 关键路径时，必须补或更新 `node:test` 测试
+- 新增功能时优先复用现有目录：
+  - `js/storage/`：schema、migration、adapter、sync
+  - `js/repositories/`：仓储访问
+  - `js/application/`：用例编排
+  - `js/detail/`、`js/modal/`：页面 helper
+
 ### 与参考项目的关系
 - 本项目参考 [DemonFourth/gupiaoshouyi-clac](https://github.com/DemonFourth/gupiaoshouyi-clac.git)（股票收益计算器）进行开发
 - **相同点**：模块结构（namespace/moduleRegistry/eventBus）、计算引擎（加权平均成本法/FIFO）、自定义事件系统、路由管理、弹窗管理

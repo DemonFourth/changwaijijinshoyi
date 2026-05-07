@@ -4,30 +4,16 @@
  */
 
 const DataService = {
-    // 基金数据缓存
     fundsCache: null,
-
-    // 交易记录缓存
     tradesCache: null,
-
-    // 计算结果缓存 Map<fundId, Map<netValue, result>>
     _calculationCache: new Map(),
 
-    /**
-     * 初始化数据服务
-     */
     init() {
         this.loadFunds();
         this.loadTrades();
         console.log('DataService initialized');
     },
 
-    /**
-     * 获取基金的计算结果（带缓存）
-     * @param {string} fundId - 基金ID
-     * @param {number} currentNetValue - 当前净值
-     * @returns {object|null}
-     */
     getCalculatedProfit(fundId, currentNetValue) {
         const fund = this.getFund(fundId);
         if (!fund) return null;
@@ -55,10 +41,6 @@ const DataService = {
         return result;
     },
 
-    /**
-     * 清除基金的计算缓存
-     * @param {string} fundId - 基金ID（不传则清除所有）
-     */
     invalidateCache(fundId) {
         if (fundId) {
             this._calculationCache.delete(fundId);
@@ -67,25 +49,14 @@ const DataService = {
         }
     },
 
-    /**
-     * 加载基金数据
-     * @returns {array}
-     */
     loadFunds() {
-        if (!this.fundsCache) {
-            this.fundsCache = Storage.loadFunds();
-        }
+        this.fundsCache = window.FundRepository.getAll();
         return this.fundsCache;
     },
 
-    /**
-     * 保存基金数据
-     * @param {array} funds - 基金列表
-     * @returns {boolean}
-     */
     saveFunds(funds) {
         this.fundsCache = funds;
-        const success = Storage.saveFunds(funds);
+        const success = window.FundRepository.saveAll(funds);
 
         if (success) {
             EventBus.emit(EventType.FUND_UPDATED, { funds });
@@ -94,112 +65,77 @@ const DataService = {
         return success;
     },
 
-    /**
-     * 获取单个基金
-     * @param {string} fundId - 基金ID
-     * @returns {object|null}
-     */
     getFund(fundId) {
-        const funds = this.loadFunds();
-        return funds.find(f => f.id === fundId) || null;
+        return window.FundRepository.getById(fundId);
     },
 
-    /**
-     * 添加基金
-     * @param {object} fund - 基金对象
-     * @returns {boolean}
-     */
     addFund(fund) {
         const funds = this.loadFunds();
 
-        // 检查是否已存在
         if (funds.find(f => f.id === fund.id)) {
             console.error('Fund already exists:', fund.id);
             return false;
         }
 
-        funds.push(fund);
-        const success = this.saveFunds(funds);
+        const success = window.FundAppService.addFund(fund);
 
         if (success) {
+            this.fundsCache = null;
             EventBus.emit(EventType.FUND_ADDED, { fund });
+            EventBus.emit(EventType.FUND_UPDATED, { fund });
         }
 
         return success;
     },
 
-    /**
-     * 更新基金
-     * @param {string} fundId - 基金ID
-     * @param {object} updates - 更新内容
-     * @returns {boolean}
-     */
     updateFund(fundId, updates) {
-        const funds = this.loadFunds();
-        const index = funds.findIndex(f => f.id === fundId);
+        const currentFund = window.FundRepository.getById(fundId);
 
-        if (index === -1) {
+        if (!currentFund) {
             console.error('Fund not found:', fundId);
             return false;
         }
 
-        funds[index] = { ...funds[index], ...updates };
-        const success = this.saveFunds(funds);
+        const success = window.FundAppService.updateFund(fundId, updates);
 
         if (success) {
-            EventBus.emit(EventType.FUND_UPDATED, { fund: funds[index] });
+            this.fundsCache = null;
+            EventBus.emit(EventType.FUND_UPDATED, { fund: window.FundRepository.getById(fundId) });
         }
 
         return success;
     },
 
-    /**
-     * 删除基金
-     * @param {string} fundId - 基金ID
-     * @returns {boolean}
-     */
     deleteFund(fundId) {
-        const funds = this.loadFunds();
-        const index = funds.findIndex(f => f.id === fundId);
+        const deletedFund = window.FundRepository.getById(fundId);
 
-        if (index === -1) {
+        if (!deletedFund) {
             console.error('Fund not found:', fundId);
             return false;
         }
 
-        const deletedFund = funds[index];
-        funds.splice(index, 1);
-        const success = this.saveFunds(funds);
+        const success = window.FundAppService.deleteFund(fundId);
 
         if (success) {
-            // 同时删除相关的交易记录
-            this.deleteTradesByFund(fundId);
-
+            this.fundsCache = null;
+            this.tradesCache = null;
+            this.invalidateCache(fundId);
             EventBus.emit(EventType.FUND_DELETED, { fund: deletedFund });
+            EventBus.emit(EventType.TRADE_UPDATED, { fundId });
+            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
         }
 
         return success;
     },
 
-    /**
-     * 加载交易记录
-     * @returns {array}
-     */
     loadTrades() {
-        if (!this.tradesCache) {
-            this.tradesCache = Storage.loadTrades();
-        }
+        this.tradesCache = window.TradeRepository.getAll();
         return this.tradesCache;
     },
 
-    /**
-     * 保存交易记录
-     * @param {array} trades - 交易记录列表
-     * @returns {boolean}
-     */
     saveTrades(trades) {
         this.tradesCache = trades;
-        const success = Storage.saveTrades(trades);
+        const success = window.TradeRepository.saveAll(trades);
 
         if (success) {
             EventBus.emit(EventType.TRADE_UPDATED, { trades });
@@ -208,83 +144,58 @@ const DataService = {
         return success;
     },
 
-    /**
-     * 获取基金的交易记录
-     * @param {string} fundId - 基金ID
-     * @returns {array}
-     */
     getTradesByFund(fundId) {
-        const trades = this.loadTrades();
-        return trades.filter(t => t.fundId === fundId);
+        return window.TradeRepository.getByFundId(fundId);
     },
 
-    /**
-     * 添加交易记录
-     * @param {object} trade - 交易记录对象
-     * @returns {boolean}
-     */
     addTrade(trade) {
-        const trades = this.loadTrades();
-        trades.push(trade);
-        const success = this.saveTrades(trades);
+        const success = window.TradeAppService.addTrade(trade);
 
         if (success) {
+            this.tradesCache = null;
             this.invalidateCache(trade.fundId);
             EventBus.emit(EventType.TRADE_ADDED, { trade });
+            EventBus.emit(EventType.TRADE_UPDATED, { trade });
             EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: trade.fundId });
         }
 
         return success;
     },
 
-    /**
-     * 更新交易记录
-     * @param {string} tradeId - 交易记录ID
-     * @param {object} updates - 更新内容
-     * @returns {boolean}
-     */
     updateTrade(tradeId, updates) {
-        const trades = this.loadTrades();
-        const index = trades.findIndex(t => t.id === tradeId);
+        const trade = window.TradeRepository.getById(tradeId);
 
-        if (index === -1) {
+        if (!trade) {
             console.error('Trade not found:', tradeId);
             return false;
         }
 
-        const fundId = trades[index].fundId;
-        trades[index] = { ...trades[index], ...updates };
-        const success = this.saveTrades(trades);
+        const fundId = trade.fundId;
+        const success = window.TradeAppService.updateTrade(tradeId, updates);
 
         if (success) {
+            this.tradesCache = null;
             this.invalidateCache(fundId);
-            EventBus.emit(EventType.TRADE_UPDATED, { trade: trades[index] });
+            EventBus.emit(EventType.TRADE_UPDATED, { trade: window.TradeRepository.getById(tradeId) });
             EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
         }
 
         return success;
     },
 
-    /**
-     * 删除交易记录
-     * @param {string} tradeId - 交易记录ID
-     * @returns {boolean}
-     */
     deleteTrade(tradeId) {
-        const trades = this.loadTrades();
-        const index = trades.findIndex(t => t.id === tradeId);
+        const deletedTrade = window.TradeRepository.getById(tradeId);
 
-        if (index === -1) {
+        if (!deletedTrade) {
             console.error('Trade not found:', tradeId);
             return false;
         }
 
-        const fundId = trades[index].fundId;
-        const deletedTrade = trades[index];
-        trades.splice(index, 1);
-        const success = this.saveTrades(trades);
+        const fundId = deletedTrade.fundId;
+        const success = window.TradeAppService.deleteTrade(tradeId);
 
         if (success) {
+            this.tradesCache = null;
             this.invalidateCache(fundId);
             EventBus.emit(EventType.TRADE_DELETED, { trade: deletedTrade });
             EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
@@ -293,28 +204,31 @@ const DataService = {
         return success;
     },
 
-    /**
-     * 删除基金的所有交易记录
-     * @param {string} fundId - 基金ID
-     * @returns {boolean}
-     */
     deleteTradesByFund(fundId) {
-        const trades = this.loadTrades();
-        const filteredTrades = trades.filter(t => t.fundId !== fundId);
-        const success = this.saveTrades(filteredTrades);
+        const snapshot = window.LocalStorageAdapter.loadSnapshot();
+        const now = new Date().toISOString();
+        snapshot.trades = snapshot.trades.map(trade => {
+            if (trade.fundId !== fundId) {
+                return trade;
+            }
+
+            return {
+                ...trade,
+                deletedAt: now,
+                updatedAt: now
+            };
+        });
+
+        const success = window.LocalStorageAdapter.saveSnapshot(snapshot);
 
         if (success) {
+            this.tradesCache = null;
             this.invalidateCache(fundId);
         }
 
         return success;
     },
 
-    /**
-     * 验证基金数据
-     * @param {object} fund - 基金对象
-     * @returns {object} {valid, errors}
-     */
     validateFund(fund) {
         const errors = [];
 
@@ -336,11 +250,6 @@ const DataService = {
         };
     },
 
-    /**
-     * 验证交易记录数据
-     * @param {object} trade - 交易记录对象
-     * @returns {object} {valid, errors}
-     */
     validateTrade(trade) {
         const errors = [];
 
@@ -378,22 +287,12 @@ const DataService = {
         };
     },
 
-    /**
-     * 导出所有数据
-     * @returns {object}
-     */
     exportData() {
         const data = Storage.exportAll();
         EventBus.emit(EventType.DATA_EXPORTED, { data });
         return data;
     },
 
-    /**
-     * 导入数据
-     * @param {object} data - 导入的数据
-     * @param {boolean} merge - 是否合并
-     * @returns {boolean}
-     */
     importData(data, merge = false) {
         const success = Storage.importAll(data, merge);
 
@@ -410,10 +309,6 @@ const DataService = {
         return success;
     },
 
-    /**
-     * 清空所有数据
-     * @returns {boolean}
-     */
     clearAll() {
         this.fundsCache = [];
         this.tradesCache = [];
@@ -429,5 +324,4 @@ const DataService = {
     }
 };
 
-// 注册到模块系统
 ModuleRegistry.register('DataService', DataService);

@@ -154,7 +154,7 @@ const App = {
 
         if (route.name === 'detail') {
             btnBack.classList.remove('hidden');
-            const fund = DataService.getFund(route.params.fundId);
+            const fund = FundManager.getFund(route.params.fundId);
             if (fund) {
                 headerTitle.textContent = `${fund.name}（${fund.code}）`;
             }

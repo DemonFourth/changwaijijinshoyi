@@ -330,13 +330,13 @@ const Overview = {
     },
 
     loadViewPreferences() {
-        Overview._viewPrefs = Storage.loadViewPrefs();
+        Overview._viewPrefs = window.AppSettingsService.loadViewPrefs();
         return Overview._viewPrefs;
     },
 
     saveViewPreferences(prefs) {
         Overview._viewPrefs = { ...Overview._viewPrefs, ...prefs };
-        Storage.saveViewPrefs(Overview._viewPrefs);
+        window.AppSettingsService.saveViewPrefs(Overview._viewPrefs);
         EventBus.emit(EventType.VIEW_CHANGED, Overview._viewPrefs);
     },
 

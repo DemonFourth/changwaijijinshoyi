@@ -7,6 +7,58 @@
 
 const Modal = {
     currentType: null,
+    modalConfigs: {
+        addFund: {
+            title: '添加基金',
+            render: () => Modal.renderAddFundForm(),
+            bind: () => Modal.bindAddFundEvents()
+        },
+        addTrade: {
+            title: '添加交易',
+            render: (data) => Modal.renderAddTradeForm(data),
+            bind: (data) => Modal.bindAddTradeEvents(data)
+        },
+        editTrade: {
+            title: '编辑交易',
+            render: (data) => Modal.renderEditTradeForm(data),
+            bind: (data) => Modal.bindEditTradeEvents(data)
+        },
+        deleteConfirm: {
+            title: '确认删除',
+            render: (data) => Modal.renderDeleteConfirm(data),
+            bind: (data) => Modal.bindDeleteConfirmEvents(data)
+        },
+        import: {
+            title: '导入数据',
+            render: () => Modal.renderImportForm(),
+            bind: () => Modal.bindImportEvents()
+        },
+        export: {
+            title: '导出数据',
+            render: () => Modal.renderExportForm(),
+            bind: () => Modal.bindExportEvents()
+        },
+        feeSettings: {
+            title: '交易费率设置',
+            render: (data) => Modal.renderFeeSettingsForm(data),
+            bind: (data) => Modal.bindFeeSettingsEvents(data)
+        },
+        verifyResult: {
+            title: '验证计算',
+            render: (data) => Modal.renderVerifyResultForm(data),
+            bind: (data) => Modal.bindVerifyResultEvents(data)
+        },
+        settings: {
+            title: '⚙️ 设置',
+            render: () => Modal.renderSettingsForm(),
+            bind: () => Modal.bindSettingsEvents()
+        },
+        editFund: {
+            title: '✏️ 编辑基金',
+            render: (data) => Modal.renderEditFundForm(data),
+            bind: (data) => Modal.bindEditFundEvents(data)
+        }
+    },
 
     show(type, data = {}) {
         Modal.currentType = type;
@@ -15,67 +67,21 @@ const Modal = {
         const title = document.getElementById('modal-title');
         const body = document.getElementById('modal-body');
         const footer = document.getElementById('modal-footer');
+        const config = Modal.modalConfigs[type];
 
-        // 根据弹窗类型设置容器类，预留精准控制
         container.className = 'modal-container';
         if (type) {
-            // 将驼峰命名转为连字符命名（如 feeSettings -> fee-settings）
             const className = 'modal-' + type.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/--/g, '-');
             container.classList.add(className);
         }
 
-        let result;
-
-        switch (type) {
-        case 'addFund':
-            title.textContent = '添加基金';
-            result = Modal.renderAddFundForm();
-            break;
-
-        case 'addTrade':
-            title.textContent = '添加交易';
-            result = Modal.renderAddTradeForm(data);
-            break;
-
-        case 'editTrade':
-            title.textContent = '编辑交易';
-            result = Modal.renderEditTradeForm(data);
-            break;
-
-        case 'deleteConfirm':
-            title.textContent = '确认删除';
-            result = Modal.renderDeleteConfirm(data);
-            break;
-
-        case 'import':
-            title.textContent = '导入数据';
-            result = Modal.renderImportForm();
-            break;
-
-        case 'export':
-            title.textContent = '导出数据';
-            result = Modal.renderExportForm();
-            break;
-        case 'feeSettings':
-            title.textContent = '交易费率设置';
-            result = Modal.renderFeeSettingsForm(data);
-            break;
-        case 'verifyResult':
-            title.textContent = '验证计算';
-            result = Modal.renderVerifyResultForm(data);
-            break;
-        case 'settings':
-            title.textContent = '⚙️ 设置';
-            result = Modal.renderSettingsForm();
-            break;
-        case 'editFund':
-            title.textContent = '✏️ 编辑基金';
-            result = Modal.renderEditFundForm(data);
-            break;
-        default:
+        if (!config) {
             console.error('Unknown modal type:', type);
             return;
         }
+
+        title.textContent = config.title;
+        const result = config.render(data);
 
         if (typeof result === 'object' && result.content !== undefined) {
             body.innerHTML = result.content;
@@ -86,40 +92,10 @@ const Modal = {
         }
 
         container.classList.remove('hidden');
-
         body.scrollTop = 0;
 
-        switch (type) {
-        case 'addFund':
-            Modal.bindAddFundEvents();
-            break;
-        case 'addTrade':
-            Modal.bindAddTradeEvents(data);
-            break;
-        case 'editTrade':
-            Modal.bindEditTradeEvents(data);
-            break;
-        case 'deleteConfirm':
-            Modal.bindDeleteConfirmEvents(data);
-            break;
-        case 'import':
-            Modal.bindImportEvents();
-            break;
-        case 'export':
-            Modal.bindExportEvents();
-            break;
-        case 'feeSettings':
-            Modal.bindFeeSettingsEvents(data);
-            break;
-        case 'verifyResult':
-            Modal.bindVerifyResultEvents(data);
-            break;
-        case 'settings':
-            Modal.bindSettingsEvents();
-            break;
-        case 'editFund':
-            Modal.bindEditFundEvents(data);
-            break;
+        if (config.bind) {
+            config.bind(data);
         }
 
         EventBus.emit(EventType.MODAL_OPENED, { type, data });
@@ -517,69 +493,7 @@ const Modal = {
     },
 
     renderTradeFormSections(data) {
-        const isEdit = data && data.trade;
-        const trade = isEdit ? data.trade : {};
-        const dateVal = isEdit ? trade.date : Utils.formatDate(new Date());
-        const settings = Storage.loadSettings() || {};
-
-        let html = '';
-
-        html += '<div class="form-section">';
-        html += '<div class="form-section-title">基础信息</div>';
-        html += '<div class="form-group">';
-        html += '<label class="form-label">交易日期 *</label>';
-        html += '<input type="date" id="input-trade-date" class="form-input" value="' + dateVal + '">';
-        html += '</div>';
-        html += '<div class="form-group">';
-        html += '<label class="form-label">交易类型 *</label>';
-        html += '<select id="input-trade-type" class="form-select">';
-        html += '<option value="buy"' + (trade.type === 'buy' ? ' selected' : '') + '>买入</option>';
-        html += '<option value="sell"' + (trade.type === 'sell' ? ' selected' : '') + '>卖出</option>';
-        html += '<option value="dividend"' + (trade.type === 'dividend' ? ' selected' : '') + '>分红</option>';
-        html += '</select>';
-        html += '</div>';
-        html += '<div class="form-group" id="dividend-mode-group"' + (trade.type === 'dividend' ? '' : ' style="display:none;"') + '>';
-        html += '<label class="form-label">分红模式 *</label>';
-        html += '<select id="input-dividend-mode" class="form-select">';
-        const divMode = trade.dividendMode || settings.defaultDividendMode || 'cash';
-        html += '<option value="cash"' + (divMode === 'cash' ? ' selected' : '') + '>现金分红</option>';
-        html += '<option value="reinvest"' + (divMode === 'reinvest' ? ' selected' : '') + '>分红再投资</option>';
-        html += '</select>';
-        html += '</div>';
-        html += '</div>';
-
-        html += '<div class="form-section">';
-        html += '<div class="form-section-title">交易详情</div>';
-        html += '<div class="form-group">';
-        html += '<label class="form-label">净值 *</label>';
-        html += '<input type="number" id="input-trade-net-value" class="form-input" value="' + (trade.netValue || '') + '" placeholder="请输入净值" step="0.0001" min="0">';
-        html += '</div>';
-        html += '<div class="form-group">';
-        html += '<label class="form-label">份额 *</label>';
-        html += '<input type="number" id="input-trade-shares" class="form-input" value="' + (trade.shares || '') + '" placeholder="请输入份额" step="0.01" min="0">';
-        html += '</div>';
-        html += '<div class="form-group">';
-        html += '<label class="form-label">手续费 *</label>';
-        const defaultFee = isEdit ? trade.fee : 0;
-        html += '<input type="number" id="input-trade-fee" class="form-input" value="' + (trade.fee !== undefined && trade.fee !== '' ? trade.fee : defaultFee) + '" placeholder="请输入手续费" step="0.01" min="0">';
-        html += '</div>';
-        html += '<div id="fee-suggestion-panel" class="fee-suggestion-panel hidden"></div>';
-        html += '<div class="form-group">';
-        html += '<label class="form-label">金额</label>';
-        html += '<input type="number" id="input-trade-amount" class="form-input" value="' + (trade.amount || '') + '" placeholder="自动计算，可手动修改" step="0.01" min="0">';
-        html += '<div class="form-hint" id="hint-amount"></div>';
-        html += '</div>';
-        html += '</div>';
-
-        html += '<div class="form-section">';
-        html += '<div class="form-section-title">其他信息</div>';
-        html += '<div class="form-group">';
-        html += '<label class="form-label">备注</label>';
-        html += '<input type="text" id="input-trade-remark" class="form-input" value="' + (trade.remark || '') + '" placeholder="备注信息（可选）" maxlength="50">';
-        html += '</div>';
-        html += '</div>';
-
-        return html;
+        return window.TradeModalHelper.renderTradeFormSections(data);
     },
 
     renderAddTradeForm(data) {
@@ -642,38 +556,43 @@ const Modal = {
 
         let autoCalcAmount = null;
 
+        const bindImportAmountButton = () => {
+            const importAmountBtn = hintAmount.querySelector('.btn-import-amount');
+            if (importAmountBtn && autoCalcAmount !== null) {
+                importAmountBtn.addEventListener('click', () => {
+                    amount.value = autoCalcAmount.toFixed(2);
+                    hintAmount.classList.remove('form-hint-warn');
+                    amount.classList.remove('form-input-mismatch');
+                });
+            }
+        };
+
         const calcAmount = (skipSetValue = false) => {
             const nv = parseFloat(netValue.value);
             const s = parseFloat(shares.value);
             const f = parseFloat(fee.value) || 0;
             const type = tradeType.value;
+            const result = window.TradeModalHelper.calculateAutoAmount(nv, s, f, type);
 
-            if (nv > 0 && s > 0) {
-                if (type === 'buy') {
-                    autoCalcAmount = nv * s + f;
-                } else if (type === 'sell') {
-                    autoCalcAmount = nv * s - f;
-                } else {
-                    autoCalcAmount = nv * s;
-                }
+            autoCalcAmount = result.amount;
+
+            if (autoCalcAmount !== null) {
                 if (!skipSetValue) {
                     amount.value = autoCalcAmount.toFixed(2);
                 }
-                hintAmount.textContent = type === 'buy'
-                    ? '自动计算：净值×份额+手续费 = ' + autoCalcAmount.toFixed(2)
-                    : type === 'sell'
-                        ? '自动计算：净值×份额-手续费 = ' + autoCalcAmount.toFixed(2)
-                        : '自动计算：净值×份额 = ' + autoCalcAmount.toFixed(2);
+                const tradeTypeLabel = type === 'buy' ? '买入' : type === 'sell' ? '卖出' : '';
+                hintAmount.innerHTML = window.TradeModalHelper.buildAmountHintHtml(autoCalcAmount, tradeTypeLabel);
                 hintAmount.classList.remove('form-hint-warn');
                 amount.classList.remove('form-input-mismatch');
+                bindImportAmountButton();
             } else {
-                autoCalcAmount = null;
                 amount.value = '';
                 hintAmount.textContent = '';
             }
         };
 
         const checkMismatch = () => {
+
             if (autoCalcAmount === null) return;
             const currentAmount = parseFloat(amount.value);
             if (isNaN(currentAmount)) return;
@@ -685,13 +604,18 @@ const Modal = {
                 amount.classList.add('form-input-mismatch');
             } else {
                 const type = tradeType.value;
-                hintAmount.textContent = type === 'buy'
-                    ? '自动计算：净值×份额+手续费 = ' + autoCalcAmount.toFixed(2)
-                    : type === 'sell'
-                        ? '自动计算：净值×份额-手续费 = ' + autoCalcAmount.toFixed(2)
-                        : '自动计算：净值×份额 = ' + autoCalcAmount.toFixed(2);
+                const tradeTypeLabel = type === 'buy' ? '买入' : type === 'sell' ? '卖出' : '';
+                hintAmount.innerHTML = window.TradeModalHelper.buildAmountHintHtml(autoCalcAmount, tradeTypeLabel);
                 hintAmount.classList.remove('form-hint-warn');
                 amount.classList.remove('form-input-mismatch');
+
+                const importAmountBtn = hintAmount.querySelector('.btn-import-amount');
+                if (importAmountBtn) {
+                    importAmountBtn.addEventListener('click', () => {
+                        amount.value = autoCalcAmount.toFixed(2);
+                        checkMismatch();
+                    });
+                }
             }
         };
 
@@ -710,23 +634,34 @@ const Modal = {
 
         // 费率自动计算
         let isFeeAutoCalculated = false;
+        const resetFeeSuggestion = () => {
+            const panel = document.getElementById('fee-suggestion-panel');
+            if (panel) {
+                panel.classList.add('hidden');
+                panel.innerHTML = '';
+            }
+        };
+
         const autoCalcFee = () => {
             const fundId = data.fundId || (data.trade && data.trade.fundId);
             if (!fundId) return;
 
-            const fund = DataService.getFund(fundId);
+            const fund = FundManager.getFund(fundId);
+            const settings = Storage.loadSettings() || {};
+            const effectiveFeeTiers = window.TradeModalHelper.getEffectiveFeeTiers(fund, settings);
+            resetFeeSuggestion();
             const type = tradeType.value;
             const nv = parseFloat(netValue.value);
             const s = parseFloat(shares.value);
             const dateVal = document.getElementById('input-trade-date').value;
 
-            const hasBuyTiers = fund && fund.feeTiers && fund.feeTiers.buyTiers && fund.feeTiers.buyTiers.length > 0;
-            const hasSellTiers = fund && fund.feeTiers && fund.feeTiers.sellTiers && fund.feeTiers.sellTiers.length > 0;
+            const hasBuyTiers = effectiveFeeTiers.buyTiers && effectiveFeeTiers.buyTiers.length > 0;
+            const hasSellTiers = effectiveFeeTiers.sellTiers && effectiveFeeTiers.sellTiers.length > 0;
 
             // 优先使用基金费率
             if (type === 'buy' && nv > 0 && s > 0 && hasBuyTiers) {
                 const amountVal = nv * s;
-                const result = FeeCalculator.calculateBuyFee(amountVal, fund.feeTiers.buyTiers);
+                const result = FeeCalculator.calculateBuyFee(amountVal, effectiveFeeTiers.buyTiers);
 
                 const panel = document.getElementById('fee-suggestion-panel');
                 if (result.matchedTier && panel) {
@@ -756,26 +691,16 @@ const Modal = {
                         fee.value = result.fee.toFixed(2);
                         isFeeAutoCalculated = true;
                         calcAmount();
+                        checkMismatch();
                     }
                 }
             } else if (type === 'buy' && nv > 0 && s > 0 && !hasBuyTiers) {
-                // 基金未配置买入费率，使用设置默认费率
-                const settings = Storage.loadSettings();
-                const rate = settings.defaultBuyFeeRate || 0;
                 const panel = document.getElementById('fee-suggestion-panel');
                 if (panel) panel.classList.add('hidden');
-
-                if (rate > 0 && !isFeeAutoCalculated) {
-                    const amountVal = nv * s;
-                    const calculatedFee = amountVal * rate / 100;
-                    fee.value = calculatedFee.toFixed(2);
-                    isFeeAutoCalculated = true;
-                    calcAmount();
-                }
             } else if (type === 'sell' && nv > 0 && s > 0 && dateVal && hasSellTiers) {
-                const allTrades = DataService.getTradesByFund(fundId);
+                const allTrades = TradeManager.getTradesByFund(fundId);
                 const sellTrade = { date: dateVal, shares: s, netValue: nv, id: data.trade ? data.trade.id : null };
-                const result = FeeCalculator.calculateSellFee(sellTrade, allTrades, fund.feeTiers.sellTiers);
+                const result = FeeCalculator.calculateSellFee(sellTrade, allTrades, effectiveFeeTiers.sellTiers);
 
                 const panel = document.getElementById('fee-suggestion-panel');
                 if (result.details.length > 0 && panel) {
@@ -808,22 +733,12 @@ const Modal = {
                         fee.value = result.fee.toFixed(2);
                         isFeeAutoCalculated = true;
                         calcAmount();
+                        checkMismatch();
                     }
                 }
             } else if (type === 'sell' && nv > 0 && s > 0 && dateVal && !hasSellTiers) {
-                // 基金未配置卖出费率，使用设置默认费率（简单计算，无 FIFO）
-                const settings = Storage.loadSettings();
-                const rate = settings.defaultSellFeeRate || 0;
                 const panel = document.getElementById('fee-suggestion-panel');
                 if (panel) panel.classList.add('hidden');
-
-                if (rate > 0 && !isFeeAutoCalculated) {
-                    const amountVal = nv * s;
-                    const calculatedFee = amountVal * rate / 100;
-                    fee.value = calculatedFee.toFixed(2);
-                    isFeeAutoCalculated = true;
-                    calcAmount();
-                }
             } else {
                 const panel = document.getElementById('fee-suggestion-panel');
                 if (panel) panel.classList.add('hidden');
@@ -834,7 +749,12 @@ const Modal = {
         shares.addEventListener('input', autoCalcFee);
         tradeType.addEventListener('change', () => {
             isFeeAutoCalculated = false;
+            fee.value = '0';
+            resetFeeSuggestion();
+            updateFieldsVisibility();
             autoCalcFee();
+            calcAmount();
+            checkMismatch();
         });
         document.getElementById('input-trade-date').addEventListener('change', autoCalcFee);
 
@@ -1236,7 +1156,7 @@ const Modal = {
         }
 
         if (needSave) {
-            DataService.updateFund(fund.id, fund);
+            FundManager.updateFund(fund.id, fund);
             // 重新渲染弹窗内容以显示填充的值
             Modal.show('feeSettings', { fundId: fundId });
             Modal.bindFeeSettingsEvents({ fundId: fundId });
@@ -1396,7 +1316,7 @@ const Modal = {
      * 渲染设置表单
      */
     renderSettingsForm() {
-        const settings = Storage.loadSettings() || {};
+        const settings = window.AppSettingsService.loadSettings() || {};
         const defaults = {
             bigNumberEnabled: true,
             bigNumberWanThreshold: 10000,
@@ -1595,7 +1515,7 @@ const Modal = {
                     defaultSortOrder: document.querySelector('input[name="settings-sort-order"]:checked')?.value || 'desc',
                     defaultPageSize: parseInt(document.getElementById('settings-page-size')?.value) || 10
                 };
-                Storage.saveSettings(settings);
+                window.AppSettingsService.saveSettings(settings);
                 Modal.hide();
                 Utils.showToast('设置已保存');
                 EventBus.emit(EventType.SETTINGS_CHANGED, settings);
@@ -1605,7 +1525,7 @@ const Modal = {
         const btnExport = document.getElementById('btn-settings-export');
         if (btnExport) {
             btnExport.addEventListener('click', () => {
-                const data = Storage.exportAll();
+                const data = window.AppSettingsService.exportData();
                 const json = JSON.stringify(data, null, 2);
                 const blob = new Blob([json], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
@@ -1630,7 +1550,7 @@ const Modal = {
                     try {
                         const text = await file.text();
                         const data = JSON.parse(text);
-                        const success = Storage.importAll(data, false);
+                        const success = window.AppSettingsService.importData(data, false);
                         if (success) {
                             Utils.showToast('数据导入成功');
                             EventBus.emit(EventType.DATA_IMPORTED);
@@ -1649,9 +1569,8 @@ const Modal = {
         if (btnClear) {
             btnClear.addEventListener('click', () => {
                 if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
-                    localStorage.clear();
+                    window.AppSettingsService.clearAllData();
                     Utils.showToast('数据已清除');
-                    EventBus.emit(EventType.DATA_CLEARED);
                     location.reload();
                 }
             });

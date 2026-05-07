@@ -284,7 +284,7 @@ const ToolPage = {
         const select = document.getElementById('conv-target-fund');
         if (!select) return;
 
-        const funds = DataService.loadFunds();
+        const funds = FundManager.getAllFunds();
         select.innerHTML = '<option value="">不生成记录，仅计算</option>';
 
         funds.forEach(fund => {

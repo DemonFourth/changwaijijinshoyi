@@ -4,12 +4,6 @@
  */
 
 const Storage = {
-    /**
-     * 保存数据到localStorage
-     * @param {string} key - 存储键
-     * @param {any} data - 要存储的数据
-     * @returns {boolean} 是否成功
-     */
     save(key, data) {
         try {
             const serialized = JSON.stringify(data);
@@ -18,7 +12,6 @@ const Storage = {
         } catch (error) {
             console.error('Storage save failed:', error);
 
-            // 检查是否是存储空间不足
             if (error.name === 'QuotaExceededError') {
                 console.error('localStorage quota exceeded');
                 Utils.showToast('存储空间不足，请清理数据', 'error');
@@ -28,11 +21,6 @@ const Storage = {
         }
     },
 
-    /**
-     * 从localStorage读取数据
-     * @param {string} key - 存储键
-     * @returns {any} 读取的数据，失败返回null
-     */
     load(key) {
         try {
             const serialized = localStorage.getItem(key);
@@ -46,11 +34,6 @@ const Storage = {
         }
     },
 
-    /**
-     * 删除localStorage中的数据
-     * @param {string} key - 存储键
-     * @returns {boolean} 是否成功
-     */
     remove(key) {
         try {
             localStorage.removeItem(key);
@@ -61,10 +44,6 @@ const Storage = {
         }
     },
 
-    /**
-     * 清空所有数据
-     * @returns {boolean} 是否成功
-     */
     clear() {
         try {
             localStorage.clear();
@@ -75,19 +54,10 @@ const Storage = {
         }
     },
 
-    /**
-     * 检查键是否存在
-     * @param {string} key - 存储键
-     * @returns {boolean}
-     */
     has(key) {
         return localStorage.getItem(key) !== null;
     },
 
-    /**
-     * 获取所有键
-     * @returns {string[]}
-     */
     keys() {
         const keys = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -96,10 +66,6 @@ const Storage = {
         return keys;
     },
 
-    /**
-     * 获取存储大小（字节）
-     * @returns {number}
-     */
     getSize() {
         let size = 0;
         for (let i = 0; i < localStorage.length; i++) {
@@ -107,16 +73,12 @@ const Storage = {
             const value = localStorage.getItem(key);
             size += key.length + value.length;
         }
-        return size * 2; // UTF-16编码，每个字符2字节
+        return size * 2;
     },
 
-    /**
-     * 获取存储使用情况
-     * @returns {object}
-     */
     getUsage() {
         const size = this.getSize();
-        const maxSize = 5 * 1024 * 1024; // localStorage通常限制5MB
+        const maxSize = 5 * 1024 * 1024;
 
         return {
             used: size,
@@ -127,63 +89,46 @@ const Storage = {
         };
     },
 
-    /**
-     * 保存基金数据
-     * @param {array} funds - 基金列表
-     * @returns {boolean}
-     */
     saveFunds(funds) {
-        const key = Config.get('storage.fundsKey');
-        return this.save(key, funds);
+        if (typeof window.LocalStorageAdapter !== 'undefined') {
+            return window.LocalStorageAdapter.saveFunds(funds);
+        }
+
+        return this.save(Config.get('storage.fundsKey'), funds);
     },
 
-    /**
-     * 加载基金数据
-     * @returns {array}
-     */
     loadFunds() {
-        const key = Config.get('storage.fundsKey');
-        return this.load(key) || [];
+        if (typeof window.LocalStorageAdapter !== 'undefined') {
+            return window.LocalStorageAdapter.loadFunds();
+        }
+
+        return this.load(Config.get('storage.fundsKey')) || [];
     },
 
-    /**
-     * 保存交易记录
-     * @param {array} trades - 交易记录列表
-     * @returns {boolean}
-     */
     saveTrades(trades) {
-        const key = Config.get('storage.tradesKey');
-        return this.save(key, trades);
+        if (typeof window.LocalStorageAdapter !== 'undefined') {
+            return window.LocalStorageAdapter.saveTrades(trades);
+        }
+
+        return this.save(Config.get('storage.tradesKey'), trades);
     },
 
-    /**
-     * 加载交易记录
-     * @returns {array}
-     */
     loadTrades() {
-        const key = Config.get('storage.tradesKey');
-        return this.load(key) || [];
+        if (typeof window.LocalStorageAdapter !== 'undefined') {
+            return window.LocalStorageAdapter.loadTrades();
+        }
+
+        return this.load(Config.get('storage.tradesKey')) || [];
     },
 
-    /**
-     * 保存应用设置
-     * @param {object} settings - 设置对象
-     * @returns {boolean}
-     */
     saveSettings(settings) {
-        const key = Config.get('storage.settingsKey');
-        return this.save(key, settings);
+        return this.save(Config.get('storage.settingsKey'), settings);
     },
 
-    /**
-     * 加载应用设置
-     * @returns {object}
-     */
     loadSettings() {
         const key = Config.get('storage.settingsKey');
         const settings = this.load(key) || {};
 
-        // 旧数据迁移：defaultBuyFee/defaultSellFee -> defaultBuyFeeRate/defaultSellFeeRate
         if (settings.defaultBuyFee !== undefined && settings.defaultBuyFeeRate === undefined) {
             settings.defaultBuyFeeRate = settings.defaultBuyFee;
             delete settings.defaultBuyFee;
@@ -198,38 +143,18 @@ const Storage = {
         return settings;
     },
 
-    /**
-     * 保存主题设置
-     * @param {string} theme - 主题名称
-     * @returns {boolean}
-     */
     saveTheme(theme) {
-        const key = Config.get('storage.themeKey');
-        return this.save(key, theme);
+        return this.save(Config.get('storage.themeKey'), theme);
     },
 
-    /**
-     * 加载主题设置
-     * @returns {string}
-     */
     loadTheme() {
-        const key = Config.get('storage.themeKey');
-        return this.load(key) || Config.get('app.defaultTheme');
+        return this.load(Config.get('storage.themeKey')) || Config.get('app.defaultTheme');
     },
 
-    /**
-     * 保存视图偏好设置
-     * @param {object} prefs - 视图偏好 {viewMode, sortField, sortOrder}
-     * @returns {boolean}
-     */
     saveViewPrefs(prefs) {
         return this.save('fund_calculator_view_prefs', prefs);
     },
 
-    /**
-     * 加载视图偏好设置
-     * @returns {object} 视图偏好
-     */
     loadViewPrefs() {
         const saved = this.load('fund_calculator_view_prefs');
         const settings = this.loadSettings() || {};
@@ -243,71 +168,57 @@ const Storage = {
         };
     },
 
-    /**
-     * 导出所有数据
-     * @returns {object}
-     */
     exportAll() {
+        const snapshot = typeof window.LocalStorageAdapter !== 'undefined'
+            ? window.LocalStorageAdapter.loadSnapshot()
+            : null;
+
         return {
             version: Config.get('app.version'),
             exportTime: new Date().toISOString(),
+            schemaVersion: snapshot ? snapshot.schemaVersion : window.StorageSchema.VERSION,
             funds: this.loadFunds(),
             trades: this.loadTrades(),
-            settings: this.loadSettings()
+            settings: this.loadSettings(),
+            syncMeta: snapshot ? snapshot.syncMeta : window.StorageSchema.createEmptySnapshot().syncMeta
         };
     },
 
-    /**
-     * 导入数据
-     * @param {object} data - 导入的数据
-     * @param {boolean} merge - 是否合并，false则覆盖
-     * @returns {boolean}
-     */
     importAll(data, merge = false) {
         try {
-            // 验证数据格式
             if (!data || typeof data !== 'object') {
                 console.error('Invalid import data format');
                 return false;
             }
 
-            // 导入基金数据
-            if (Array.isArray(data.funds)) {
-                // 为没有 feeTiers 的基金补充默认值（兼容旧数据）
-                const processedFunds = data.funds.map(fund => ({
-                    ...fund,
-                    feeTiers: fund.feeTiers || { buyTiers: [], sellTiers: [] }
-                }));
+            const incomingFunds = Array.isArray(data.funds)
+                ? data.funds.map(fund => window.StorageSchema.createFundEntity(fund))
+                : [];
+            const incomingTrades = Array.isArray(data.trades)
+                ? data.trades.map(trade => window.StorageSchema.createTradeEntity(trade))
+                : [];
 
-                if (merge) {
-                    const existingFunds = this.loadFunds();
-                    const mergedFunds = this.mergeArrays(existingFunds, processedFunds, 'id');
-                    this.saveFunds(mergedFunds);
-                } else {
-                    this.saveFunds(processedFunds);
-                }
+            if (merge) {
+                const mergedFunds = this.mergeArrays(this.loadFunds(), incomingFunds, 'id');
+                const mergedTrades = this.mergeArrays(this.loadTrades(), incomingTrades, 'id');
+                this.saveFunds(mergedFunds);
+                this.saveTrades(mergedTrades);
+            } else {
+                this.saveFunds(incomingFunds);
+                this.saveTrades(incomingTrades);
             }
 
-            // 导入交易记录
-            if (Array.isArray(data.trades)) {
-                if (merge) {
-                    const existingTrades = this.loadTrades();
-                    const mergedTrades = this.mergeArrays(existingTrades, data.trades, 'id');
-                    this.saveTrades(mergedTrades);
-                } else {
-                    this.saveTrades(data.trades);
-                }
-            }
-
-            // 导入设置
             if (data.settings && typeof data.settings === 'object') {
                 if (merge) {
                     const existingSettings = this.loadSettings();
-                    const mergedSettings = { ...existingSettings, ...data.settings };
-                    this.saveSettings(mergedSettings);
+                    this.saveSettings({ ...existingSettings, ...data.settings });
                 } else {
                     this.saveSettings(data.settings);
                 }
+            }
+
+            if (data.syncMeta && typeof data.syncMeta === 'object' && typeof window.LocalStorageAdapter !== 'undefined') {
+                window.LocalStorageAdapter.updateSyncMeta(data.syncMeta);
             }
 
             return true;
@@ -317,13 +228,6 @@ const Storage = {
         }
     },
 
-    /**
-     * 合并数组（根据唯一键）
-     * @param {array} existing - 现有数组
-     * @param {array} imported - 导入数组
-     * @param {string} keyField - 唯一键字段名
-     * @returns {array}
-     */
     mergeArrays(existing, imported, keyField) {
         const result = [...existing];
         const existingKeys = new Set(existing.map(item => item[keyField]));
@@ -338,5 +242,4 @@ const Storage = {
     }
 };
 
-// 注册到模块系统
 ModuleRegistry.register('Storage', Storage);
