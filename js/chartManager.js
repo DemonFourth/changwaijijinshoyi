@@ -1031,7 +1031,7 @@ const ChartManager = {
                     lineStyle: { color: themeConfig.itemColor[2] },
                     itemStyle: { color: themeConfig.itemColor[2] }
                 },
-{
+                {
                 name: '当前市值',
                 type: 'line',
                 data: currentValue,
@@ -1151,6 +1151,14 @@ const ChartManager = {
                     costPrices.push(costPrice);
                 }
             }
+            if (trade.type === 'dividend' && trade.dividendMode === 'reinvest') {
+                const amount = parseFloat(trade.amount) || 0;
+                const shares = parseFloat(trade.shares) || 0;
+                if (shares > 0) {
+                    const costPrice = amount / shares;
+                    costPrices.push(costPrice);
+                }
+            }
         });
 
         if (costPrices.length === 0) {
@@ -1162,19 +1170,20 @@ const ChartManager = {
         const maxPrice = Math.ceil(Math.max(...costPrices) * 10) / 10;
         const step = 0.1;
         
-        // 创建区间
+        // 创建区间（包含最大值）
         const ranges = [];
         let current = minPrice;
-        while (current < maxPrice) {
+        while (current <= maxPrice) {
             const next = current + step;
-            ranges.push({ min: current, max: next, label: `${current.toFixed(1)}-${next.toFixed(1)}`, count: 0 });
+            const rangeMax = next > maxPrice ? maxPrice : next;
+            ranges.push({ min: current, max: rangeMax, label: `${current.toFixed(1)}-${rangeMax.toFixed(1)}`, count: 0 });
             current = next;
         }
         
         // 统计各区间数量
         costPrices.forEach(price => {
             for (const range of ranges) {
-                if (price >= range.min && price < range.max) {
+                if (price >= range.min && (price < range.max || (range.max === maxPrice && price === range.max))) {
                     range.count++;
                     break;
                 }
@@ -1216,15 +1225,6 @@ const ChartManager = {
                 barMaxWidth: 50
             }]
         };
-    }
-};
-
-// 注册到模块系统
-ModuleRegistry.register('ChartManager', ChartManager);
-            ]
-        };
-    }
-};
     }
 };
 
