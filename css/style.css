@@ -3511,3 +3511,84 @@ td.negative {
 .modal-container.modal-settings .modal {
     max-width: 600px;
 }
+
+/* 密码验证页 */
+#auth-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: var(--color-bg-primary);
+}
+
+.auth-container {
+    background: var(--color-bg-secondary);
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 360px;
+    width: 100%;
+}
+
+.auth-container h2 {
+    margin-bottom: 24px;
+    color: var(--color-text-primary);
+}
+
+.auth-container .form-group {
+    margin-bottom: 20px;
+}
+
+.auth-container input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--color-border-primary);
+    border-radius: 8px;
+    font-size: 16px;
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+}
+
+.auth-container .btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+}
+
+.auth-container .error-message {
+    margin-top: 16px;
+    color: var(--color-danger);
+    font-size: 14px;
+}
+
+/* 同步状态提示 */
+.sync-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+}
+
+.sync-status.syncing .sync-icon {
+    animation: spin 1s linear infinite;
+}
+
+.sync-status.error {
+    background: rgba(220, 53, 69, 0.1);
+    color: var(--color-danger);
+}
+
+.sync-status.conflict {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

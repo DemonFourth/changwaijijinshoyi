@@ -3,7 +3,7 @@
  * 初始化所有模块并启动应用
  */
 
-/* global TooltipManager */
+/* global TooltipManager, SyncAppService, SyncConflictModalHelper */
 
 const App = {
     /**
@@ -20,6 +20,35 @@ const App = {
 
             // 初始化数据服务
             DataService.init();
+
+            // 初始化同步服务
+            const workerUrl = Config.get('sync.workerUrl');
+            await SyncAppService.init({ workerUrl, timeout: Config.get('sync.timeout') });
+
+            // 启动后台同步（不阻塞页面渲染）
+            setTimeout(async () => {
+                try {
+                    const syncResult = await SyncAppService.startBackgroundSync();
+
+                    if (syncResult.needPassword) {
+                        // 需要密码验证，显示密码页
+                        document.getElementById('auth-page').classList.remove('hidden');
+                        document.getElementById('page-overview').classList.add('hidden');
+                    } else if (syncResult.hasConflicts) {
+                        // 有冲突，显示冲突处理
+                        SyncConflictModalHelper.show(syncResult.conflicts, async (resolutions) => {
+                            await SyncAppService.resolveConflicts(syncResult.conflicts, resolutions);
+                            Overview.refresh();
+                        });
+                    } else {
+                        // 同步完成，刷新页面
+                        Overview.refresh();
+                    }
+                } catch (error) {
+                    console.error('Background sync failed:', error);
+                    // 静默失败，不阻塞用户体验
+                }
+            }, 100);
 
             // 初始化主题管理器
             ThemeManager.init();
@@ -59,6 +88,9 @@ const App = {
 
             // 绑定 header 返回按钮
             this.setupHeaderBackButton();
+
+            // 绑定密码页事件
+            this.setupAuthPage();
 
             // 监听路由变化
             this.setupRouteListener();
@@ -202,6 +234,51 @@ const App = {
                 Overview.refresh();
             }
         }
+    },
+
+    /**
+     * 绑定密码页事件
+     */
+    setupAuthPage() {
+        const btnSubmit = document.getElementById('btn-auth-submit');
+        const inputPassword = document.getElementById('auth-password');
+        const errorMsg = document.getElementById('auth-error');
+
+        btnSubmit?.addEventListener('click', async () => {
+            const password = inputPassword.value;
+            if (!password) {
+                errorMsg.textContent = '请输入密码';
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
+            const result = await adapter.login(password);
+
+            if (result.success) {
+                document.getElementById('auth-page').classList.add('hidden');
+                document.getElementById('page-overview').classList.remove('hidden');
+                document.getElementById('page-overview').classList.add('active');
+
+                // 登录成功后执行同步
+                const syncResult = await SyncAppService.startBackgroundSync();
+                if (syncResult.hasConflicts) {
+                    SyncConflictModalHelper.show(syncResult.conflicts, async (resolutions) => {
+                        await SyncAppService.resolveConflicts(syncResult.conflicts, resolutions);
+                        Overview.refresh();
+                    });
+                }
+            } else {
+                errorMsg.textContent = result.reason || '密码错误';
+                errorMsg.classList.remove('hidden');
+            }
+        });
+
+        inputPassword?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                btnSubmit.click();
+            }
+        });
     },
 
     /**

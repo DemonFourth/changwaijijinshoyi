@@ -12,6 +12,18 @@
     <script src="lib/echarts.min.js"></script>
     <!-- 应用容器 -->
     <div id="app">
+        <!-- 密码验证页 -->
+        <div id="auth-page" class="page hidden">
+            <div class="auth-container">
+                <h2>请输入访问密码</h2>
+                <div class="form-group">
+                    <input type="password" id="auth-password" placeholder="请输入密码" />
+                </div>
+                <button id="btn-auth-submit" class="btn btn-primary">确认</button>
+                <p id="auth-error" class="error-message hidden"></p>
+            </div>
+        </div>
+
         <!-- 标题栏 -->
         <header class="header">
             <div class="header-left">
@@ -20,6 +32,10 @@
             </div>
             <div class="header-actions">
                 <button id="btn-tools" class="btn btn-secondary" type="button">🧰 工具箱</button>
+                <span id="sync-status" class="sync-status hidden">
+                    <span class="sync-icon">⟳</span>
+                    <span class="sync-text">同步中</span>
+                </span>
                 <button id="btn-export" class="btn btn-secondary" type="button">导出数据</button>
                 <button id="btn-import" class="btn btn-secondary" type="button">导入数据</button>
                 <button id="btn-theme" class="btn btn-icon" type="button" data-tooltip="切换主题">🌙</button>
@@ -567,6 +583,9 @@
     <script src="js/storage/localStorageAdapter.js"></script>
     <script src="js/storage/localSyncAdapter.js"></script>
     <script src="js/storage/syncAdapterRegistry.js"></script>
+    <script src="js/storage/cloudflareD1SyncAdapter.js"></script>
+    <script src="js/application/syncAppService.js"></script>
+    <script src="js/modal/syncConflictModalHelper.js"></script>
     <script src="js/repositories/fundRepository.js"></script>
     <script src="js/repositories/tradeRepository.js"></script>
     <script src="js/application/fundAppService.js"></script>
