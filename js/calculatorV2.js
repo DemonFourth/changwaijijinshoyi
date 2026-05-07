@@ -17,20 +17,25 @@ const CalculatorV2 = {
      * @returns {object} 计算结果
      */
     calculateFundProfit(trades, currentNetValue) {
-        const result = this.calculateWithDetails(trades, currentNetValue);
-        const summary = result.summary || {};
-        return {
-            summary: {
-                totalInvest: summary.totalInvest || 0,
-                totalProfit: summary.totalProfit || 0,
-                totalRealizedProfit: summary.totalRealizedProfit || 0,
-                currentHolding: summary.currentHolding || {
-                    floatingProfit: 0,
-                    cost: 0,
-                    shares: 0
-                }
-            }
-        };
+        if (!trades || trades.length === 0) {
+            return this.getEmptyResult();
+        }
+
+        // 按日期排序交易记录
+        const sortedTrades = [...trades].sort((a, b) =>
+            new Date(a.date) - new Date(b.date)
+        );
+
+        // 识别持仓周期
+        const cycles = this.identifyHoldingCycles(sortedTrades);
+
+        // 计算每个周期的收益
+        const cyclesWithProfit = cycles.map(cycle =>
+            this.calculateCycleProfit(cycle, currentNetValue)
+        );
+
+        // 计算总收益
+        return this.calculateTotalProfit(cyclesWithProfit);
     },
 
     calculateWithDetails(trades, currentNetValue) {
