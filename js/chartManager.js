@@ -1153,61 +1153,54 @@ const ChartManager = {
             return ChartManager.buildEmptyOption('暂无交易数据');
         }
 
-        // 收集所有买入记录的成本价
-        const costPrices = [];
+        // 收集所有买入记录的成本价和份额
+        const costData = [];
         trades.forEach(trade => {
-            if (trade.type === 'buy') {
-                const amount = parseFloat(trade.amount) || 0;
-                const shares = parseFloat(trade.shares) || 0;
-                if (shares > 0) {
-                    const costPrice = amount / shares;
-                    costPrices.push(costPrice);
-                }
-            }
-            if (trade.type === 'dividend' && trade.dividendMode === 'reinvest') {
-                const amount = parseFloat(trade.amount) || 0;
-                const shares = parseFloat(trade.shares) || 0;
-                if (shares > 0) {
-                    const costPrice = amount / shares;
-                    costPrices.push(costPrice);
+            const amount = parseFloat(trade.amount) || 0;
+            const shares = parseFloat(trade.shares) || 0;
+            if (shares > 0) {
+                const costPrice = amount / shares;
+                if (trade.type === 'buy' || (trade.type === 'dividend' && trade.dividendMode === 'reinvest')) {
+                    costData.push({ costPrice: costPrice, shares: shares });
                 }
             }
         });
 
-        if (costPrices.length === 0) {
+        if (costData.length === 0) {
             return ChartManager.buildEmptyOption('暂无买入记录');
         }
 
         // 计算成本价范围
-        const minPrice = Math.floor(Math.min(...costPrices) * 10) / 10;
-        const maxPrice = Math.ceil(Math.max(...costPrices) * 10) / 10;
+        const prices = costData.map(d => d.costPrice);
+        const minPrice = Math.floor(Math.min(...prices) * 10) / 10;
+        const maxPrice = Math.ceil(Math.max(...prices) * 10) / 10;
         const step = 0.1;
         
-        // 创建区间（包含最大值）
+        // 创建区间
         const ranges = [];
         let current = minPrice;
         while (current <= maxPrice) {
             const next = current + step;
             const rangeMax = next > maxPrice ? maxPrice : next;
-            ranges.push({ min: current, max: rangeMax, label: `${current.toFixed(1)}-${rangeMax.toFixed(1)}`, count: 0 });
+            ranges.push({ min: current, max: rangeMax, label: current.toFixed(2) + '元', shares: 0 });
             current = next;
         }
         
-        // 统计各区间数量
-        costPrices.forEach(price => {
+        // 统计各区间的份额
+        costData.forEach(data => {
             for (const range of ranges) {
-                if (price >= range.min && (price < range.max || (range.max === maxPrice && price === range.max))) {
-                    range.count++;
+                if (data.costPrice >= range.min && (data.costPrice < range.max || (range.max === maxPrice && data.costPrice === range.max))) {
+                    range.shares += data.shares;
                     break;
                 }
             }
         });
 
         // 过滤空区间
-        const nonEmptyRanges = ranges.filter(r => r.count > 0);
+        const nonEmptyRanges = ranges.filter(r => r.shares > 0);
 
-        // 改为饼图显示占比
-        const total = nonEmptyRanges.reduce((sum, r) => sum + r.count, 0);
+        // 计算总份额
+        const total = nonEmptyRanges.reduce((sum, r) => sum + r.shares, 0);
 
         return {
             textStyle: { color: themeConfig.textColor },
@@ -1215,7 +1208,7 @@ const ChartManager = {
                 trigger: 'item',
                 formatter: function(params) {
                     const percent = (params.value / total * 100).toFixed(1);
-                    return params.name + '<br/>次数: ' + params.value + ' (' + percent + '%)';
+                    return params.name + '<br/>份额: ' + params.value.toFixed(2) + ' (' + percent + '%)';
                 }
             },
             legend: {
@@ -1229,11 +1222,11 @@ const ChartManager = {
                 center: ['50%', '50%'],
                 data: nonEmptyRanges.map(r => ({
                     name: r.label,
-                    value: r.count
+                    value: parseFloat(r.shares.toFixed(2))
                 })),
                 label: {
                     show: true,
-                    formatter: '{b}: {d}%'
+                    formatter: '{b}'
                 }
             }]
         };
