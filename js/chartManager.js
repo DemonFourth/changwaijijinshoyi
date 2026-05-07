@@ -1062,7 +1062,7 @@ const ChartManager = {
         // 计算每个周期的持有天数
         const daysData = cycles.map(c => {
             if (!c.startDate) return 0;
-            const endDate = c.endDate || new Date().toISOString().split('T')[0];
+            const endDate = c.endDate || new Date().toISOString().slice(0, 10);
             const start = new Date(c.startDate);
             const end = new Date(endDate);
             return Math.floor((end - start) / (1000 * 60 * 60 * 24));
