@@ -393,6 +393,13 @@ const Detail = {
                 return;
             }
 
+            // 持仓成本趋势图
+            const costTrendContainer = document.getElementById('chart-cost-trend');
+            if (costTrendContainer) {
+                const trades = TradeManager.getTradesByFund(fund.id);
+                ChartManager.createChart('chart-cost-trend', ChartManager.buildCostTrendOption(fund, trades, stats));
+            }
+
             // 持仓份额变化图
             const shareContainer = document.getElementById('chart-share-change');
             if (shareContainer) {
@@ -413,12 +420,7 @@ const Detail = {
                 ChartManager.createChart('chart-cycle-compare', ChartManager.buildCycleCompareOption(stats.cycles));
             }
 
-            // 持仓成本分布图
-            const costDistContainer = document.getElementById('chart-cost-distribution');
-            if (costDistContainer) {
-                const trades = TradeManager.getTradesByFund(fund.id);
-                ChartManager.createChart('chart-cost-distribution', ChartManager.buildCostDistributionOption(trades));
-            }
+
         } else {
             // Fallback: 简单统计
             const container = document.getElementById('chart-detail-trend');
