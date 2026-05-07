@@ -893,7 +893,7 @@ const ChartManager = {
             textStyle: { color: themeConfig.textColor },
             tooltip: { trigger: 'axis' },
             legend: {
-                data: legendData,
+                data: ['持仓份额'],
                 textStyle: { color: themeConfig.textColor }
             },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -1030,7 +1030,7 @@ const ChartManager = {
                 }
             },
             legend: {
-                data: legendData,
+                data: ['持仓份额'],
                 textStyle: { color: themeConfig.textColor }
             },
             grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
