@@ -25,6 +25,13 @@ const App = {
             const workerUrl = Config.get('sync.workerUrl');
             await SyncAppService.init({ workerUrl, timeout: Config.get('sync.timeout') });
 
+            // 显示存储模式提示
+            if (workerUrl) {
+                Utils.showToast('当前使用混合存储（本地 + 云端同步）', 'info');
+            } else {
+                Utils.showToast('当前使用本地数据', 'info');
+            }
+
             // 启动后台同步（不阻塞页面渲染）
             setTimeout(async () => {
                 try {

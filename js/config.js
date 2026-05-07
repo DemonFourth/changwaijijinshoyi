@@ -96,6 +96,14 @@ const Config = {
         enabled: true
     },
 
+    // 同步配置
+    sync: {
+        // Cloudflare Workers 同步服务地址（本地为空字符串，表示不使用云端同步）
+        workerUrl: '',
+        // 同步请求超时时间（毫秒）
+        timeout: 10000
+    },
+
     /**
      * 获取配置项
      * @param {string} key - 配置项路径，如 'api.timeout'
