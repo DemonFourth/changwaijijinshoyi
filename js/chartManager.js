@@ -902,6 +902,7 @@ const ChartManager = {
                 lineStyle: { color: themeConfig.profitColor },
                 itemStyle: { color: themeConfig.profitColor },
                 markPoint: {
+                    symbolSize: 12,
                     data: [
                         ...buyMarkers.map(m => ({
                             coord: m.coord,
@@ -1029,8 +1030,8 @@ const ChartManager = {
                     name: '累计卖出',
                     type: 'line',
                     data: cumulativeSell,
-                    lineStyle: { color: themeConfig.itemColor[2] },
-                    itemStyle: { color: themeConfig.itemColor[2] }
+                    lineStyle: { color: themeConfig.itemColor[3] },
+                    itemStyle: { color: themeConfig.itemColor[3] }
                 },
                 {
                     name: '当前市值',
@@ -1195,36 +1196,30 @@ const ChartManager = {
         // 过滤空区间
         const nonEmptyRanges = ranges.filter(r => r.count > 0);
 
+        // 改为饼图显示占比
+        const total = nonEmptyRanges.reduce((sum, r) => sum + r.count, 0);
+
         return {
             textStyle: { color: themeConfig.textColor },
             tooltip: { 
-                trigger: 'axis',
-                formatter: params => {
-                    const data = params[0];
-                    return `成本区间: ${data.name}<br/>买入次数: ${data.value}`;
+                trigger: 'item',
+                formatter: function(params) {
+                    const percent = (params.value / total * 100).toFixed(1);
+                    return params.name + '<br/>次数: ' + params.value + ' (' + percent + '%)';
                 }
             },
-            grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
-            xAxis: {
-                type: 'category',
-                data: nonEmptyRanges.map(r => r.label),
-                axisLabel: { color: themeConfig.textColor, rotate: 45 },
-                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
-            },
-            yAxis: {
-                type: 'value',
-                name: '买入次数',
-                axisLabel: { color: themeConfig.textColor },
-                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
-                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
-            },
             series: [{
-                type: 'bar',
+                type: 'pie',
+                radius: ['30%', '70%'],
+                center: ['50%', '50%'],
                 data: nonEmptyRanges.map(r => ({
-                    value: r.count,
-                    itemStyle: { color: themeConfig.itemColor[0] }
+                    name: r.label,
+                    value: r.count
                 })),
-                barMaxWidth: 50
+                label: {
+                    show: true,
+                    formatter: '{d}%'
+                }
             }]
         };
     }
