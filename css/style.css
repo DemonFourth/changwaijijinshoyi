@@ -801,7 +801,14 @@ td.negative {
 
 .holding-stat.highlight .stat-value {
     font-size: 1.25rem;
-    color: var(--color-brand-primary);
+}
+
+.holding-stat.highlight .stat-value.positive {
+    color: var(--color-rise);
+}
+
+.holding-stat.highlight .stat-value.negative {
+    color: var(--color-fall);
 }
 
 .holding-stat.estimated {
@@ -810,11 +817,19 @@ td.negative {
 }
 
 .holding-stat.estimated .stat-label {
-    color: var(--color-info);
+    color: var(--color-text-secondary);
 }
 
 .holding-stat.estimated .stat-value {
-    color: var(--color-info);
+    color: var(--color-text-secondary);
+}
+
+.holding-stat.estimated .stat-value.positive {
+    color: var(--color-rise);
+}
+
+.holding-stat.estimated .stat-value.negative {
+    color: var(--color-fall);
 }
 
 /* 响应式 */
