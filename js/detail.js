@@ -393,28 +393,31 @@ rate.textContent = Utils.formatPercent(holdingRate);
                 return;
             }
 
-            // 渲染收益趋势图
-            const trendContainer = document.getElementById('chart-fund-profit-trend');
-            if (trendContainer) {
-                ChartManager.createChart('chart-fund-profit-trend', ChartManager.buildFundProfitTrendOption(fund, stats));
-            }
-
-            // 渲染买卖对比图
-            const compareContainer = document.getElementById('chart-buy-sell-compare');
-            if (compareContainer) {
-                ChartManager.createChart('chart-buy-sell-compare', ChartManager.buildBuySellCompareOption(stats));
-            }
-
-            // 渲染收益率变化图
-            const rateContainer = document.getElementById('chart-profit-rate-change');
-            if (rateContainer) {
-                ChartManager.createChart('chart-profit-rate-change', ChartManager.buildProfitRateChangeOption(stats.cycles));
-            }
-
-            const costTrendContainer = document.getElementById('chart-cost-trend');
-            if (costTrendContainer) {
+            // 持仓份额变化图
+            const shareContainer = document.getElementById('chart-share-change');
+            if (shareContainer) {
                 const trades = TradeManager.getTradesByFund(fund.id);
-                ChartManager.createChart('chart-cost-trend', ChartManager.buildCostTrendOption(fund, trades, stats));
+                ChartManager.createChart('chart-share-change', ChartManager.buildShareChangeOption(trades, fund.netValue));
+            }
+
+            // 资金流动图
+            const fundFlowContainer = document.getElementById('chart-fund-flow');
+            if (fundFlowContainer) {
+                const trades = TradeManager.getTradesByFund(fund.id);
+                ChartManager.createChart('chart-fund-flow', ChartManager.buildFundFlowOption(trades, fund.netValue));
+            }
+
+            // 持仓周期对比图
+            const cycleCompareContainer = document.getElementById('chart-cycle-compare');
+            if (cycleCompareContainer) {
+                ChartManager.createChart('chart-cycle-compare', ChartManager.buildCycleCompareOption(stats.cycles));
+            }
+
+            // 持仓成本分布图
+            const costDistContainer = document.getElementById('chart-cost-distribution');
+            if (costDistContainer) {
+                const trades = TradeManager.getTradesByFund(fund.id);
+                ChartManager.createChart('chart-cost-distribution', ChartManager.buildCostDistributionOption(trades));
             }
         } else {
             // Fallback: 简单统计
