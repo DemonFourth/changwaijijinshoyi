@@ -261,6 +261,8 @@ const Detail = {
         const value = document.getElementById('holding-value');
         const profit = document.getElementById('holding-profit');
         const rate = document.getElementById('holding-rate');
+        const profitEstimated = document.getElementById('holding-profit-estimated');
+        const rateEstimated = document.getElementById('holding-rate-estimated');
 
         // 已实现收益和总收益
         const realizedProfit = document.getElementById('realized-profit');
@@ -302,8 +304,39 @@ const Detail = {
                 const holdingRate = currentHolding.cost > 0
                     ? (currentHolding.floatingProfit / currentHolding.cost * 100)
                     : 0;
-                rate.textContent = Utils.formatPercent(holdingRate);
+rate.textContent = Utils.formatPercent(holdingRate);
                 rate.className = `value ${Utils.getValueColor(holdingRate)}`;
+            }
+        }
+
+        // 显示预估收益（使用估算净值）
+        if (profitEstimated || rateEstimated) {
+            const estimatedNetValue = parseFloat(fund.estimatedValue) || 0;
+            const holdingShares = currentHolding.shares || 0;
+            const holdingCost = currentHolding.cost || 0;
+            
+            if (estimatedNetValue > 0 && holdingShares > 0 && holdingCost > 0) {
+                const estimatedValue = holdingShares * estimatedNetValue;
+                const estimatedProfit = estimatedValue - holdingCost;
+                const estimatedProfitRate = (estimatedProfit / holdingCost * 100);
+                
+                if (profitEstimated) {
+                    profitEstimated.innerHTML = Utils.formatMoneySmart(estimatedProfit);
+                    profitEstimated.className = `value ${Utils.getValueColor(estimatedProfit)}`;
+                }
+                if (rateEstimated) {
+                    rateEstimated.textContent = Utils.formatPercent(estimatedProfitRate);
+                    rateEstimated.className = `value ${Utils.getValueColor(estimatedProfitRate)}`;
+                }
+            } else {
+                if (profitEstimated) {
+                    profitEstimated.innerHTML = '-';
+                    profitEstimated.className = 'value';
+                }
+                if (rateEstimated) {
+                    rateEstimated.textContent = '-';
+                    rateEstimated.className = 'value';
+                }
             }
         }
 

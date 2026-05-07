@@ -804,6 +804,20 @@ td.negative {
     color: var(--color-brand-primary);
 }
 
+.holding-stat.estimated {
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--color-border-light);
+    margin-top: 0.5rem;
+}
+
+.holding-stat.estimated .stat-label {
+    color: var(--color-info);
+}
+
+.holding-stat.estimated .stat-value {
+    color: var(--color-info);
+}
+
 /* 响应式 */
 @media (width <= 768px) {
     .holding-cards {
