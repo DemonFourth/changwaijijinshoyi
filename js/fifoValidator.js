@@ -66,14 +66,26 @@ const FIFOValidator = {
 
         const fifoResult = FIFOCalculator.calculate(trades, currentNetValue);
         const weightedResult = CalculatorV2.calculateFundProfit(sortedTrades, currentNetValue);
-        const comparison = FIFOValidator.compareResults(fifoResult, weightedResult);
+        
+        const weightedSummary = weightedResult.summary || {};
+        const currentHolding = weightedSummary.currentHolding || {};
+        
+        const weightedData = {
+            totalProfit: weightedSummary.totalProfit || 0,
+            realizedProfit: weightedSummary.totalRealizedProfit || 0,
+            floatingProfit: currentHolding.floatingProfit || 0,
+            holdingCost: currentHolding.cost || 0,
+            holdingShares: currentHolding.shares || 0
+        };
+        
+        const comparison = FIFOValidator.compareResults(fifoResult, weightedData);
 
         return {
             success: true,
             fund: fund,
             trades: sortedTrades,
             fifo: fifoResult,
-            weighted: weightedResult,
+            weighted: weightedData,
             consistent: comparison.consistent,
             differences: comparison.differences
         };
