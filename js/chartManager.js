@@ -1088,7 +1088,7 @@ const ChartManager = {
                 }
             },
             legend: {
-                data: ['收益额', '持有天数'],
+                data: ['累计投入', '累计卖出', '当前市值'],
                 textStyle: { color: themeConfig.textColor }
             },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
