@@ -3,6 +3,8 @@
  * 管理工具箱页面的显示和交互
  */
 
+/* global ModuleRegistry, Utils, FundManager, TradeManager, ConversionCalculator, SyncAppService, SyncConflictModalHelper, Overview */
+
 const ToolPage = {
     currentResult: null,
     tierCount: 0,
@@ -67,6 +69,106 @@ const ToolPage = {
             aSharesInput.addEventListener('input', () => {
                 ToolPage.validateTieredShares();
             });
+        }
+
+        // 同步状态区域
+        ToolPage.renderSyncStatus();
+
+        // 绑定手动同步事件
+        document.getElementById('btn-manual-sync')?.addEventListener('click', async () => {
+            Utils.showLoading('同步中...');
+            const result = await SyncAppService.manualSync();
+            Utils.hideLoading();
+
+            if (result.success) {
+                Utils.showToast('同步成功', 'success');
+                Overview.refresh();
+            } else if (result.conflict) {
+                SyncConflictModalHelper.show(result.conflicts, async (resolutions) => {
+                    await SyncAppService.resolveConflicts(result.conflicts, resolutions);
+                    Overview.refresh();
+                });
+            } else {
+                Utils.showToast(result.reason || '同步失败', 'error');
+            }
+        });
+
+        document.getElementById('btn-force-push')?.addEventListener('click', async () => {
+            if (!confirm('确定强制上传本地数据覆盖云端吗？此操作不可撤销。')) {
+                return;
+            }
+            Utils.showLoading('上传中...');
+            const result = await SyncAppService.forcePushLocal();
+            Utils.hideLoading();
+
+            if (result.success) {
+                Utils.showToast('强制上传成功', 'success');
+            } else {
+                Utils.showToast(result.reason || '强制上传失败', 'error');
+            }
+        });
+
+        document.getElementById('btn-force-pull')?.addEventListener('click', async () => {
+            if (!confirm('确定强制下载云端数据覆盖本地吗？此操作不可撤销。')) {
+                return;
+            }
+            Utils.showLoading('下载中...');
+            const result = await SyncAppService.forcePullCloud();
+            Utils.hideLoading();
+
+            if (result.success) {
+                Utils.showToast('强制下载成功', 'success');
+                Overview.refresh();
+            } else {
+                Utils.showToast(result.reason || '强制下载失败', 'error');
+            }
+        });
+    },
+
+    /**
+     * 渲染同步状态区域
+     */
+    renderSyncStatus() {
+        const toolDetail = document.querySelector('.tool-detail[data-tool="conversion"]');
+        if (!toolDetail) return;
+
+        const syncStatus = SyncAppService.getSyncStatus();
+        const syncStatusHtml = `
+            <div class="tool-section">
+                <h4>云同步状态</h4>
+                <div class="sync-info">
+                    <span class="status-label">状态:</span>
+                    <span class="status-value">${syncStatus.syncStatus || 'idle'}</span>
+                </div>
+                <div class="sync-info">
+                    <span class="status-label">云端版本:</span>
+                    <span class="status-value">${syncStatus.cloudRevision || 0}</span>
+                </div>
+                <div class="sync-actions">
+                    <button class="btn btn-secondary" id="btn-manual-sync">立即同步</button>
+                    <button class="btn btn-secondary" id="btn-force-push">强制上传本地</button>
+                    <button class="btn btn-secondary" id="btn-force-pull">强制下载云端</button>
+                </div>
+            </div>
+        `;
+
+        // 查找工具详情页中合适的位置插入同步状态区域
+        // 在工具详情内容末尾添加
+        const existingSyncSection = toolDetail.querySelector('.tool-section.sync-status-section');
+        if (existingSyncSection) {
+            existingSyncSection.remove();
+        }
+
+        const syncSection = document.createElement('div');
+        syncSection.className = 'tool-section sync-status-section';
+        syncSection.innerHTML = syncStatusHtml;
+
+        // 插入到工具详情末尾（在 result 区域之前）
+        const resultEl = toolDetail.querySelector('.tool-result');
+        if (resultEl) {
+            toolDetail.insertBefore(syncSection, resultEl);
+        } else {
+            toolDetail.appendChild(syncSection);
         }
     },
 
