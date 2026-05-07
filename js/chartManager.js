@@ -872,8 +872,18 @@ const ChartManager = {
                 trigger: 'axis',
                 formatter: params => {
                     const data = params[0];
-                    return `${data.name}<br/>持仓份额: ${data.value}`;
+                    let tip = `${data.name}<br/>持仓份额: ${data.value}`;
+                    // 添加买卖标记说明
+                    const buyMatch = buyMarkers.find(m => m.coord[0] === data.name);
+                    const sellMatch = sellMarkers.find(m => m.coord[0] === data.name);
+                    if (buyMatch) tip += '<br/>🟢 买入';
+                    if (sellMatch) tip += '<br/>🔴 卖出';
+                    return tip;
                 }
+            },
+            legend: {
+                data: ['持仓份额'],
+                textStyle: { color: themeConfig.textColor }
             },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
             xAxis: {
@@ -1208,6 +1218,11 @@ const ChartManager = {
                     return params.name + '<br/>次数: ' + params.value + ' (' + percent + '%)';
                 }
             },
+            legend: {
+                orient: 'vertical',
+                left: 'left',
+                textStyle: { color: themeConfig.textColor }
+            },
             series: [{
                 type: 'pie',
                 radius: ['30%', '70%'],
@@ -1218,7 +1233,7 @@ const ChartManager = {
                 })),
                 label: {
                     show: true,
-                    formatter: '{d}%'
+                    formatter: '{b}: {d}%'
                 }
             }]
         };
