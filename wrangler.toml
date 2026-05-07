@@ -1,0 +1,11 @@
+name = "fund-calculator-sync"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[env.production]
+vars = { AUTH_ENABLED = "false", APP_PASSWORD = "", SESSION_SECRET = "" }
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fund-calculator-db"
+database_id = "your-database-id"
