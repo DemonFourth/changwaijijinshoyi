@@ -1235,18 +1235,18 @@ td.negative {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--color-bg-brand);
+    background: var(--color-brand-gradient);
     color: var(--color-text-on-brand);
-    border: none;
+    border: 1px solid var(--color-border-secondary);
     font-size: 1.5rem;
     cursor: pointer;
-    box-shadow: 0 4px 12px var(--color-shadow);
+    box-shadow: var(--shadow-md);
     transition: all 0.3s;
 }
 
 .fab:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 16px var(--color-shadow);
+    box-shadow: var(--shadow-lg);
 }
 
 /* 弹窗 */
