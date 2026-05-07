@@ -110,7 +110,7 @@ const FundManager = {
                 estimatedValue: apiData ? apiData.estimatedValue : 0,
                 estimatedGrowth: apiData ? apiData.estimatedGrowth : 0,
                 createTime: new Date().toISOString(),
-                updateTime: new Date().toISOString()
+                updateTime: apiData && apiData.estimatedDate ? apiData.estimatedDate : new Date().toISOString()
             };
 
             console.log('4. Final fund object:', fund);
@@ -199,7 +199,7 @@ const FundManager = {
                 netValueDate: apiData.netValueDate,
                 estimatedValue: apiData.estimatedValue,
                 estimatedGrowth: apiData.estimatedGrowth,
-                updateTime: new Date().toISOString()
+                updateTime: apiData.estimatedDate || new Date().toISOString()
             };
 
             const success = this.updateFund(fundId, updates);
@@ -240,7 +240,7 @@ const FundManager = {
                         netValueDate: apiData.netValueDate,
                         estimatedValue: apiData.estimatedValue,
                         estimatedGrowth: apiData.estimatedGrowth,
-                        updateTime: new Date().toISOString()
+                        updateTime: apiData.estimatedDate || new Date().toISOString()
                     };
 
                     this.updateFund(fund.id, updates);
