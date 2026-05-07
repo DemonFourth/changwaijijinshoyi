@@ -1132,7 +1132,7 @@ const Modal = {
         if (needSave) {
             DataService.updateFund(fund.id, fund);
             // 重新渲染弹窗内容以显示填充的值
-            Modal.renderModal('feeSettings', { fundId: fundId });
+            Modal.show('feeSettings', { fundId: fundId });
             Modal.bindFeeSettingsEvents({ fundId: fundId });
             return;
         }
