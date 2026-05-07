@@ -52,6 +52,33 @@ const FIFOValidator = {
         };
     },
 
+    getDetailedResult(fundId) {
+        const fund = FundManager.getFund(fundId);
+        if (!fund) return null;
+
+        const trades = TradeManager.getTradesByFund(fundId);
+        if (!trades || trades.length === 0) {
+            return { success: true, empty: true, message: '无交易记录' };
+        }
+
+        const currentNetValue = parseFloat(fund.netValue) || 0;
+        const sortedTrades = trades.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const fifoResult = FIFOCalculator.calculate(trades, currentNetValue);
+        const weightedResult = CalculatorV2.calculateFundProfit(sortedTrades, currentNetValue);
+        const comparison = FIFOValidator.compareResults(fifoResult, weightedResult);
+
+        return {
+            success: true,
+            fund: fund,
+            trades: sortedTrades,
+            fifo: fifoResult,
+            weighted: weightedResult,
+            consistent: comparison.consistent,
+            differences: comparison.differences
+        };
+    },
+
     compareResults(fifoResult, weightedResult) {
         const differences = [];
         let consistent = true;

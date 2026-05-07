@@ -997,17 +997,19 @@ const Detail = {
             return;
         }
 
-        const result = FIFOValidator.verifyFund(Detail.currentFundId);
+        const result = FIFOValidator.getDetailedResult(Detail.currentFundId);
 
-        if (result.success && result.consistent) {
-            Utils.showToast('✅ 验证通过：FIFO与移动加权平均结果一致', 'success');
-        } else if (result.success && !result.consistent) {
-            Utils.showToast('❌ 结果不一致', 'error');
-            const message = FIFOValidator.formatResult(result);
-            alert(message);
-        } else {
-            Utils.showToast('❌ ' + result.error, 'error');
+        if (!result || !result.success) {
+            Utils.showToast('验证失败：' + (result?.message || '未知错误'), 'error');
+            return;
         }
+
+        if (result.empty) {
+            Utils.showToast('无交易记录', 'info');
+            return;
+        }
+
+        Modal.show('verifyResult', { fundId: Detail.currentFundId });
     },
 
     /**

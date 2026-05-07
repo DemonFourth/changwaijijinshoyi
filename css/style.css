@@ -1536,6 +1536,97 @@ td.negative {
     color: var(--color-fall);
 }
 
+/* 验证计算结果弹窗 */
+.verify-result-modal {
+    padding: 0.5rem;
+}
+
+.verify-status {
+    text-align: center;
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.verify-success {
+    background: rgb(72 187 120 / 15%);
+    color: var(--color-success);
+}
+
+.verify-fail {
+    background: rgb(245 101 101 / 15%);
+    color: var(--color-rise);
+}
+
+.verify-summary {
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.verify-summary p {
+    margin: 0.25rem 0;
+}
+
+.verify-comparison {
+    margin-bottom: 1rem;
+}
+
+.verify-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.verify-table th,
+.verify-table td {
+    padding: 0.5rem;
+    text-align: right;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.verify-table th:first-child,
+.verify-table td:first-child {
+    text-align: left;
+}
+
+.verify-table th {
+    background: var(--color-bg-secondary);
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.verify-diff-list {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.verify-diff-list h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.verify-diff-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    margin-bottom: 0.25rem;
+}
+
+.verify-diff-fail {
+    background: rgb(245 101 101 / 15%);
+}
+
+.verify-diff-warn {
+    background: rgb(237 137 54 / 15%);
+}
+
 .fifo-verify-result {
     margin-left: 10px;
     padding: 4px 12px;

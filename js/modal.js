@@ -60,6 +60,10 @@ const Modal = {
             title.textContent = '交易费率设置';
             result = Modal.renderFeeSettingsForm(data);
             break;
+        case 'verifyResult':
+            title.textContent = '验证计算';
+            result = Modal.renderVerifyResultForm(data);
+            break;
         case 'settings':
             title.textContent = '⚙️ 设置';
             result = Modal.renderSettingsForm();
@@ -106,6 +110,9 @@ const Modal = {
             break;
         case 'feeSettings':
             Modal.bindFeeSettingsEvents(data);
+            break;
+        case 'verifyResult':
+            Modal.bindVerifyResultEvents(data);
             break;
         case 'settings':
             Modal.bindSettingsEvents();
@@ -998,6 +1005,107 @@ const Modal = {
             Utils.showToast('数据导出成功', 'success');
             Modal.hide();
         });
+    },
+
+    /**
+     * 渲染验证计算结果弹窗
+     */
+    renderVerifyResultForm(data) {
+        const fundId = data.fundId;
+        const result = FIFOValidator.getDetailedResult(fundId);
+
+        if (!result || !result.success) {
+            return '<p>验证失败</p>';
+        }
+
+        const fund = result.fund;
+        const fifo = result.fifo;
+        const weighted = result.weighted;
+        const consistent = result.consistent;
+        const diffs = result.differences || [];
+
+        let diffHtml = '';
+        if (!consistent && diffs.length > 0) {
+            diffHtml = '<div class="verify-diff-list"><h4>差异项：</h4>';
+            for (const d of diffs) {
+                const diffClass = 'verify-diff-' + (d.diff > FIFOValidator.TOLERANCE ? 'fail' : 'warn');
+                diffHtml += `<div class="verify-diff-item ${diffClass}">
+                    <span class="verify-diff-name">${d.name}</span>
+                    <span class="verify-diff-fifo">FIFO: ${Utils.formatMoneySmart(d.fifo)}</span>
+                    <span class="verify-diff-weighted">加权: ${Utils.formatMoneySmart(d.weighted)}</span>
+                    <span class="verify-diff-value">差异: ${Utils.formatMoneySmart(d.diff)}</span>
+                </div>`;
+            }
+            diffHtml += '</div>';
+        }
+
+        const statusClass = consistent ? 'verify-success' : 'verify-fail';
+        const statusText = consistent ? '✅ 验证通过' : '❌ 结果不一致';
+
+        const content = `
+            <div class="verify-result-modal">
+                <div class="verify-status ${statusClass}">${statusText}</div>
+                <div class="verify-summary">
+                    <p>基金：${fund.name} (${fund.code})</p>
+                    <p>交易记录：${result.trades.length} 笔</p>
+                </div>
+                <div class="verify-comparison">
+                    <table class="verify-table">
+                        <thead>
+                            <tr>
+                                <th>指标</th>
+                                <th>FIFO</th>
+                                <th>移动加权</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>总收益</td>
+                                <td>${Utils.formatMoneySmart(fifo.totalProfit)}</td>
+                                <td>${Utils.formatMoneySmart(weighted.totalProfit)}</td>
+                            </tr>
+                            <tr>
+                                <td>已实现收益</td>
+                                <td>${Utils.formatMoneySmart(fifo.realizedProfit)}</td>
+                                <td>${Utils.formatMoneySmart(weighted.realizedProfit)}</td>
+                            </tr>
+                            <tr>
+                                <td>浮动收益</td>
+                                <td>${Utils.formatMoneySmart(fifo.floatingProfit)}</td>
+                                <td>${Utils.formatMoneySmart(weighted.floatingProfit)}</td>
+                            </tr>
+                            <tr>
+                                <td>持仓成本</td>
+                                <td>${Utils.formatMoneySmart(fifo.holdingCost)}</td>
+                                <td>${Utils.formatMoneySmart(weighted.holdingCost)}</td>
+                            </tr>
+                            <tr>
+                                <td>持有份额</td>
+                                <td>${fifo.holdingShares.toFixed(4)}</td>
+                                <td>${weighted.holdingShares.toFixed(4)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                ${diffHtml}
+            </div>
+        `;
+
+        const actions = `<button type="button" class="btn btn-secondary" id="btn-close-verify-modal">关闭</button>`;
+
+        return { content, actions };
+    },
+
+    /**
+     * 绑定验证结果弹窗事件
+     */
+    bindVerifyResultEvents(data) {
+        const btnClose = document.getElementById('btn-close-verify-modal');
+        if (btnClose) {
+            btnClose.addEventListener('click', () => {
+                Modal.hide();
+            });
+        }
     },
 
     /**
