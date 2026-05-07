@@ -1061,28 +1061,28 @@ const Modal = {
                         <tbody>
                             <tr>
                                 <td>总收益</td>
-                                <td>${Utils.formatMoneySmart(fifo.totalProfit)}</td>
-                                <td>${Utils.formatMoneySmart(weighted.totalProfit)}</td>
+                                <td>${Utils.formatMoneySmart(fifo.totalProfit || 0)}</td>
+                                <td>${Utils.formatMoneySmart(weighted.totalProfit || 0)}</td>
                             </tr>
                             <tr>
                                 <td>已实现收益</td>
-                                <td>${Utils.formatMoneySmart(fifo.realizedProfit)}</td>
-                                <td>${Utils.formatMoneySmart(weighted.realizedProfit)}</td>
+                                <td>${Utils.formatMoneySmart(fifo.realizedProfit || 0)}</td>
+                                <td>${Utils.formatMoneySmart(weighted.realizedProfit || 0)}</td>
                             </tr>
                             <tr>
                                 <td>浮动收益</td>
-                                <td>${Utils.formatMoneySmart(fifo.floatingProfit)}</td>
-                                <td>${Utils.formatMoneySmart(weighted.floatingProfit)}</td>
+                                <td>${Utils.formatMoneySmart(fifo.floatingProfit || 0)}</td>
+                                <td>${Utils.formatMoneySmart(weighted.floatingProfit || 0)}</td>
                             </tr>
                             <tr>
                                 <td>持仓成本</td>
-                                <td>${Utils.formatMoneySmart(fifo.holdingCost)}</td>
-                                <td>${Utils.formatMoneySmart(weighted.holdingCost)}</td>
+                                <td>${Utils.formatMoneySmart(fifo.holdingCost || 0)}</td>
+                                <td>${Utils.formatMoneySmart(weighted.holdingCost || 0)}</td>
                             </tr>
                             <tr>
                                 <td>持有份额</td>
-                                <td>${fifo.holdingShares.toFixed(4)}</td>
-                                <td>${weighted.holdingShares.toFixed(4)}</td>
+                                <td>${(fifo.holdingShares || 0).toFixed(4)}</td>
+                                <td>${(weighted.holdingShares || 0).toFixed(4)}</td>
                             </tr>
                         </tbody>
                     </table>
