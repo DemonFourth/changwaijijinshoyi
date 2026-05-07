@@ -18,14 +18,16 @@ const CalculatorV2 = {
      */
     calculateFundProfit(trades, currentNetValue) {
         const result = this.calculateWithDetails(trades, currentNetValue);
+        const summary = result.summary || {};
         return {
             summary: {
-                totalProfit: result.totalProfit,
-                totalRealizedProfit: result.totalRealizedProfit,
-                currentHolding: {
-                    floatingProfit: result.currentHolding?.floatingProfit || 0,
-                    cost: result.currentHolding?.cost || 0,
-                    shares: result.currentHolding?.shares || 0
+                totalInvest: summary.totalInvest || 0,
+                totalProfit: summary.totalProfit || 0,
+                totalRealizedProfit: summary.totalRealizedProfit || 0,
+                currentHolding: summary.currentHolding || {
+                    floatingProfit: 0,
+                    cost: 0,
+                    shares: 0
                 }
             }
         };
