@@ -1,6 +1,16 @@
 const StorageSchema = {
     VERSION: 1,
 
+    generateDeviceId() {
+        const key = 'fund_calculator_device_id';
+        let deviceId = localStorage.getItem(key);
+        if (!deviceId) {
+            deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem(key, deviceId);
+        }
+        return deviceId;
+    },
+
     createEmptySnapshot() {
         return {
             schemaVersion: StorageSchema.VERSION,
@@ -8,8 +18,14 @@ const StorageSchema = {
             trades: [],
             syncMeta: {
                 provider: 'local',
-                deviceId: '',
-                lastSyncAt: null
+                deviceId: StorageSchema.generateDeviceId(),
+                lastSyncAt: null,
+                lastPulledAt: null,
+                lastPushedAt: null,
+                cloudRevision: 0,
+                syncStatus: 'idle',
+                pendingChanges: 0,
+                lastError: null
             }
         };
     },
