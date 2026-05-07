@@ -804,6 +804,119 @@ const ChartManager = {
                 }
             }
         };
+    },
+
+    buildShareChangeOption(trades, currentNetValue) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!trades || trades.length === 0) {
+            return ChartManager.buildEmptyOption('暂无交易数据');
+        }
+
+        const sortedTrades = [...trades].sort((a, b) =>
+            new Date(a.date) - new Date(b.date)
+        );
+
+        const dates = [];
+        const shareData = [];
+        const buyMarkers = [];
+        const sellMarkers = [];
+        let cumulativeShares = 0;
+
+        sortedTrades.forEach(trade => {
+            const type = trade.type;
+            const shares = parseFloat(trade.shares) || 0;
+
+            dates.push(trade.date);
+
+            if (type === 'buy') {
+                cumulativeShares += shares;
+                shareData.push(parseFloat(cumulativeShares.toFixed(2)));
+                buyMarkers.push({
+                    name: '买入',
+                    coord: [trade.date, cumulativeShares],
+                    value: shares
+                });
+            } else if (type === 'sell') {
+                cumulativeShares -= shares;
+                shareData.push(parseFloat(cumulativeShares.toFixed(2)));
+                sellMarkers.push({
+                    name: '卖出',
+                    coord: [trade.date, cumulativeShares],
+                    value: shares
+                });
+            } else if (type === 'dividend' && trade.dividendMode === 'reinvest') {
+                const reinvestShares = parseFloat(trade.reinvestShares) || shares;
+                cumulativeShares += reinvestShares;
+                shareData.push(parseFloat(cumulativeShares.toFixed(2)));
+                buyMarkers.push({
+                    name: '红利再投',
+                    coord: [trade.date, cumulativeShares],
+                    value: reinvestShares
+                });
+            } else {
+                shareData.push(parseFloat(cumulativeShares.toFixed(2)));
+            }
+        });
+
+        if (cumulativeShares > 0 && currentNetValue) {
+            dates.push('当前');
+            shareData.push(parseFloat(cumulativeShares.toFixed(2)));
+        }
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: {
+                trigger: 'axis',
+                formatter: params => {
+                    const data = params[0];
+                    return `${data.name}<br/>持仓份额: ${data.value}`;
+                }
+            },
+            grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: dates,
+                axisLabel: { color: themeConfig.textColor, rotate: 45 },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: {
+                type: 'value',
+                name: '份额',
+                axisLabel: { color: themeConfig.textColor },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+            },
+            series: [{
+                name: '持仓份额',
+                type: 'line',
+                data: shareData,
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: themeConfig.profitColor + '80' },
+                        { offset: 1, color: themeConfig.profitColor + '20' }
+                    ])
+                },
+                lineStyle: { color: themeConfig.profitColor },
+                itemStyle: { color: themeConfig.profitColor },
+                markPoint: {
+                    data: [
+                        ...buyMarkers.map(m => ({
+                            coord: m.coord,
+                            itemStyle: { color: '#4caf50' },
+                            symbol: 'triangle',
+                            symbolRotate: 0
+                        })),
+                        ...sellMarkers.map(m => ({
+                            coord: m.coord,
+                            itemStyle: { color: '#f44336' },
+                            symbol: 'triangle',
+                            symbolRotate: 180
+                        }))
+                    ]
+                }
+            }]
+        };
     }
 };
 
