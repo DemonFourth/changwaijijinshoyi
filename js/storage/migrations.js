@@ -1,11 +1,19 @@
 const StorageMigrations = {
     migrateSnapshot(snapshot) {
         if (snapshot && snapshot.schemaVersion === window.StorageSchema.VERSION) {
+            const defaultMeta = window.StorageSchema.createEmptySnapshot().syncMeta;
             return {
                 ...snapshot,
-                funds: Array.isArray(snapshot.funds) ? snapshot.funds.map(fund => window.StorageSchema.createFundEntity(fund)) : [],
-                trades: Array.isArray(snapshot.trades) ? snapshot.trades.map(trade => window.StorageSchema.createTradeEntity(trade)) : [],
-                syncMeta: snapshot.syncMeta || window.StorageSchema.createEmptySnapshot().syncMeta
+                funds: Array.isArray(snapshot.funds)
+                    ? snapshot.funds.map(fund => window.StorageSchema.createFundEntity(fund))
+                    : [],
+                trades: Array.isArray(snapshot.trades)
+                    ? snapshot.trades.map(trade => window.StorageSchema.createTradeEntity(trade))
+                    : [],
+                syncMeta: {
+                    ...defaultMeta,
+                    ...(snapshot.syncMeta || {})
+                }
             };
         }
 
