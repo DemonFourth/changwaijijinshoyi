@@ -1031,18 +1031,103 @@ const ChartManager = {
                     lineStyle: { color: themeConfig.itemColor[2] },
                     itemStyle: { color: themeConfig.itemColor[2] }
                 },
+{
+                name: '当前市值',
+                type: 'line',
+                data: currentValue,
+                lineStyle: { color: themeConfig.profitColor },
+                itemStyle: { color: themeConfig.profitColor },
+                areaStyle: { 
+                    color: themeConfig.profitColor + '20'
+                }
+            }
+        ]
+    };
+
+    /**
+     * 生成持仓周期对比图配置
+     * @param {Array} cycles - 持仓周期数组
+     * @returns {Object}
+     */
+    buildCycleCompareOption(cycles) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!cycles || cycles.length === 0) {
+            return ChartManager.buildEmptyOption('暂无周期数据');
+        }
+
+        const cycleNames = cycles.map((c, i) => `周期${c.id || (i + 1)}`);
+        const profitData = cycles.map(c => c.totalProfit || 0);
+        
+        // 计算每个周期的持有天数
+        const daysData = cycles.map(c => {
+            if (!c.startDate) return 0;
+            const endDate = c.endDate || new Date().toISOString().split('T')[0];
+            const start = new Date(c.startDate);
+            const end = new Date(endDate);
+            return Math.floor((end - start) / (1000 * 60 * 60 * 24));
+        });
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: { 
+                trigger: 'axis',
+                formatter: params => {
+                    const profit = params[0];
+                    const days = params[1];
+                    return `${profit.name}<br/>收益: ¥${Utils.formatMoneySmart(profit.value)}<br/>持有天数: ${days.value}天`;
+                }
+            },
+            legend: {
+                data: ['收益额', '持有天数'],
+                textStyle: { color: themeConfig.textColor }
+            },
+            grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: cycleNames,
+                axisLabel: { color: themeConfig.textColor },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: [
                 {
-                    name: '当前市值',
+                    type: 'value',
+                    name: '收益(¥)',
+                    axisLabel: { color: themeConfig.textColor },
+                    axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                    splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+                },
+                {
+                    type: 'value',
+                    name: '天数',
+                    axisLabel: { color: themeConfig.textColor },
+                    axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                    splitLine: { show: false }
+                }
+            ],
+            series: [
+                {
+                    name: '收益额',
+                    type: 'bar',
+                    data: profitData.map(v => ({
+                        value: v,
+                        itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor }
+                    })),
+                    barMaxWidth: 40
+                },
+                {
+                    name: '持有天数',
                     type: 'line',
-                    data: currentValue,
-                    lineStyle: { color: themeConfig.profitColor },
-                    itemStyle: { color: themeConfig.profitColor },
-                    areaStyle: { 
-                        color: themeConfig.profitColor + '20'
-                    }
+                    yAxisIndex: 1,
+                    data: daysData,
+                    lineStyle: { color: themeConfig.itemColor[1] },
+                    itemStyle: { color: themeConfig.itemColor[1] },
+                    smooth: true
                 }
             ]
         };
+    }
+};
     }
 };
 
