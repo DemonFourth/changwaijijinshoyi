@@ -805,9 +805,8 @@ td.negative {
 }
 
 .holding-stat.estimated {
-    padding-top: 0.75rem;
     border-top: 1px dashed var(--color-border-light);
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
 }
 
 .holding-stat.estimated .stat-label {
