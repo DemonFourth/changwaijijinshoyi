@@ -817,92 +817,62 @@ const ChartManager = {
         const sortedTrades = [...trades].sort((a, b) =>
             new Date(a.date) - new Date(b.date)
         );
+        const cycles = CalculatorV2.identifyHoldingCycles(sortedTrades);
+        const allDates = [];
+        const seenDates = new Set();
+        const series = [];
+        const legendData = [];
 
-        const dates = [];
-        const shareData = [];
-        const buyMarkers = [];
-        const sellMarkers = [];
-        let cumulativeShares = 0;
+        cycles.forEach((cycle, index) => {
+            let cumulativeShares = 0;
+            const cycleMap = new Map();
+            const buyMarkers = [];
+            const sellMarkers = [];
+            const seriesName = `持仓份额-周期${cycle.id || (index + 1)}`;
 
-        sortedTrades.forEach(trade => {
-            const type = trade.type;
-            const shares = parseFloat(trade.shares) || 0;
+            (cycle.trades || []).forEach(trade => {
+                const type = trade.type;
+                const shares = parseFloat(trade.shares) || 0;
+                const date = trade.date;
 
-            dates.push(trade.date);
-
-            if (type === 'buy') {
-                cumulativeShares += shares;
-                shareData.push(parseFloat(cumulativeShares.toFixed(2)));
-                buyMarkers.push({
-                    name: '买入',
-                    coord: [trade.date, cumulativeShares],
-                    value: shares
-                });
-            } else if (type === 'sell') {
-                cumulativeShares -= shares;
-                shareData.push(parseFloat(cumulativeShares.toFixed(2)));
-                sellMarkers.push({
-                    name: '卖出',
-                    coord: [trade.date, cumulativeShares],
-                    value: shares
-                });
-            } else if (type === 'dividend' && trade.dividendMode === 'reinvest') {
-                const reinvestShares = parseFloat(trade.reinvestShares) || shares;
-                cumulativeShares += reinvestShares;
-                shareData.push(parseFloat(cumulativeShares.toFixed(2)));
-                buyMarkers.push({
-                    name: '红利再投',
-                    coord: [trade.date, cumulativeShares],
-                    value: reinvestShares
-                });
-            } else {
-                shareData.push(parseFloat(cumulativeShares.toFixed(2)));
-            }
-        });
-
-        if (cumulativeShares > 0 && currentNetValue) {
-            const today = new Date().toISOString().slice(0, 10);
-            dates.push(today);
-            shareData.push(parseFloat(cumulativeShares.toFixed(2)));
-        }
-
-        return {
-            textStyle: { color: themeConfig.textColor },
-            tooltip: {
-                trigger: 'axis',
-                formatter: params => {
-                    const data = params[0];
-                    let tip = `${data.name}<br/>持仓份额: ${data.value}`;
-                    // 添加买卖标记说明
-                    const buyMatch = buyMarkers.find(m => m.coord[0] === data.name);
-                    const sellMatch = sellMarkers.find(m => m.coord[0] === data.name);
-                    if (buyMatch) tip += '<br/>🟢 买入';
-                    if (sellMatch) tip += '<br/>🔴 卖出';
-                    return tip;
+                if (!seenDates.has(date)) {
+                    seenDates.add(date);
+                    allDates.push(date);
                 }
-            },
-            legend: {
-                data: ['持仓份额'],
-                textStyle: { color: themeConfig.textColor }
-            },
-            grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-            xAxis: {
-                type: 'category',
-                data: dates,
-                axisLabel: { color: themeConfig.textColor, rotate: 45 },
-                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
-            },
-            yAxis: {
-                type: 'value',
-                name: '份额',
-                axisLabel: { color: themeConfig.textColor },
-                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
-                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
-            },
-            series: [{
-                name: '持仓份额',
+
+                if (type === 'buy') {
+                    cumulativeShares += shares;
+                    cycleMap.set(date, parseFloat(cumulativeShares.toFixed(2)));
+                    buyMarkers.push({ coord: [date, cumulativeShares] });
+                } else if (type === 'sell') {
+                    cumulativeShares -= shares;
+                    cycleMap.set(date, parseFloat(cumulativeShares.toFixed(2)));
+                    sellMarkers.push({ coord: [date, cumulativeShares] });
+                } else if (type === 'dividend' && trade.dividendMode === 'reinvest') {
+                    const reinvestShares = parseFloat(trade.reinvestShares) || shares;
+                    cumulativeShares += reinvestShares;
+                    cycleMap.set(date, parseFloat(cumulativeShares.toFixed(2)));
+                    buyMarkers.push({ coord: [date, cumulativeShares] });
+                } else {
+                    cycleMap.set(date, parseFloat(cumulativeShares.toFixed(2)));
+                }
+            });
+
+            if (cycle.status === 'active' && cumulativeShares > 0 && currentNetValue) {
+                const today = new Date().toISOString().slice(0, 10);
+                if (!seenDates.has(today)) {
+                    seenDates.add(today);
+                    allDates.push(today);
+                }
+                cycleMap.set(today, parseFloat(cumulativeShares.toFixed(2)));
+            }
+
+            legendData.push(seriesName);
+            series.push({
+                name: seriesName,
                 type: 'line',
-                data: shareData,
+                data: allDates.map(date => cycleMap.has(date) ? cycleMap.get(date) : null),
+                connectNulls: false,
                 areaStyle: {
                     color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                         { offset: 0, color: themeConfig.profitColor + '80' },
@@ -914,21 +884,35 @@ const ChartManager = {
                 markPoint: {
                     symbolSize: 12,
                     data: [
-                        ...buyMarkers.map(m => ({
-                            coord: m.coord,
-                            itemStyle: { color: '#4caf50' },
-                            symbol: 'triangle',
-                            symbolRotate: 0
-                        })),
-                        ...sellMarkers.map(m => ({
-                            coord: m.coord,
-                            itemStyle: { color: '#f44336' },
-                            symbol: 'triangle',
-                            symbolRotate: 180
-                        }))
+                        ...buyMarkers.map(m => ({ ...m, itemStyle: { color: '#4caf50' }, symbol: 'triangle', symbolRotate: 0 })),
+                        ...sellMarkers.map(m => ({ ...m, itemStyle: { color: '#f44336' }, symbol: 'triangle', symbolRotate: 180 }))
                     ]
                 }
-            }]
+            });
+        });
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: { trigger: 'axis' },
+            legend: {
+                data: legendData,
+                textStyle: { color: themeConfig.textColor }
+            },
+            grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: allDates,
+                axisLabel: { color: themeConfig.textColor, rotate: 45 },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: {
+                type: 'value',
+                name: '份额',
+                axisLabel: { color: themeConfig.textColor },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+            },
+            series: series
         };
     },
 
@@ -945,77 +929,120 @@ const ChartManager = {
             return ChartManager.buildEmptyOption('暂无交易数据');
         }
 
-        const sortedTrades = [...trades].sort((a, b) => 
+        const sortedTrades = [...trades].sort((a, b) =>
             new Date(a.date) - new Date(b.date)
         );
+        const cycles = CalculatorV2.identifyHoldingCycles(sortedTrades);
+        const allDates = [];
+        const seenDates = new Set();
+        const series = [];
+        const legendData = [];
 
-        const dates = [];
-        const cumulativeInvest = [];
-        const cumulativeSell = [];
-        const currentValue = [];
-        
-        let totalInvest = 0;
-        let totalSell = 0;
-        let totalShares = 0;
+        cycles.forEach((cycle, index) => {
+            const investMap = new Map();
+            const sellMap = new Map();
+            const valueMap = new Map();
+            let totalInvest = 0;
+            let totalSell = 0;
+            let totalShares = 0;
 
-        sortedTrades.forEach(trade => {
-            const type = trade.type;
-            const amount = parseFloat(trade.amount) || 0;
-            const shares = parseFloat(trade.shares) || 0;
-            const netValue = parseFloat(trade.netValue) || 0;
-            
-            dates.push(trade.date);
-            
-            if (type === 'buy') {
-                totalInvest += amount;
-                totalShares += shares;
-            } else if (type === 'sell') {
-                totalSell += amount;
-                totalShares -= shares;
-            } else if (type === 'dividend') {
-                if (trade.dividendMode === 'cash') {
-                    totalSell += amount;
-                } else if (trade.dividendMode === 'reinvest') {
-                    const reinvestShares = parseFloat(trade.reinvestShares) || shares;
-                    totalShares += reinvestShares;
+            (cycle.trades || []).forEach(trade => {
+                const type = trade.type;
+                const amount = parseFloat(trade.amount) || 0;
+                const shares = parseFloat(trade.shares) || 0;
+                const netValue = parseFloat(trade.netValue) || 0;
+                const date = trade.date;
+
+                if (!seenDates.has(date)) {
+                    seenDates.add(date);
+                    allDates.push(date);
                 }
-            }
-            
-            cumulativeInvest.push(parseFloat(totalInvest.toFixed(2)));
-            cumulativeSell.push(parseFloat(totalSell.toFixed(2)));
-            
-            const marketValue = totalShares * (type === 'buy' || type === 'sell' ? netValue : currentNetValue || netValue);
-            currentValue.push(parseFloat(marketValue.toFixed(2)));
-        });
 
-        if (totalShares > 0 && currentNetValue) {
-            const today = new Date().toISOString().slice(0, 10);
-            dates.push(today);
-            cumulativeInvest.push(totalInvest);
-            cumulativeSell.push(totalSell);
-            currentValue.push(parseFloat((totalShares * currentNetValue).toFixed(2)));
-        }
+                if (type === 'buy') {
+                    totalInvest += amount;
+                    totalShares += shares;
+                } else if (type === 'sell') {
+                    totalSell += amount;
+                    totalShares -= shares;
+                } else if (type === 'dividend') {
+                    if (trade.dividendMode === 'cash') {
+                        totalSell += amount;
+                    } else if (trade.dividendMode === 'reinvest') {
+                        const reinvestShares = parseFloat(trade.reinvestShares) || shares;
+                        totalShares += reinvestShares;
+                    }
+                }
+
+                investMap.set(date, parseFloat(totalInvest.toFixed(2)));
+                sellMap.set(date, parseFloat(totalSell.toFixed(2)));
+                valueMap.set(date, parseFloat((totalShares * (netValue || currentNetValue || 0)).toFixed(2)));
+            });
+
+            if (cycle.status === 'active' && totalShares > 0 && currentNetValue) {
+                const today = new Date().toISOString().slice(0, 10);
+                if (!seenDates.has(today)) {
+                    seenDates.add(today);
+                    allDates.push(today);
+                }
+                investMap.set(today, parseFloat(totalInvest.toFixed(2)));
+                sellMap.set(today, parseFloat(totalSell.toFixed(2)));
+                valueMap.set(today, parseFloat((totalShares * currentNetValue).toFixed(2)));
+            }
+
+            const cycleLabel = `周期${cycle.id || (index + 1)}`;
+            legendData.push(`累计投入-${cycleLabel}`, `累计卖出-${cycleLabel}`, `当前市值-${cycleLabel}`);
+
+            series.push(
+                {
+                    name: `累计投入-${cycleLabel}`,
+                    type: 'line',
+                    data: allDates.map(date => investMap.has(date) ? investMap.get(date) : null),
+                    connectNulls: false,
+                    lineStyle: { color: themeConfig.itemColor[0] },
+                    itemStyle: { color: themeConfig.itemColor[0] }
+                },
+                {
+                    name: `累计卖出-${cycleLabel}`,
+                    type: 'line',
+                    data: allDates.map(date => sellMap.has(date) ? sellMap.get(date) : null),
+                    connectNulls: false,
+                    lineStyle: { color: themeConfig.itemColor[3] },
+                    itemStyle: { color: themeConfig.itemColor[3] }
+                },
+                {
+                    name: `当前市值-${cycleLabel}`,
+                    type: 'line',
+                    data: allDates.map(date => valueMap.has(date) ? valueMap.get(date) : null),
+                    connectNulls: false,
+                    lineStyle: { color: themeConfig.profitColor },
+                    itemStyle: { color: themeConfig.profitColor },
+                    areaStyle: {
+                        color: themeConfig.profitColor + '20'
+                    }
+                }
+            );
+        });
 
         return {
             textStyle: { color: themeConfig.textColor },
-            tooltip: { 
+            tooltip: {
                 trigger: 'axis',
                 formatter: params => {
                     let html = `${params[0].name}<br/>`;
-                    params.forEach(p => {
+                    params.filter(p => p.value !== null && p.value !== undefined).forEach(p => {
                         html += `${p.seriesName}: ¥${Utils.formatMoneySmart(p.value)}<br/>`;
                     });
                     return html;
                 }
             },
             legend: {
-                data: ['累计投入', '累计卖出', '当前市值'],
+                data: legendData,
                 textStyle: { color: themeConfig.textColor }
             },
             grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
             xAxis: {
                 type: 'category',
-                data: dates,
+                data: allDates,
                 axisLabel: { color: themeConfig.textColor, rotate: 45 },
                 axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
             },
@@ -1028,32 +1055,7 @@ const ChartManager = {
                 axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
                 splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
             },
-            series: [
-                {
-                    name: '累计投入',
-                    type: 'line',
-                    data: cumulativeInvest,
-                    lineStyle: { color: themeConfig.itemColor[0] },
-                    itemStyle: { color: themeConfig.itemColor[0] }
-                },
-                {
-                    name: '累计卖出',
-                    type: 'line',
-                    data: cumulativeSell,
-                    lineStyle: { color: themeConfig.itemColor[3] },
-                    itemStyle: { color: themeConfig.itemColor[3] }
-                },
-                {
-                    name: '当前市值',
-                    type: 'line',
-                    data: currentValue,
-                    lineStyle: { color: themeConfig.profitColor },
-                    itemStyle: { color: themeConfig.profitColor },
-                    areaStyle: {
-                        color: themeConfig.profitColor + '20'
-                    }
-                }
-            ]
+            series: series
         };
     },
 
