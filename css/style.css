@@ -1690,6 +1690,66 @@ td.negative {
     font-size: 0.75rem;
 }
 
+/* 验证计算步骤对比表格 */
+.verify-steps {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border-light);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.verify-steps h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.verify-steps-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+}
+
+.verify-steps-table th,
+.verify-steps-table td {
+    padding: 0.375rem;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.verify-steps-table th:first-child {
+    width: 40px;
+}
+
+.verify-steps-table .step-num {
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.verify-steps-table .step-type {
+    font-weight: 500;
+    font-size: 0.6875rem;
+}
+
+.verify-steps-table .step-detail {
+    text-align: left;
+    font-size: 0.6875rem;
+    color: var(--color-text-secondary);
+}
+
+.verify-steps-table .type-buy {
+    color: var(--color-success);
+}
+
+.verify-steps-table .type-sell {
+    color: var(--color-rise);
+}
+
+.verify-steps-table .type-dividend {
+    color: #ed8936;
+}
+
 .fifo-verify-result {
     margin-left: 10px;
     padding: 4px 12px;

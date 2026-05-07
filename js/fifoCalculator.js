@@ -7,6 +7,18 @@ const FIFOCalculator = {
     EPSILON: 0.0001,
 
     calculate(trades, currentNetValue) {
+        const result = this.calculateWithDetails(trades, currentNetValue);
+        return {
+            totalProfit: result.totalProfit,
+            realizedProfit: result.realizedProfit,
+            floatingProfit: result.floatingProfit,
+            totalCost: result.totalCost,
+            holdingShares: result.holdingShares,
+            holdingCost: result.holdingCost
+        };
+    },
+
+    calculateWithDetails(trades, currentNetValue) {
         if (!trades || trades.length === 0) {
             return {
                 totalProfit: 0,
@@ -15,7 +27,7 @@ const FIFOCalculator = {
                 totalCost: 0,
                 holdingShares: 0,
                 holdingCost: 0,
-                cycles: []
+                steps: []
             };
         }
 
@@ -37,19 +49,20 @@ const FIFOCalculator = {
         let totalRealizedProfit = 0;
         let totalHoldingCost = 0;
         let totalHoldingShares = 0;
-        const cycleResults = [];
+        const steps = [];
 
         for (let i = 0; i < cycles.length; i++) {
             const cycle = cycles[i];
-            const cycleResult = FIFOCalculator.calculateCycle(cycle);
-            cycleResults.push(cycleResult);
+            const cycleResult = FIFOCalculator.calculateCycleWithDetails(cycle, i + 1);
+            steps.push(...cycleResult.steps);
             totalRealizedProfit += cycleResult.realizedProfit;
             totalHoldingShares += cycleResult.holdingShares;
             totalHoldingCost += cycleResult.holdingCost;
         }
 
         const netValue = parseFloat(currentNetValue) || 0;
-        const floatingProfit = (totalHoldingShares * netValue) - totalHoldingCost;
+        const holdingValue = totalHoldingShares * netValue;
+        const floatingProfit = holdingValue - totalHoldingCost;
         const totalProfit = totalRealizedProfit + floatingProfit;
 
         return {
@@ -59,7 +72,7 @@ const FIFOCalculator = {
             totalCost: totalHoldingCost,
             holdingShares: totalHoldingShares,
             holdingCost: totalHoldingCost,
-            cycles: cycleResults
+            steps: steps
         };
     },
 
@@ -140,6 +153,91 @@ const FIFOCalculator = {
         }
 
         return totalCost;
+    },
+
+    calculateCycleWithDetails(cycle, cycleIndex) {
+        const holdingQueue = [];
+        let realizedProfit = 0;
+        let holdingShares = 0;
+        let holdingCost = 0;
+        const steps = [];
+
+        const trades = cycle.trades || [];
+        for (let i = 0; i < trades.length; i++) {
+            const trade = trades[i];
+            const shares = parseFloat(trade.shares) || 0;
+            const amount = parseFloat(trade.amount) || 0;
+            const fee = parseFloat(trade.fee) || 0;
+            
+            let step = {
+                step: i + 1,
+                date: trade.date,
+                type: trade.type,
+                shares: shares,
+                amount: amount,
+                fee: fee,
+                holdingShares: holdingShares,
+                holdingCost: holdingCost,
+                realizedProfit: 0,
+                method: 'FIFO'
+            };
+
+            if (trade.type === 'buy') {
+                const costPerShare = shares > 0 ? amount / shares : 0;
+                holdingQueue.push({
+                    shares: shares,
+                    cost: amount,
+                    date: trade.date,
+                    costPerShare: costPerShare
+                });
+                holdingShares += shares;
+                holdingCost += amount;
+                step.holdingShares = holdingShares;
+                step.holdingCost = holdingCost;
+                step.note = `成本价 ${costPerShare.toFixed(4)}`;
+            } else if (trade.type === 'sell') {
+                const sellCost = FIFOCalculator.dequeueCost(holdingQueue, shares);
+                const profit = amount - sellCost;
+                const costPerShare = shares > 0 ? sellCost / shares : 0;
+                realizedProfit += profit;
+                holdingShares -= shares;
+                holdingCost -= sellCost;
+                step.holdingShares = holdingShares;
+                step.holdingCost = holdingCost;
+                step.realizedProfit = profit;
+                step.note = `卖出成本 ${costPerShare.toFixed(4)}，卖出份额出${shares.toFixed(2)}`;
+            } else if (trade.type === 'dividend') {
+                const dividendMode = trade.dividendMode || 'cash';
+                if (dividendMode === 'reinvest' && trade.reinvestShares) {
+                    const reinvestShares = parseFloat(trade.reinvestShares) || 0;
+                    const costPerShare = reinvestShares > 0 ? amount / reinvestShares : 0;
+                    holdingQueue.push({
+                        shares: reinvestShares,
+                        cost: amount,
+                        date: trade.date,
+                        costPerShare: costPerShare
+                    });
+                    holdingShares += reinvestShares;
+                    holdingCost += amount;
+                    step.holdingShares = holdingShares;
+                    step.holdingCost = holdingCost;
+                    step.note = `红利再投 ${reinvestShares.toFixed(2)}份`;
+                } else {
+                    realizedProfit += amount;
+                    step.note = '现金分红';
+                }
+            }
+            
+            steps.push(step);
+        }
+
+        return {
+            cycleId: cycle.id,
+            realizedProfit: realizedProfit,
+            holdingShares: holdingShares,
+            holdingCost: holdingCost,
+            steps: steps
+        };
     }
 };
 

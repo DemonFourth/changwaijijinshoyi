@@ -1024,6 +1024,9 @@ const Modal = {
         const weighted = result.weighted;
         const consistent = result.consistent;
         const diffs = result.differences || [];
+        
+        const fifoSteps = result.fifoSteps || [];
+        const weightedSteps = result.weightedSteps || [];
 
         let diffHtml = '';
         if (!consistent && diffs.length > 0) {
@@ -1043,34 +1046,41 @@ const Modal = {
         const statusClass = consistent ? 'verify-success' : 'verify-fail';
         const statusText = consistent ? '✅ 验证通过' : '❌ 结果不一致';
 
-        let tradeDetailsHtml = '<div class="verify-trades"><h4>计算过程：</h4>';
+        const maxSteps = Math.max(fifoSteps.length, weightedSteps.length);
         
-        for (let i = 0; i < trades.length; i++) {
-            const trade = trades[i];
-            const date = trade.date;
-            const type = trade.type;
-            const netValue = parseFloat(trade.netValue) || 0;
-            const shares = parseFloat(trade.shares) || 0;
-            const amount = parseFloat(trade.amount) || 0;
-            const fee = parseFloat(trade.fee) || 0;
+        let stepsHtml = '<div class="verify-steps"><h4>计算过程对比：</h4>';
+        stepsHtml += '<table class="verify-steps-table"><thead><tr><th>步骤</th><th colspan="2">FIFO（先进先出）</th><th colspan="2">移动加权平均</th></tr></thead><tbody>';
+        
+        for (let i = 0; i < maxSteps; i++) {
+            const fifoStep = fifoSteps[i];
+            const wStep = weightedSteps[i];
             
-            const typeText = type === 'buy' ? '买入' : (type === 'sell' ? '卖出' : '分红');
-            const typeClass = 'trade-type-' + type;
+            const fifoType = fifoStep ? fifoStep.type : '-';
+            const wType = wStep ? wStep.type : '-';
+            const fifoShares = fifoStep ? fifoStep.shares.toFixed(2) : '-';
+            const wShares = wStep ? wStep.shares.toFixed(2) : '-';
+            const fifoHC = fifoStep ? Utils.formatMoneySmart(fifoStep.holdingCost) : '-';
+            const wHC = wStep ? Utils.formatMoneySmart(wStep.holdingCost) : '-';
+            const fifoNote = fifoStep ? fifoStep.note : '';
+            const wNote = wStep ? wStep.note : '';
             
-            tradeDetailsHtml += `<div class="verify-trade-item">
-                <div class="verify-trade-header">
-                    <span class="verify-trade-date">${date}</span>
-                    <span class="verify-trade-type ${typeClass}">${typeText}</span>
-                </div>
-                <div class="verify-trade-details">
-                    <span>份额: ${shares.toFixed(2)}</span>
-                    <span>净值: ${netValue.toFixed(4)}</span>
-                    <span>金额: ${Utils.formatMoneySmart(amount)}</span>
-                    <span>手续费: ${Utils.formatMoneySmart(fee)}</span>
-                </div>
-            </div>`;
+            const typeClass = (type) => {
+                if (type === 'buy') return 'type-buy';
+                if (type === 'sell') return 'type-sell';
+                if (type === 'dividend') return 'type-dividend';
+                return '';
+            };
+            
+            stepsHtml += `<tr>
+                <td class="step-num">${i + 1}</td>
+                <td class="step-type ${typeClass(fifoType)}">${fifoType === 'buy' ? '买入' : fifoType === 'sell' ? '卖出' : fifoType === 'dividend' ? '分红' : '-'}</td>
+                <td class="step-detail">${fifoShares}<br><small>${fifoNote}</small></td>
+                <td class="step-type ${typeClass(wType)}">${wType === 'buy' ? '买入' : wType === 'sell' ? '卖出' : wType === 'dividend' ? '分红' : '-'}</td>
+                <td class="step-detail">${wShares}<br><small>${wNote}</small></td>
+            </tr>`;
         }
-        tradeDetailsHtml += '</div>';
+        
+        stepsHtml += '</tbody></table></div>';
 
         const content = `
             <div class="verify-result-modal">
@@ -1117,7 +1127,7 @@ const Modal = {
                         </tbody>
                     </table>
                 </div>
-                ${tradeDetailsHtml}
+                ${stepsHtml}
                 ${diffHtml}
             </div>
         `;

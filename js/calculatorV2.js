@@ -17,6 +17,21 @@ const CalculatorV2 = {
      * @returns {object} 计算结果
      */
     calculateFundProfit(trades, currentNetValue) {
+        const result = this.calculateWithDetails(trades, currentNetValue);
+        return {
+            summary: {
+                totalProfit: result.totalProfit,
+                totalRealizedProfit: result.totalRealizedProfit,
+                currentHolding: {
+                    floatingProfit: result.currentHolding?.floatingProfit || 0,
+                    cost: result.currentHolding?.cost || 0,
+                    shares: result.currentHolding?.shares || 0
+                }
+            }
+        };
+    },
+
+    calculateWithDetails(trades, currentNetValue) {
         if (!trades || trades.length === 0) {
             return this.getEmptyResult();
         }
@@ -30,8 +45,8 @@ const CalculatorV2 = {
         const cycles = this.identifyHoldingCycles(sortedTrades);
 
         // 计算每个周期的收益
-        const cyclesWithProfit = cycles.map(cycle =>
-            this.calculateCycleProfit(cycle, currentNetValue)
+        const cyclesWithProfit = cycles.map((cycle, idx) =>
+            this.calculateCycleProfitWithDetails(cycle, currentNetValue, idx)
         );
 
         // 计算总收益
@@ -265,6 +280,99 @@ const CalculatorV2 = {
             // 明细
             realizedDetails,
             tradeDetails
+        };
+    },
+
+    calculateCycleProfitWithDetails(cycle, currentNetValue, cycleIndex) {
+        let totalInvest = 0;
+        let totalSellAmount = 0;
+        let totalBuyFee = 0;
+        let totalSellFee = 0;
+        let totalShares = 0;
+        let holdingShares = 0;
+        let holdingCost = 0;
+        let realizedProfit = 0;
+        const steps = [];
+
+        for (const trade of cycle.trades) {
+            const shares = parseFloat(trade.shares);
+            const amount = parseFloat(trade.amount) || 0;
+            const fee = parseFloat(trade.fee || 0);
+            const netValue = parseFloat(trade.netValue || 0);
+            
+            const costPrice = holdingShares > 0 ? holdingCost / holdingShares : 0;
+            let step = {
+                step: steps.length + 1,
+                date: trade.date,
+                type: trade.type,
+                shares: shares,
+                amount: amount,
+                fee: fee,
+                holdingShares: holdingShares,
+                holdingCost: holdingCost,
+                costPrice: costPrice,
+                realizedProfit: 0,
+                method: '加权平均'
+            };
+
+            if (trade.type === 'buy') {
+                totalInvest += amount;
+                totalBuyFee += fee;
+                totalShares += shares;
+                holdingShares += shares;
+                holdingCost += amount;
+                step.holdingShares = holdingShares;
+                step.holdingCost = holdingCost;
+                step.costPrice = costPrice;
+                step.note = `成本价 ${costPrice.toFixed(4)}`;
+            } else if (trade.type === 'sell') {
+                totalSellAmount += amount;
+                totalSellFee += fee;
+                const costAmount = shares * costPrice;
+                holdingShares -= shares;
+                holdingCost -= costAmount;
+                const profit = amount - costAmount;
+                realizedProfit += profit;
+                step.holdingShares = holdingShares;
+                step.holdingCost = holdingCost;
+                step.realizedProfit = profit;
+                step.note = `成本价 ${costPrice.toFixed(4)}，平出${shares.toFixed(2)}份`;
+            } else if (trade.type === 'dividend') {
+                const dividendMode = trade.dividendMode || 'cash';
+                if (dividendMode === 'reinvest') {
+                    holdingShares += shares;
+                    holdingCost += amount;
+                    step.holdingShares = holdingShares;
+                    step.holdingCost = holdingCost;
+                    step.note = `红利再投 ${shares.toFixed(2)}份`;
+                } else {
+                    realizedProfit += amount;
+                    step.note = '现金分红';
+                }
+            }
+            
+            steps.push(step);
+        }
+
+        let holdingValue = holdingShares * currentNetValue;
+        let floatingProfit = holdingValue - holdingCost;
+        holdingCost = Math.max(0, holdingCost);
+        holdingShares = holdingShares <= CalculatorV2.EPSILON ? 0 : holdingShares;
+
+        return {
+            ...cycle,
+            totalInvest,
+            totalBuyFee,
+            totalShares,
+            totalSellAmount,
+            totalSellFee,
+            holdingShares,
+            holdingCost,
+            holdingValue,
+            realizedProfit,
+            floatingProfit,
+            totalProfit: realizedProfit + floatingProfit,
+            steps: steps
         };
     },
 

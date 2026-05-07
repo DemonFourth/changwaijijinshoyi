@@ -64,8 +64,8 @@ const FIFOValidator = {
         const currentNetValue = parseFloat(fund.netValue) || 0;
         const sortedTrades = trades.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        const fifoResult = FIFOCalculator.calculate(trades, currentNetValue);
-        const weightedResult = CalculatorV2.calculateFundProfit(sortedTrades, currentNetValue);
+        const fifoResult = FIFOCalculator.calculateWithDetails(sortedTrades, currentNetValue);
+        const weightedResult = CalculatorV2.calculateWithDetails(sortedTrades, currentNetValue);
         
         const weightedSummary = weightedResult.summary || {};
         const currentHolding = weightedSummary.currentHolding || {};
@@ -86,6 +86,8 @@ const FIFOValidator = {
             trades: sortedTrades,
             fifo: fifoResult,
             weighted: weightedData,
+            fifoSteps: fifoResult.steps || [],
+            weightedSteps: weightedResult.steps || [],
             consistent: comparison.consistent,
             differences: comparison.differences
         };
