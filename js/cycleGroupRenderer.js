@@ -27,11 +27,11 @@ const CycleGroupRenderer = {
         return html;
     },
 
-    renderCycleGroupHeaderRow(cycle, isExpanded, color, summary, cycleIndex) {
+    renderCycleGroupHeaderRow(_cycle, _isExpanded, _color, _summary, _cycleIndex) {
         return '';
     },
 
-    renderCycleSummary(summary) {
+    renderCycleSummary(_summary) {
         return '';
     },
 

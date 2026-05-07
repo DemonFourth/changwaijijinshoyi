@@ -66,10 +66,10 @@ const FIFOValidator = {
 
         const fifoResult = FIFOCalculator.calculateWithDetails(sortedTrades, currentNetValue);
         const weightedResult = CalculatorV2.calculateWithDetails(sortedTrades, currentNetValue);
-        
+
         const weightedSummary = weightedResult.summary || {};
         const currentHolding = weightedSummary.currentHolding || {};
-        
+
         const weightedData = {
             totalProfit: weightedSummary.totalProfit || 0,
             realizedProfit: weightedSummary.totalRealizedProfit || 0,
@@ -77,9 +77,9 @@ const FIFOValidator = {
             holdingCost: currentHolding.cost || 0,
             holdingShares: currentHolding.shares || 0
         };
-        
+
         const comparison = FIFOValidator.compareResults(fifoResult, weightedData);
-        
+
         const weightedCycles = weightedResult.cycles || [];
         const weightedStepsFlat = weightedCycles.flatMap(c => c.steps || []);
 

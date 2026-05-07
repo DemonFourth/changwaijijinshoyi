@@ -6,15 +6,13 @@
 const NameValidator = {
     GARBLED_PATTERNS: [
         /锘/,
-        /�/,
         /\ufffd/,
-        /锘�/,
-        /[\x00-\x08\x0b\x0c\x0e-\x1f]/,
+        new RegExp('[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]'),
         /[^\u4e00-\u9fa5\u0020-\u007e\u3000-\u303f\uff00-\uffef\d\-_()]/
     ],
 
     VALID_PATTERNS: [
-        /^[\u4e00-\u9fa5a-zA-Z0-9\-\s\(\)（）]+$/
+        /^[\u4e00-\u9fa5a-zA-Z0-9\s\-_()（）]+$/
     ],
 
     MIN_VALID_RATIO: 0.7,
@@ -80,7 +78,7 @@ const NameValidator = {
             .replace(/锘/g, '')
             .replace(/�/g, '')
             .replace(/\ufffd/g, '')
-            .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '')
+            .replace(new RegExp('[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]', 'g'), '')
             .trim();
 
         return sanitized;

@@ -62,7 +62,7 @@ const NameCache = {
         let expiredEntries = 0;
 
         for (const code in cache) {
-            if (cache.hasOwnProperty(code)) {
+            if (Object.prototype.hasOwnProperty.call(cache, code)) {
                 if (now - cache[code].timestamp <= NameCache.DEFAULT_TTL) {
                     validEntries++;
                 } else {
@@ -86,7 +86,7 @@ const NameCache = {
         let removed = 0;
 
         for (const code in cache) {
-            if (cache.hasOwnProperty(code)) {
+            if (Object.prototype.hasOwnProperty.call(cache, code)) {
                 if (now - cache[code].timestamp > NameCache.DEFAULT_TTL) {
                     delete cache[code];
                     removed++;

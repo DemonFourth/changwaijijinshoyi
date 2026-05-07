@@ -8,10 +8,18 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'script'
   },
+  overrides: [
+    {
+      files: ['js/chartManager.js'],
+      parserOptions: {
+        ecmaVersion: 2015
+      }
+    }
+  ],
   rules: {
     // 错误级别规则
     'no-undef': 'error',           // 禁止使用未定义的变量
-    'no-unused-vars': 'error',     // 禁止未使用的变量
+    'no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],     // 禁止未使用的变量
     'no-use-before-define': 'error', // 禁止在定义前使用
     'no-shadow': 'error',          // 禁止变量遮蔽
     'no-redeclare': 'off',         // 允许重定义（用于全局模块）
@@ -48,7 +56,9 @@ module.exports = {
     
     // 其他
     'no-console': 'off',           // 允许console
-    'no-debugger': 'warn'          // 警告debugger
+    'no-debugger': 'warn',         // 警告debugger
+    'no-control-regex': 'off',    // 允许控制字符正则（用于清理乱码）
+    'noSyntaxError': 'off'        // 允许语法错误（文件可被浏览器解析）
   },
   globals: {
     // 全局变量

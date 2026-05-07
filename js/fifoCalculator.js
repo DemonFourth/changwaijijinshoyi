@@ -87,7 +87,6 @@ const FIFOCalculator = {
             const trade = trades[i];
             const shares = parseFloat(trade.shares) || 0;
             const amount = parseFloat(trade.amount) || 0;
-            const fee = parseFloat(trade.fee) || 0;
 
             if (trade.type === 'buy') {
                 const costPerShare = shares > 0 ? amount / shares : 0;
@@ -155,7 +154,7 @@ const FIFOCalculator = {
         return totalCost;
     },
 
-    calculateCycleWithDetails(cycle, cycleIndex) {
+    calculateCycleWithDetails(cycle, _cycleIndex) {
         const holdingQueue = [];
         let realizedProfit = 0;
         let holdingShares = 0;
@@ -168,8 +167,8 @@ const FIFOCalculator = {
             const shares = parseFloat(trade.shares) || 0;
             const amount = parseFloat(trade.amount) || 0;
             const fee = parseFloat(trade.fee) || 0;
-            
-            let step = {
+
+            const step = {
                 step: i + 1,
                 date: trade.date,
                 type: trade.type,
@@ -227,7 +226,7 @@ const FIFOCalculator = {
                     step.note = '现金分红';
                 }
             }
-            
+
             steps.push(step);
         }
 

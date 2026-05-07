@@ -160,7 +160,7 @@ const FundAPI = {
      * @param {string} fundCode - 期望的基金代码（用于日志，不强制匹配）
      * @returns {object}
      */
-    parseJSONPResponse(data, fundCode) {
+    parseJSONPResponse(data, _fundCode) {
         try {
             // 验证返回的数据
             if (!data || !data.fundcode) {

@@ -211,7 +211,6 @@ const Modal = {
         const btnRefresh = document.getElementById(`btn-${prefix}refresh-name`);
         const sourceBadge = document.getElementById(`${prefix}name-source-badge`);
         const statusSpan = document.getElementById(`${prefix}name-status`);
-        const nameInfo = document.getElementById(`${prefix}name-source-info`);
 
         let currentCode = initialCode;
         let currentName = '';
@@ -367,12 +366,10 @@ const Modal = {
 
         let currentCode = '';
         let currentName = '';
-        let currentSource = '';
 
         const updateNameUI = function(name, source, isGarbled) {
             inputName.value = name || '';
             currentName = name || '';
-            currentSource = source || '';
 
             sourceBadge.textContent = source === 'api' ? 'API获取' :
                 source === 'cache' ? '缓存' :
@@ -1092,7 +1089,7 @@ const Modal = {
             </div>
         `;
 
-        const actions = `<button type="button" class="btn btn-secondary" id="btn-close-verify-modal">关闭</button>`;
+        const actions = '<button type="button" class="btn btn-secondary" id="btn-close-verify-modal">关闭</button>';
 
         return { content, actions };
     },
@@ -1100,7 +1097,7 @@ const Modal = {
     /**
      * 绑定验证结果弹窗事件
      */
-    bindVerifyResultEvents(data) {
+    bindVerifyResultEvents(_data) {
         const btnClose = document.getElementById('btn-close-verify-modal');
         if (btnClose) {
             btnClose.addEventListener('click', () => {
@@ -1683,13 +1680,13 @@ const Modal = {
                 <div class="form-value">${code}</div>
             </div>
             ${Modal.renderFundNameFieldHtml({
-                idPrefix: 'edit',
-                label: '基金名称 *',
-                placeholder: '输入名称或点击刷新按钮获取',
-                value: name,
-                source: nameSource,
-                updateTime: nameUpdateTime
-            })}
+        idPrefix: 'edit',
+        label: '基金名称 *',
+        placeholder: '输入名称或点击刷新按钮获取',
+        value: name,
+        source: nameSource,
+        updateTime: nameUpdateTime
+    })}
             <div class="form-group">
                 <label class="form-label">备注</label>
                 <input type="text" id="input-edit-fund-remark" class="form-input" value="${remark}" placeholder="添加备注（可选）" maxlength="50">

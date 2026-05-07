@@ -285,7 +285,7 @@ const CycleTradeDisplay = {
         }
     },
 
-    renderGroupedPage(pageTrades, filteredCycles) {
+    renderGroupedPage(pageTrades, _filteredCycles) {
         const tradeList = document.getElementById('trade-list');
         if (!tradeList) return;
 

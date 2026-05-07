@@ -304,7 +304,7 @@ const Detail = {
                 const holdingRate = currentHolding.cost > 0
                     ? (currentHolding.floatingProfit / currentHolding.cost * 100)
                     : 0;
-rate.textContent = Utils.formatPercent(holdingRate);
+                rate.textContent = Utils.formatPercent(holdingRate);
                 rate.className = `value ${Utils.getValueColor(holdingRate)}`;
             }
         }
@@ -314,12 +314,12 @@ rate.textContent = Utils.formatPercent(holdingRate);
             const estimatedNetValue = parseFloat(fund.estimatedValue) || 0;
             const holdingShares = currentHolding.shares || 0;
             const holdingCost = currentHolding.cost || 0;
-            
+
             if (estimatedNetValue > 0 && holdingShares > 0 && holdingCost > 0) {
                 const estimatedValue = holdingShares * estimatedNetValue;
                 const estimatedProfit = estimatedValue - holdingCost;
                 const estimatedProfitRate = (estimatedProfit / holdingCost * 100);
-                
+
                 if (profitEstimated) {
                     profitEstimated.innerHTML = Utils.formatMoneySmart(estimatedProfit);
                     profitEstimated.className = `value ${Utils.getValueColor(estimatedProfit)}`;
@@ -446,7 +446,7 @@ rate.textContent = Utils.formatPercent(holdingRate);
      * @param {array} cycles - 持仓周期数组
      * @param {object} summary - 汇总数据
      */
-    renderCycleList(cycles, summary) {
+    renderCycleList(cycles, _summary) {
         const cycleList = document.getElementById('cycle-list');
         if (!cycleList) return;
 
@@ -459,7 +459,6 @@ rate.textContent = Utils.formatPercent(holdingRate);
         cycles.forEach(cycle => {
             const statusText = cycle.status === 'closed' ? '已结束' : '进行中';
             const statusColor = cycle.status === 'closed' ? '#4caf50' : '#ff9800';
-            const totalFee = ((cycle.totalBuyFee || 0) + (cycle.totalSellFee || 0));
 
             html += `
                 <div class="cycle-item" style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 8px; border-left: 4px solid ${statusColor};">

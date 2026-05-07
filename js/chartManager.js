@@ -1,6 +1,7 @@
 /**
  * 图表管理模块
  * 封装ECharts实例管理，提供统一的图表创建和主题适配接口
+ * eslint-disable no-unused-vars
  */
 
 const ChartManager = {
@@ -1032,17 +1033,17 @@ const ChartManager = {
                     itemStyle: { color: themeConfig.itemColor[2] }
                 },
                 {
-                name: '当前市值',
-                type: 'line',
-                data: currentValue,
-                lineStyle: { color: themeConfig.profitColor },
-                itemStyle: { color: themeConfig.profitColor },
-                areaStyle: { 
-                    color: themeConfig.profitColor + '20'
+                    name: '当前市值',
+                    type: 'line',
+                    data: currentValue,
+                    lineStyle: { color: themeConfig.profitColor },
+                    itemStyle: { color: themeConfig.profitColor },
+                    areaStyle: {
+                        color: themeConfig.profitColor + '20'
+                    }
                 }
-            }
-        ]
-    };
+            ]
+        },
 
     /**
      * 生成持仓周期对比图配置
