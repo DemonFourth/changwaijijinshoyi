@@ -1030,10 +1030,11 @@ const ChartManager = {
                 }
             },
             legend: {
-                data: ['持仓份额'],
+                data: ['累计投入', '累计卖出', '当前市值'],
+                top: 0,
                 textStyle: { color: themeConfig.textColor }
             },
-            grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+            grid: { left: '3%', right: '4%', top: 36, bottom: '15%', containLabel: true },
             xAxis: {
                 type: 'category',
                 data: allDates,
