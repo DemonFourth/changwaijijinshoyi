@@ -1627,6 +1627,69 @@ td.negative {
     background: rgb(237 137 54 / 15%);
 }
 
+/* 验证交易明细 */
+.verify-trades {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border-light);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.verify-trades h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.verify-trade-item {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    background: var(--color-bg-secondary);
+    border-radius: 4px;
+    font-size: 0.8125rem;
+}
+
+.verify-trade-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.verify-trade-date {
+    color: var(--color-text-secondary);
+}
+
+.verify-trade-type {
+    font-weight: 500;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+}
+
+.trade-type-buy {
+    background: rgb(72 187 120 / 20%);
+    color: var(--color-success);
+}
+
+.trade-type-sell {
+    background: rgb(245 101 101 / 20%);
+    color: var(--color-rise);
+}
+
+.trade-type-dividend {
+    background: rgb(237 137 54 / 20%);
+    color: #ed8936;
+}
+
+.verify-trade-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.25rem 0.5rem;
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+}
+
 .fifo-verify-result {
     margin-left: 10px;
     padding: 4px 12px;

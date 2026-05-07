@@ -1019,6 +1019,7 @@ const Modal = {
         }
 
         const fund = result.fund;
+        const trades = result.trades || [];
         const fifo = result.fifo;
         const weighted = result.weighted;
         const consistent = result.consistent;
@@ -1042,12 +1043,41 @@ const Modal = {
         const statusClass = consistent ? 'verify-success' : 'verify-fail';
         const statusText = consistent ? '✅ 验证通过' : '❌ 结果不一致';
 
+        let tradeDetailsHtml = '<div class="verify-trades"><h4>计算过程：</h4>';
+        
+        for (let i = 0; i < trades.length; i++) {
+            const trade = trades[i];
+            const date = trade.date;
+            const type = trade.type;
+            const netValue = parseFloat(trade.netValue) || 0;
+            const shares = parseFloat(trade.shares) || 0;
+            const amount = parseFloat(trade.amount) || 0;
+            const fee = parseFloat(trade.fee) || 0;
+            
+            const typeText = type === 'buy' ? '买入' : (type === 'sell' ? '卖出' : '分红');
+            const typeClass = 'trade-type-' + type;
+            
+            tradeDetailsHtml += `<div class="verify-trade-item">
+                <div class="verify-trade-header">
+                    <span class="verify-trade-date">${date}</span>
+                    <span class="verify-trade-type ${typeClass}">${typeText}</span>
+                </div>
+                <div class="verify-trade-details">
+                    <span>份额: ${shares.toFixed(2)}</span>
+                    <span>净值: ${netValue.toFixed(4)}</span>
+                    <span>金额: ${Utils.formatMoneySmart(amount)}</span>
+                    <span>手续费: ${Utils.formatMoneySmart(fee)}</span>
+                </div>
+            </div>`;
+        }
+        tradeDetailsHtml += '</div>';
+
         const content = `
             <div class="verify-result-modal">
                 <div class="verify-status ${statusClass}">${statusText}</div>
                 <div class="verify-summary">
                     <p>基金：${fund.name} (${fund.code})</p>
-                    <p>交易记录：${result.trades.length} 笔</p>
+                    <p>交易记录：${trades.length} 笔</p>
                 </div>
                 <div class="verify-comparison">
                     <table class="verify-table">
@@ -1087,6 +1117,7 @@ const Modal = {
                         </tbody>
                     </table>
                 </div>
+                ${tradeDetailsHtml}
                 ${diffHtml}
             </div>
         `;
