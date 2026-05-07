@@ -31,23 +31,43 @@
         <main id="main-content" class="main-content">
             <!-- 汇总页 -->
             <div id="page-overview" class="page active">
-                <!-- 统计卡片区 -->
+                <!-- 当前持仓统计卡片区 -->
                 <div class="stats-container">
                     <div class="stat-card">
-                        <div class="stat-label">总投入</div>
+                        <div class="stat-label">当前持仓成本</div>
                         <div class="stat-value" id="total-invest">¥0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">总市值</div>
+                        <div class="stat-label">当前持仓市值</div>
                         <div class="stat-value" id="total-value">¥0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">总收益</div>
+                        <div class="stat-label">当前持仓盈亏</div>
                         <div class="stat-value" id="total-profit">¥0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">收益率</div>
+                        <div class="stat-label">当前持仓收益率</div>
                         <div class="stat-value" id="total-rate">0.00%</div>
+                    </div>
+                </div>
+
+                <!-- 全部持仓统计卡片区 -->
+                <div class="stats-container" id="stats-container-all">
+                    <div class="stat-card">
+                        <div class="stat-label">累计投入</div>
+                        <div class="stat-value" id="total-invest-all">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">累计市值</div>
+                        <div class="stat-value" id="total-value-all">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">累计收益</div>
+                        <div class="stat-value" id="total-profit-all">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">累计收益率</div>
+                        <div class="stat-value" id="total-rate-all">0.00%</div>
                     </div>
                 </div>
 

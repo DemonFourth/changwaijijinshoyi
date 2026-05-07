@@ -116,8 +116,14 @@ const Overview = {
      * 更新统计信息
      */
     updateStats() {
-        // 使用CalculatorV2计算汇总
         const funds = FundManager.getAllFunds();
+
+        // 当前持仓数据
+        let currentCost = 0;
+        let currentValue = 0;
+        let currentProfit = 0;
+
+        // 累计（全部）数据
         let totalInvest = 0;
         let totalValue = 0;
         let totalProfit = 0;
@@ -126,43 +132,74 @@ const Overview = {
         funds.forEach(fund => {
             const stats = FundManager.getFundStats(fund.id);
             if (stats) {
-                totalInvest += stats.summary.currentHolding.cost;
+                // 当前持仓
+                currentCost += stats.summary.currentHolding.cost;
+                currentValue += stats.summary.currentHolding.value;
+                currentProfit += stats.summary.currentHolding.floatingProfit;
+
+                // 累计
+                totalInvest += stats.summary.totalInvest;
                 totalValue += stats.summary.currentHolding.value;
-                totalProfit += stats.summary.currentHolding.floatingProfit;
+                totalProfit += stats.summary.totalProfit;
             }
         });
 
+        const currentProfitRate = currentCost > 0 ? (currentProfit / currentCost * 100) : 0;
         totalProfitRate = totalInvest > 0 ? (totalProfit / totalInvest * 100) : 0;
 
-        const statsData = {
-            totalInvest,
-            totalValue,
-            totalProfit,
-            totalProfitRate
+        // 更新当前持仓统计卡片
+        const currentData = {
+            totalInvest: currentCost,
+            totalValue: currentValue,
+            totalProfit: currentProfit,
+            totalProfitRate: currentProfitRate
         };
 
-        // 更新统计卡片
         const totalInvestEl = document.getElementById('total-invest');
         const totalValueEl = document.getElementById('total-value');
         const totalProfitEl = document.getElementById('total-profit');
         const totalRateEl = document.getElementById('total-rate');
 
         if (totalInvestEl) {
-            totalInvestEl.innerHTML = Utils.formatMoneySmart(statsData.totalInvest);
+            totalInvestEl.innerHTML = Utils.formatMoneySmart(currentData.totalInvest);
         }
 
         if (totalValueEl) {
-            totalValueEl.innerHTML = Utils.formatMoneySmart(statsData.totalValue);
+            totalValueEl.innerHTML = Utils.formatMoneySmart(currentData.totalValue);
         }
 
         if (totalProfitEl) {
-            totalProfitEl.innerHTML = Utils.formatMoneySmart(statsData.totalProfit);
-            totalProfitEl.className = `stat-value ${Utils.getValueColor(statsData.totalProfit)}`;
+            totalProfitEl.innerHTML = Utils.formatMoneySmart(currentData.totalProfit);
+            totalProfitEl.className = `stat-value ${Utils.getValueColor(currentData.totalProfit)}`;
         }
 
         if (totalRateEl) {
-            totalRateEl.textContent = Utils.formatPercent(statsData.totalProfitRate);
-            totalRateEl.className = `stat-value ${Utils.getValueColor(statsData.totalProfitRate)}`;
+            totalRateEl.textContent = Utils.formatPercent(currentData.totalProfitRate);
+            totalRateEl.className = `stat-value ${Utils.getValueColor(currentData.totalProfitRate)}`;
+        }
+
+        // 更新累计统计卡片
+        const totalInvestAllEl = document.getElementById('total-invest-all');
+        const totalValueAllEl = document.getElementById('total-value-all');
+        const totalProfitAllEl = document.getElementById('total-profit-all');
+        const totalRateAllEl = document.getElementById('total-rate-all');
+
+        if (totalInvestAllEl) {
+            totalInvestAllEl.innerHTML = Utils.formatMoneySmart(totalInvest);
+        }
+
+        if (totalValueAllEl) {
+            totalValueAllEl.innerHTML = Utils.formatMoneySmart(totalValue);
+        }
+
+        if (totalProfitAllEl) {
+            totalProfitAllEl.innerHTML = Utils.formatMoneySmart(totalProfit);
+            totalProfitAllEl.className = `stat-value ${Utils.getValueColor(totalProfit)}`;
+        }
+
+        if (totalRateAllEl) {
+            totalRateAllEl.textContent = Utils.formatPercent(totalProfitRate);
+            totalRateAllEl.className = `stat-value ${Utils.getValueColor(totalProfitRate)}`;
         }
     },
 
