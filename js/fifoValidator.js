@@ -79,6 +79,9 @@ const FIFOValidator = {
         };
         
         const comparison = FIFOValidator.compareResults(fifoResult, weightedData);
+        
+        const weightedCycles = weightedResult.cycles || [];
+        const weightedStepsFlat = weightedCycles.flatMap(c => c.steps || []);
 
         return {
             success: true,
@@ -87,7 +90,7 @@ const FIFOValidator = {
             fifo: fifoResult,
             weighted: weightedData,
             fifoSteps: fifoResult.steps || [],
-            weightedSteps: weightedResult.steps || [],
+            weightedSteps: weightedStepsFlat,
             consistent: comparison.consistent,
             differences: comparison.differences
         };
