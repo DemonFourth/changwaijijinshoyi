@@ -371,7 +371,7 @@ const ChartManager = {
             textStyle: { color: themeConfig.textColor },
             tooltip: { trigger: 'axis' },
             legend: {
-                data: ['收益额', '收益率'],
+                data: ['累计投入', '累计卖出', '当前市值'],
                 textStyle: { color: themeConfig.textColor }
             },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -821,7 +821,6 @@ const ChartManager = {
         const allDates = [];
         const seenDates = new Set();
         const series = [];
-        const legendData = [];
 
         cycles.forEach((cycle, index) => {
             let cumulativeShares = 0;
@@ -867,9 +866,8 @@ const ChartManager = {
                 cycleMap.set(today, parseFloat(cumulativeShares.toFixed(2)));
             }
 
-            legendData.push(seriesName);
             series.push({
-                name: seriesName,
+                name: '持仓份额',
                 type: 'line',
                 data: allDates.map(date => cycleMap.has(date) ? cycleMap.get(date) : null),
                 connectNulls: false,
@@ -936,7 +934,6 @@ const ChartManager = {
         const allDates = [];
         const seenDates = new Set();
         const series = [];
-        const legendData = [];
 
         cycles.forEach((cycle, index) => {
             const investMap = new Map();
@@ -989,12 +986,9 @@ const ChartManager = {
                 valueMap.set(today, parseFloat((totalShares * currentNetValue).toFixed(2)));
             }
 
-            const cycleLabel = `周期${cycle.id || (index + 1)}`;
-            legendData.push(`累计投入-${cycleLabel}`, `累计卖出-${cycleLabel}`, `当前市值-${cycleLabel}`);
-
             series.push(
                 {
-                    name: `累计投入-${cycleLabel}`,
+                    name: '累计投入',
                     type: 'line',
                     data: allDates.map(date => investMap.has(date) ? investMap.get(date) : null),
                     connectNulls: false,
@@ -1002,7 +996,7 @@ const ChartManager = {
                     itemStyle: { color: themeConfig.itemColor[0] }
                 },
                 {
-                    name: `累计卖出-${cycleLabel}`,
+                    name: '累计卖出',
                     type: 'line',
                     data: allDates.map(date => sellMap.has(date) ? sellMap.get(date) : null),
                     connectNulls: false,
@@ -1010,7 +1004,7 @@ const ChartManager = {
                     itemStyle: { color: themeConfig.itemColor[3] }
                 },
                 {
-                    name: `当前市值-${cycleLabel}`,
+                    name: '当前市值',
                     type: 'line',
                     data: allDates.map(date => valueMap.has(date) ? valueMap.get(date) : null),
                     connectNulls: false,
