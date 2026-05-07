@@ -126,9 +126,9 @@ const Overview = {
         funds.forEach(fund => {
             const stats = FundManager.getFundStats(fund.id);
             if (stats) {
-                totalInvest += stats.summary.totalInvest;
+                totalInvest += stats.summary.currentHolding.cost;
                 totalValue += stats.summary.currentHolding.value;
-                totalProfit += stats.summary.totalProfit;
+                totalProfit += stats.summary.currentHolding.floatingProfit;
             }
         });
 
