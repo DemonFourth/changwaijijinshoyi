@@ -211,7 +211,6 @@ body {
     box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
     position: relative;
-    overflow: visible;
 }
 
 .stat-card::before {
