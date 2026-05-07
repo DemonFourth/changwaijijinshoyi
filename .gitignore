@@ -32,3 +32,6 @@ coverage/
 # opencode开发文件
 .opencode/
 opencode.json
+
+# git worktrees
+.worktrees/
