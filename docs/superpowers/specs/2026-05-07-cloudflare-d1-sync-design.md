@@ -19,6 +19,7 @@
 - 本地修改先落地，再后台同步到云端
 - 云端返回后自动比对本地差异，仅在有冲突时打扰用户
 - 云端不可用时应用仍可正常使用本地数据
+- 未部署 Cloudflare Workers / D1 时，应用默认退回纯本地模式，不影响本地使用
 
 ## 非目标
 
@@ -45,6 +46,7 @@
 
 - `LocalStorageAdapter` 继续作为本地持久化入口
 - 新增 `CloudflareD1SyncAdapter`，注册到 `SyncAdapterRegistry`
+- 未检测到 Cloudflare 同步配置时，`SyncAdapterRegistry` 默认选择 `local` provider
 - 页面、manager、repository 不直接访问 Workers 接口
 - 同步流程由 application / storage 层统一调度
 
@@ -426,6 +428,14 @@ D1 负责：
 - 将 `syncStatus` 标为 `error`
 - 保留待同步变更，等待下次自动或手动重试
 
+### 未部署 Cloudflare
+
+- 若本地环境、静态托管环境或自定义部署环境未提供 Workers 同步入口
+- 应用启动时不应报错，不应阻塞页面渲染
+- `SyncAdapterRegistry` 应默认回退到 `local` provider
+- 不显示强制性的密码页与云同步失败弹窗
+- 同步相关入口可显示为“未配置云同步”或直接隐藏高级同步能力
+
 ### 鉴权失效
 
 - 若密码保护开启且 session 失效
@@ -504,6 +514,7 @@ D1 负责：
 - session 过期
 - 密码错误
 - 网络断开后恢复重试
+- 未部署 Workers / D1 时自动回退纯本地模式
 
 ## 分阶段实施建议
 
@@ -539,6 +550,7 @@ D1 负责：
 ## 验收标准
 
 - 部署后应用可以在 Cloudflare 环境下运行
+- 未部署 Cloudflare Workers / D1 时，应用仍可作为纯本地版本正常运行
 - 本地已有数据时，页面打开无需等待云端即可显示
 - 云端无差异时不打扰用户
 - 云端有差异时能自动合并非冲突记录
