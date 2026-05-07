@@ -918,6 +918,131 @@ const ChartManager = {
                 }
             }]
         };
+    },
+
+    /**
+     * 生成资金流动图配置
+     * @param {Array} trades - 交易记录数组
+     * @param {number} currentNetValue - 当前净值
+     * @returns {Object}
+     */
+    buildFundFlowOption(trades, currentNetValue) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!trades || trades.length === 0) {
+            return ChartManager.buildEmptyOption('暂无交易数据');
+        }
+
+        const sortedTrades = [...trades].sort((a, b) => 
+            new Date(a.date) - new Date(b.date)
+        );
+
+        const dates = [];
+        const cumulativeInvest = [];
+        const cumulativeSell = [];
+        const currentValue = [];
+        
+        let totalInvest = 0;
+        let totalSell = 0;
+        let totalShares = 0;
+
+        sortedTrades.forEach(trade => {
+            const type = trade.type;
+            const amount = parseFloat(trade.amount) || 0;
+            const shares = parseFloat(trade.shares) || 0;
+            const netValue = parseFloat(trade.netValue) || 0;
+            
+            dates.push(trade.date);
+            
+            if (type === 'buy') {
+                totalInvest += amount;
+                totalShares += shares;
+            } else if (type === 'sell') {
+                totalSell += amount;
+                totalShares -= shares;
+            } else if (type === 'dividend') {
+                if (trade.dividendMode === 'cash') {
+                    totalSell += amount;
+                } else if (trade.dividendMode === 'reinvest') {
+                    const reinvestShares = parseFloat(trade.reinvestShares) || shares;
+                    totalShares += reinvestShares;
+                }
+            }
+            
+            cumulativeInvest.push(parseFloat(totalInvest.toFixed(2)));
+            cumulativeSell.push(parseFloat(totalSell.toFixed(2)));
+            
+            const marketValue = totalShares * (type === 'buy' || type === 'sell' ? netValue : currentNetValue || netValue);
+            currentValue.push(parseFloat(marketValue.toFixed(2)));
+        });
+
+        if (totalShares > 0 && currentNetValue) {
+            const today = new Date().toISOString().slice(0, 10);
+            dates.push(today);
+            cumulativeInvest.push(totalInvest);
+            cumulativeSell.push(totalSell);
+            currentValue.push(parseFloat((totalShares * currentNetValue).toFixed(2)));
+        }
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: { 
+                trigger: 'axis',
+                formatter: params => {
+                    let html = `${params[0].name}<br/>`;
+                    params.forEach(p => {
+                        html += `${p.seriesName}: ¥${Utils.formatMoneySmart(p.value)}<br/>`;
+                    });
+                    return html;
+                }
+            },
+            legend: {
+                data: ['累计投入', '累计卖出', '当前市值'],
+                textStyle: { color: themeConfig.textColor }
+            },
+            grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: dates,
+                axisLabel: { color: themeConfig.textColor, rotate: 45 },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    color: themeConfig.textColor,
+                    formatter: val => (val >= 10000) ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
+                },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+            },
+            series: [
+                {
+                    name: '累计投入',
+                    type: 'line',
+                    data: cumulativeInvest,
+                    lineStyle: { color: themeConfig.itemColor[0] },
+                    itemStyle: { color: themeConfig.itemColor[0] }
+                },
+                {
+                    name: '累计卖出',
+                    type: 'line',
+                    data: cumulativeSell,
+                    lineStyle: { color: themeConfig.itemColor[2] },
+                    itemStyle: { color: themeConfig.itemColor[2] }
+                },
+                {
+                    name: '当前市值',
+                    type: 'line',
+                    data: currentValue,
+                    lineStyle: { color: themeConfig.profitColor },
+                    itemStyle: { color: themeConfig.profitColor },
+                    areaStyle: { 
+                        color: themeConfig.profitColor + '20'
+                    }
+                }
+            ]
+        };
     }
 };
 
