@@ -860,7 +860,8 @@ const ChartManager = {
         });
 
         if (cumulativeShares > 0 && currentNetValue) {
-            dates.push('当前');
+            const today = new Date().toISOString().slice(0, 10);
+            dates.push(today);
             shareData.push(parseFloat(cumulativeShares.toFixed(2)));
         }
 
