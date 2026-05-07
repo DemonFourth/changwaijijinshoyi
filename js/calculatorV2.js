@@ -38,6 +38,17 @@ const CalculatorV2 = {
         return this.calculateTotalProfit(cyclesWithProfit);
     },
 
+    /**
+     * 计算基金收益（带详细步骤记录）
+     * 
+     * @description 用于验证弹窗中显示两种计算方法的详细步骤
+     * @note 与calculateFundProfit使用相同的计算逻辑，但额外返回每一步的详情
+     * @note 此方法不影响核心计算，calculateFundProfit使用calculateCycleProfit
+     * 
+     * @param {array} trades - 交易记录数组
+     * @param {number} currentNetValue - 当前净值
+     * @returns {object} 计算结果（含steps字段）
+     */
     calculateWithDetails(trades, currentNetValue) {
         if (!trades || trades.length === 0) {
             return this.getEmptyResult();
@@ -290,6 +301,18 @@ const CalculatorV2 = {
         };
     },
 
+    /**
+     * 计算周期收益（带详细步骤记录）
+     * 
+     * @description 此方法用于验证弹窗中显示计算过程步对比
+     * @note 与calculateCycleProfit逻辑相同，但额外记录每一步的计算详情（用于FIFO vs 加权平均对比）
+     * @note 此方法不影响核心计算，calculateFundProfit使用calculateCycleProfit
+     * 
+     * @param {object} cycle - 持仓周期对象
+     * @param {number} currentNetValue - 当前净值
+     * @param {number} cycleIndex - 周期索引（unused，保留参数）
+     * @returns {object} 周期收益对象
+     */
     calculateCycleProfitWithDetails(cycle, currentNetValue, cycleIndex) {
         let totalInvest = 0;
         let totalSellAmount = 0;
