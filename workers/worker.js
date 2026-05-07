@@ -2,6 +2,66 @@ const AUTH_ENABLED = AUTH_ENABLED === 'true';
 const APP_PASSWORD = APP_PASSWORD || '';
 const SESSION_SECRET = SESSION_SECRET || 'default-secret-change-me';
 
+// 自动建表：首次请求时检查并创建 D1 表
+async function ensureTables(env) {
+    try {
+        // 检查表是否存在
+        const check = await env.DB.prepare(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='app_snapshot'"
+        ).first();
+
+        if (!check) {
+            // 创建 app_snapshot 表
+            await env.DB.prepare(`
+                CREATE TABLE IF NOT EXISTS app_snapshot (
+                    id TEXT PRIMARY KEY DEFAULT 'main',
+                    revision INTEGER NOT NULL DEFAULT 0,
+                    funds_json TEXT NOT NULL DEFAULT '[]',
+                    trades_json TEXT NOT NULL DEFAULT '[]',
+                    sync_meta_json TEXT,
+                    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                )
+            `).run();
+
+            // 创建 change_log 表
+            await env.DB.prepare(`
+                CREATE TABLE IF NOT EXISTS change_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    revision INTEGER NOT NULL,
+                    entity_type TEXT NOT NULL,
+                    sync_id TEXT NOT NULL,
+                    operation TEXT NOT NULL,
+                    payload_json TEXT,
+                    device_id TEXT,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                )
+            `).run();
+
+            // 创建 sync_session 表
+            await env.DB.prepare(`
+                CREATE TABLE IF NOT EXISTS sync_session (
+                    session_id TEXT PRIMARY KEY,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    expires_at TEXT NOT NULL,
+                    last_seen_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    ip_hash TEXT,
+                    user_agent_hash TEXT
+                )
+            `).run();
+
+            // 插入初始快照
+            await env.DB.prepare(`
+                INSERT OR IGNORE INTO app_snapshot (id, revision, funds_json, trades_json)
+                VALUES ('main', 0, '[]', '[]')
+            `).run();
+
+            console.log('D1 tables auto-created');
+        }
+    } catch (error) {
+        console.error('Auto-table-creation failed:', error.message);
+    }
+}
+
 export default {
     async fetch(request, env, ctx) {
         const url = new URL(request.url);
@@ -20,6 +80,9 @@ export default {
 
         // 路由处理
         try {
+            // 首次请求自动建表
+            await ensureTables(env);
+
             let response;
             
             if (pathname === '/auth/status') {
