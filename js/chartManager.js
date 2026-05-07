@@ -1115,7 +1115,7 @@ const ChartManager = {
                     })),
                     barMaxWidth: 40
                 },
-                {
+{
                     name: '持有天数',
                     type: 'line',
                     yAxisIndex: 1,
@@ -1124,6 +1124,103 @@ const ChartManager = {
                     itemStyle: { color: themeConfig.itemColor[1] },
                     smooth: true
                 }
+            ]
+        };
+    },
+
+    /**
+     * 生成持仓成本分布图配置
+     * @param {Array} trades - 交易记录数组
+     * @returns {Object}
+     */
+    buildCostDistributionOption(trades) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!trades || trades.length === 0) {
+            return ChartManager.buildEmptyOption('暂无交易数据');
+        }
+
+        // 收集所有买入记录的成本价
+        const costPrices = [];
+        trades.forEach(trade => {
+            if (trade.type === 'buy') {
+                const amount = parseFloat(trade.amount) || 0;
+                const shares = parseFloat(trade.shares) || 0;
+                if (shares > 0) {
+                    const costPrice = amount / shares;
+                    costPrices.push(costPrice);
+                }
+            }
+        });
+
+        if (costPrices.length === 0) {
+            return ChartManager.buildEmptyOption('暂无买入记录');
+        }
+
+        // 计算成本价范围
+        const minPrice = Math.floor(Math.min(...costPrices) * 10) / 10;
+        const maxPrice = Math.ceil(Math.max(...costPrices) * 10) / 10;
+        const step = 0.1;
+        
+        // 创建区间
+        const ranges = [];
+        let current = minPrice;
+        while (current < maxPrice) {
+            const next = current + step;
+            ranges.push({ min: current, max: next, label: `${current.toFixed(1)}-${next.toFixed(1)}`, count: 0 });
+            current = next;
+        }
+        
+        // 统计各区间数量
+        costPrices.forEach(price => {
+            for (const range of ranges) {
+                if (price >= range.min && price < range.max) {
+                    range.count++;
+                    break;
+                }
+            }
+        });
+
+        // 过滤空区间
+        const nonEmptyRanges = ranges.filter(r => r.count > 0);
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: { 
+                trigger: 'axis',
+                formatter: params => {
+                    const data = params[0];
+                    return `成本区间: ${data.name}<br/>买入次数: ${data.value}`;
+                }
+            },
+            grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: nonEmptyRanges.map(r => r.label),
+                axisLabel: { color: themeConfig.textColor, rotate: 45 },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: {
+                type: 'value',
+                name: '买入次数',
+                axisLabel: { color: themeConfig.textColor },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+            },
+            series: [{
+                type: 'bar',
+                data: nonEmptyRanges.map(r => ({
+                    value: r.count,
+                    itemStyle: { color: themeConfig.itemColor[0] }
+                })),
+                barMaxWidth: 50
+            }]
+        };
+    }
+};
+
+// 注册到模块系统
+ModuleRegistry.register('ChartManager', ChartManager);
             ]
         };
     }
