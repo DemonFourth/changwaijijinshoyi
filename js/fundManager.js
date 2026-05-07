@@ -270,10 +270,10 @@ const FundManager = {
         }
 
         const trades = DataService.getTradesByFund(fundId);
-        const netValue = fund.netValue || 0;
+        const currentNetValue = fund.estimatedValue || fund.netValue || 0;
 
-        // 使用CalculatorV2计算
-        const stats = CalculatorV2.calculateFundProfit(trades, netValue);
+        // 汇总页当前持仓相关统计：估算净值优先，空时回退最新净值
+        const stats = CalculatorV2.calculateFundProfit(trades, currentNetValue);
 
         // 清除缓存以获取最新数据
         this._statsCache.delete(fundId);
