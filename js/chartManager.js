@@ -1116,7 +1116,7 @@ const ChartManager = {
                     })),
                     barMaxWidth: 40
                 },
-{
+                {
                     name: '持有天数',
                     type: 'line',
                     yAxisIndex: 1,
