@@ -10,6 +10,19 @@ const SyncAppService = {
         return new Date().toISOString();
     },
 
+    _toLogText(label, value) {
+        if (value === undefined) {
+            console.log(label);
+            return;
+        }
+
+        try {
+            console.log(label + ' ' + JSON.stringify(value));
+        } catch (_error) {
+            console.log(label + ' [日志序列化失败]');
+        }
+    },
+
     _finalizePushSuccess(result) {
         const now = SyncAppService._getNowIso();
         const snapshot = window.LocalStorageAdapter.loadSnapshot();
@@ -83,18 +96,21 @@ const SyncAppService = {
     async notifyBusinessDataChanged(source = 'unknown') {
         const adapter = window.SyncAdapterRegistry.getCurrentAdapter();
         if (!adapter || typeof adapter.getStatus !== 'function') {
+            console.log('[同步调试] 未找到可用同步适配器，跳过待同步标记');
             return;
         }
 
         const status = adapter.getStatus();
         if (!status || !status.canPush) {
+            SyncAppService._toLogText('[同步调试] 当前适配器不可推送，跳过同步', status || null);
             return;
         }
 
         const syncMeta = window.LocalStorageAdapter.getSyncMeta();
         const delay = SyncAppService._getPushDelay(source);
+        const nextPendingChanges = (syncMeta.pendingChanges || 0) + 1;
         window.LocalStorageAdapter.updateSyncMeta({
-            pendingChanges: (syncMeta.pendingChanges || 0) + 1,
+            pendingChanges: nextPendingChanges,
             syncStatus: 'pending',
             lastPendingAt: new Date().toISOString(),
             pendingSource: source
@@ -105,7 +121,13 @@ const SyncAppService = {
             SyncAppService._executePush();
         }, delay);
 
-        console.log(`[SyncAppService] notifyBusinessDataChanged: source=${source}, delay=${delay}ms`);
+        SyncAppService._toLogText('[同步调试] 已标记业务变更，等待推送', {
+            source,
+            delay,
+            provider: status.provider || 'unknown',
+            pendingChanges: nextPendingChanges,
+            cloudRevision: syncMeta.cloudRevision || 0
+        });
     },
 
     _onDataChanged() {
@@ -165,22 +187,35 @@ const SyncAppService = {
     async _executePull() {
         const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
         if (!adapter || typeof adapter.getStatus !== 'function') {
+            console.log('[同步调试] pull 跳过：未找到可用同步适配器');
             return { success: true, reason: 'not_configured' };
         }
 
         const status = adapter.getStatus();
 
         if (!status.canPull) {
+            SyncAppService._toLogText('[同步调试] pull 跳过：当前适配器不可拉取', status);
             return { success: true, reason: 'not_configured' };
         }
 
+        SyncAppService._toLogText('[同步调试] 开始执行 pull', {
+            provider: status.provider || 'unknown',
+            cloudRevision: window.LocalStorageAdapter.getSyncMeta().cloudRevision || 0
+        });
         window.LocalStorageAdapter.updateSyncMeta({ syncStatus: 'syncing' });
 
         const result = await adapter.pull();
 
         if (!result.success) {
+            SyncAppService._toLogText('[同步调试] pull 失败', result);
             return result;
         }
+
+        SyncAppService._toLogText('[同步调试] pull 成功', {
+            revision: result.revision || 0,
+            funds: (result.funds || []).length,
+            trades: (result.trades || []).length
+        });
 
         const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
         const localFunds = localSnapshot.funds || [];
@@ -224,17 +259,20 @@ const SyncAppService = {
 
     async _executePush() {
         if (SyncAppService._syncInProgress) {
+            console.log('[同步调试] push 跳过：已有同步进行中');
             return { success: false, reason: 'sync_in_progress' };
         }
 
         const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
         if (!adapter || typeof adapter.getStatus !== 'function') {
+            console.log('[同步调试] push 跳过：未找到可用同步适配器');
             return { success: true, reason: 'not_configured' };
         }
 
         const status = adapter.getStatus();
 
         if (!status.canPush) {
+            SyncAppService._toLogText('[同步调试] push 跳过：当前适配器不可推送', status);
             return { success: true, reason: 'not_configured' };
         }
 
@@ -242,11 +280,21 @@ const SyncAppService = {
         window.LocalStorageAdapter.updateSyncMeta({ syncStatus: 'syncing' });
 
         const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
+        SyncAppService._toLogText('[同步调试] 开始执行 push', {
+            provider: status.provider || 'unknown',
+            funds: (localSnapshot.funds || []).length,
+            trades: (localSnapshot.trades || []).length,
+            pendingChanges: localSnapshot.syncMeta && localSnapshot.syncMeta.pendingChanges || 0,
+            cloudRevision: localSnapshot.syncMeta && localSnapshot.syncMeta.cloudRevision || 0
+        });
         const result = await adapter.push(localSnapshot.funds, localSnapshot.trades);
 
         SyncAppService._syncInProgress = false;
 
         if (result.conflict) {
+            SyncAppService._toLogText('[同步调试] push 检测到冲突', {
+                conflicts: (result.conflicts || []).length
+            });
             return {
                 success: false,
                 reason: 'conflict',
@@ -255,11 +303,15 @@ const SyncAppService = {
         }
 
         if (!result.success) {
+            SyncAppService._toLogText('[同步调试] push 失败，准备重试', result);
             SyncAppService._scheduleRetry(result.reason);
             return result;
         }
 
         if (result.success) {
+            SyncAppService._toLogText('[同步调试] push 成功', {
+                revision: result.revision || 0
+            });
             SyncAppService._retryCount = 0;
             SyncAppService._finalizePushSuccess(result);
         }

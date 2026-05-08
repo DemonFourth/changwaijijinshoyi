@@ -36,7 +36,7 @@ test('integration: local change becomes pending and is pushed to adapter', async
 
     const adapter = {
         getStatus() {
-            return { canPush: true, canPull: true };
+            return { provider: 'cloudflare', canPush: true, canPull: true };
         },
         async push(funds, trades) {
             pushPayload = { funds, trades };
@@ -53,6 +53,47 @@ test('integration: local change becomes pending and is pushed to adapter', async
 
     assert.equal(Array.isArray(pushPayload.funds), true);
     assert.equal(pushPayload.funds.length, 1);
+});
+
+test('integration: adding trade schedules push and sends trade payload to cloud adapter', async () => {
+    const context = createContext();
+    let pushPayload = null;
+
+    context.setTimeout = (callback) => {
+        callback();
+        return 1;
+    };
+    context.clearTimeout = () => {};
+
+    const adapter = {
+        getStatus() {
+            return { provider: 'cloudflare', canPush: true, canPull: true };
+        },
+        async push(funds, trades) {
+            pushPayload = { funds, trades };
+            return { success: true, revision: 4 };
+        }
+    };
+
+    context.window.SyncAdapterRegistry.getCurrentAdapter = () => adapter;
+    context.window.LocalStorageAdapter.getCurrentSyncAdapter = () => adapter;
+    context.window.SyncAppService._getNowIso = () => '2026-05-08T12:00:00.000Z';
+
+    await context.window.FundAppService.addFund({ id: 'fund-1', code: '000001', name: '测试基金' });
+    await context.window.TradeAppService.addTrade({
+        id: 'trade-1',
+        fundId: 'fund-1',
+        date: '2026-05-08',
+        type: 'buy',
+        netValue: 1.23,
+        shares: 100,
+        amount: 123,
+        fee: 0
+    });
+
+    assert.equal(Array.isArray(pushPayload.trades), true);
+    assert.equal(pushPayload.trades.length, 1);
+    assert.equal(pushPayload.trades[0].syncId, 'trade-1');
 });
 
 test('integration: pull merges remote changes into local snapshot', async () => {

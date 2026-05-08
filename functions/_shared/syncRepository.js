@@ -56,6 +56,23 @@ export async function updateSnapshot(env, payload, userId = 'default') {
     `).bind(userId).first();
 
     const newRevision = (current && current.revision !== undefined ? current.revision : 0) + 1;
+    const serializedFunds = JSON.stringify(funds);
+    const serializedTrades = JSON.stringify(trades);
+    const serializedSyncMeta = sync_meta ? JSON.stringify(sync_meta) : null;
+
+    if (!current) {
+        await env.DB.prepare(`
+            INSERT INTO app_snapshot (id, user_id, revision, funds_json, trades_json, sync_meta_json, updated_at)
+            VALUES ('main', ?, ?, ?, ?, ?, datetime('now'))
+        `).bind(
+            userId,
+            newRevision,
+            serializedFunds,
+            serializedTrades,
+            serializedSyncMeta
+        ).run();
+        return newRevision;
+    }
 
     await env.DB.prepare(`
         UPDATE app_snapshot
@@ -67,9 +84,9 @@ export async function updateSnapshot(env, payload, userId = 'default') {
         WHERE id = 'main' AND user_id = ?
     `).bind(
         newRevision,
-        JSON.stringify(funds),
-        JSON.stringify(trades),
-        sync_meta ? JSON.stringify(sync_meta) : null,
+        serializedFunds,
+        serializedTrades,
+        serializedSyncMeta,
         userId
     ).run();
 
