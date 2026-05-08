@@ -50,7 +50,8 @@ const StorageSchema = {
             createdAt: fund.createdAt || fund.createTime || now,
             updatedAt: fund.updatedAt || fund.updateTime || now,
             deletedAt: fund.deletedAt || null,
-            syncId: fund.syncId || fund.id
+            syncId: fund.syncId || fund.id,
+            lastSyncedAt: fund.lastSyncedAt || null
         };
     },
 
@@ -72,7 +73,8 @@ const StorageSchema = {
             createdAt: trade.createdAt || trade.createTime || now,
             updatedAt: trade.updatedAt || trade.updateTime || now,
             deletedAt: trade.deletedAt || null,
-            syncId: trade.syncId || trade.id
+            syncId: trade.syncId || trade.id,
+            lastSyncedAt: trade.lastSyncedAt || null
         };
     }
 };

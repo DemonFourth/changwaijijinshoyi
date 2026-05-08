@@ -3,7 +3,7 @@
  * 初始化所有模块并启动应用
  */
 
-/* global TooltipManager, SyncAppService, SyncConflictModalHelper, RuntimeConfigLoader */
+/* global TooltipManager, SyncAppService, RuntimeConfigLoader */
 
 const App = {
     /**
@@ -40,23 +40,7 @@ const App = {
 
             // 启动后台同步（不阻塞页面渲染）
             setTimeout(async () => {
-                try {
-                    const syncResult = await SyncAppService.startBackgroundSync();
-
-                    if (syncResult.hasConflicts) {
-                        // 有冲突，显示冲突处理
-                        SyncConflictModalHelper.show(syncResult.conflicts, async (resolutions) => {
-                            await SyncAppService.resolveConflicts(syncResult.conflicts, resolutions);
-                            Overview.refresh();
-                        });
-                    } else {
-                        // 同步完成，刷新页面
-                        Overview.refresh();
-                    }
-                } catch (error) {
-                    console.error('Background sync failed:', error);
-                    // 静默失败，不阻塞用户体验
-                }
+                await App.handleStartupSyncCheck();
             }, 100);
 
             // 初始化主题管理器
@@ -112,6 +96,23 @@ const App = {
             console.error('Application initialization failed:', error);
             Utils.hideLoading();
             Utils.showToast('应用初始化失败', 'error');
+        }
+    },
+
+    async handleStartupSyncCheck() {
+        try {
+            const syncResult = await window.SyncAppService.startBackgroundSync();
+
+            if (syncResult && syncResult.hasConflicts) {
+                window.Modal.showSyncConflict(syncResult);
+                return syncResult;
+            }
+
+            window.Overview.refresh();
+            return syncResult;
+        } catch (error) {
+            console.error('Background sync failed:', error);
+            return { success: false, reason: 'background_sync_failed' };
         }
     },
 

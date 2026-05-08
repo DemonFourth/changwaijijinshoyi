@@ -164,6 +164,7 @@ const EventType = {
     DATA_IMPORTED: 'data:imported',
     DATA_EXPORTED: 'data:exported',
     DATA_CLEARED: 'data:cleared',
+    SYNC_DATA_APPLIED: 'sync:dataApplied',
     SETTINGS_CHANGED: 'settings:changed',
 
     // 名称相关事件

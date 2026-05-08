@@ -73,10 +73,14 @@ const ToolPage = {
 
         // 同步状态区域
         ToolPage.renderSyncStatus();
-        EventBus.on(EventType.DATA_IMPORTED, () => ToolPage.renderSyncStatus());
-        EventBus.on(EventType.DATA_CLEARED, () => ToolPage.renderSyncStatus());
-        EventBus.on(EventType.FUND_UPDATED, () => ToolPage.renderSyncStatus());
-        EventBus.on(EventType.TRADE_UPDATED, () => ToolPage.renderSyncStatus());
+        if (!ToolPage._syncEventsBound) {
+            ToolPage._syncEventsBound = true;
+            EventBus.on(EventType.DATA_IMPORTED, () => ToolPage.renderSyncStatus());
+            EventBus.on(EventType.DATA_CLEARED, () => ToolPage.renderSyncStatus());
+            EventBus.on(EventType.FUND_UPDATED, () => ToolPage.renderSyncStatus());
+            EventBus.on(EventType.TRADE_UPDATED, () => ToolPage.renderSyncStatus());
+            EventBus.on(EventType.SYNC_DATA_APPLIED, () => ToolPage.renderSyncStatus());
+        }
 
         // 绑定手动同步事件
         document.getElementById('btn-manual-sync')?.addEventListener('click', async () => {

@@ -2,6 +2,38 @@ const SyncAppService = {
     _syncInProgress: false,
     _pendingChanges: [],
     _pushTimeout: null,
+    _retryCount: 0,
+    _maxRetryCount: 3,
+    _retryBaseDelay: 3000,
+
+    _getNowIso() {
+        return new Date().toISOString();
+    },
+
+    _finalizePushSuccess(result) {
+        const now = SyncAppService._getNowIso();
+        const snapshot = window.LocalStorageAdapter.loadSnapshot();
+        const currentSyncMeta = window.LocalStorageAdapter.getSyncMeta();
+
+        snapshot.funds = (snapshot.funds || []).map(fund => ({
+            ...fund,
+            lastSyncedAt: now
+        }));
+        snapshot.trades = (snapshot.trades || []).map(trade => ({
+            ...trade,
+            lastSyncedAt: now
+        }));
+
+        window.LocalStorageAdapter.saveSnapshot(snapshot);
+        window.LocalStorageAdapter.updateSyncMeta({
+            lastSyncAt: now,
+            lastPushedAt: now,
+            cloudRevision: result.revision || currentSyncMeta.cloudRevision,
+            syncStatus: 'idle',
+            pendingChanges: 0,
+            lastError: null
+        });
+    },
 
     async init(config = {}) {
         const { enabled, basePath, timeout } = config;
@@ -92,6 +124,30 @@ const SyncAppService = {
         return delayMap[source] ?? 5000;
     },
 
+    _emitSyncApplied(payload = {}) {
+        EventBus.emit(EventType.SYNC_DATA_APPLIED, {
+            source: 'sync',
+            ...payload
+        });
+    },
+
+    _scheduleRetry(reason) {
+        if (SyncAppService._retryCount >= SyncAppService._maxRetryCount) {
+            window.LocalStorageAdapter.updateSyncMeta({
+                syncStatus: 'error',
+                lastError: reason || 'push_failed'
+            });
+            return;
+        }
+
+        SyncAppService._retryCount += 1;
+        const delay = SyncAppService._retryBaseDelay * SyncAppService._retryCount;
+        clearTimeout(SyncAppService._pushTimeout);
+        SyncAppService._pushTimeout = setTimeout(() => {
+            SyncAppService._executePush();
+        }, delay);
+    },
+
     async startBackgroundSync() {
         const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
 
@@ -141,6 +197,7 @@ const SyncAppService = {
                 trades: cloudTrades
             };
             window.LocalStorageAdapter.saveSnapshot(newSnapshot);
+            SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
             return { success: true, reason: 'filled_from_cloud' };
         }
 
@@ -157,6 +214,7 @@ const SyncAppService = {
 
         if (mergeResult.hasChanges) {
             window.LocalStorageAdapter.saveSnapshot(mergeResult.snapshot);
+            SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
         }
 
         adapter.markSyncComplete();
@@ -194,6 +252,16 @@ const SyncAppService = {
                 reason: 'conflict',
                 conflicts: result.conflicts
             };
+        }
+
+        if (!result.success) {
+            SyncAppService._scheduleRetry(result.reason);
+            return result;
+        }
+
+        if (result.success) {
+            SyncAppService._retryCount = 0;
+            SyncAppService._finalizePushSuccess(result);
         }
 
         return result;
@@ -290,7 +358,11 @@ const SyncAppService = {
             }
         });
 
-        return adapter.resolve(conflicts, resolutions);
+        const result = await adapter.resolve(conflicts, resolutions);
+        if (result && result.success) {
+            SyncAppService._emitSyncApplied({ mode: 'resolve', hasChanges: true });
+        }
+        return result;
     },
 
     async manualSync() {

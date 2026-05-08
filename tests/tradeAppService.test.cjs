@@ -67,6 +67,7 @@ test('TradeAppService addTrade normalizes persisted trade fields and emits side 
     assert.equal(result.success, true);
     assert.equal(savedPayloads.length, 1);
     assert.equal(savedPayloads[0][0].syncId, 'trade-1');
+    assert.equal('lastSyncedAt' in savedPayloads[0][0], true);
     assert.equal(savedPayloads[0][0].shares, 100.5);
     assert.equal(savedPayloads[0][0].fee, 0.1);
     assert.deepEqual(events.map(item => item.event), [

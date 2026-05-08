@@ -108,6 +108,17 @@ const Modal = {
         EventBus.emit(EventType.MODAL_CLOSED);
     },
 
+    showSyncConflict(syncResult) {
+        if (window.SyncConflictModalHelper && typeof window.SyncConflictModalHelper.show === 'function') {
+            window.SyncConflictModalHelper.show(syncResult.conflicts || [], async (resolutions) => {
+                await window.SyncAppService.resolveConflicts(syncResult.conflicts || [], resolutions);
+            });
+            return;
+        }
+
+        Modal.show('syncConflict', syncResult);
+    },
+
     /**
      * 渲染基金名称字段HTML（公共方法）
      * @param {object} options - 配置选项

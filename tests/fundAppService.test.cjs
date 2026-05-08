@@ -63,6 +63,8 @@ test('FundAppService addFund normalizes persisted fields and emits sync side eff
     assert.equal(result.fund.id, 'fund-1');
     assert.equal(savedPayloads.length, 1);
     assert.equal(savedPayloads[0][0].syncId, 'fund-1');
+    assert.equal('lastSyncedAt' in savedPayloads[0][0], true);
+    assert.equal(savedPayloads[0][0].lastSyncedAt === null || typeof savedPayloads[0][0].lastSyncedAt === 'string', true);
     assert.equal(savedPayloads[0][0].deletedAt, null);
     assert.deepEqual(events.map(item => item.event), [
         context.window.EventType.FUND_ADDED,

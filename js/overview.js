@@ -7,6 +7,7 @@ const Overview = {
     _viewPrefs: null,
 
     _groupCollapsed: { holding: false, cleared: false },
+    _syncRefreshBound: false,
 
     /**
      * 初始化汇总页
@@ -99,6 +100,11 @@ const Overview = {
             Overview._viewPrefs = null;
             Overview.refresh();
         });
+
+        if (!Overview._syncRefreshBound) {
+            Overview._syncRefreshBound = true;
+            EventBus.on(EventType.SYNC_DATA_APPLIED, () => Overview.refresh());
+        }
     },
 
     /**

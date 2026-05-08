@@ -6,6 +6,7 @@
 const Detail = {
     // 当前基金ID
     currentFundId: null,
+    _syncRefreshBound: false,
 
     // 交易记录分页实例
     _tradePaginator: null,
@@ -86,6 +87,15 @@ const Detail = {
         EventBus.on(EventType.SETTINGS_CHANGED, () => {
             Detail.refresh();
         });
+
+        if (!Detail._syncRefreshBound) {
+            Detail._syncRefreshBound = true;
+            EventBus.on(EventType.SYNC_DATA_APPLIED, () => {
+                if (Detail.currentFundId) {
+                    Detail.refresh();
+                }
+            });
+        }
 
         // 交易记录筛选
         const filterTradeType = document.getElementById('filter-trade-type');

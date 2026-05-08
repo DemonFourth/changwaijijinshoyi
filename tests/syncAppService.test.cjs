@@ -126,3 +126,92 @@ test('notifyBusinessDataChanged visibility compensation triggers push when pendi
 
     assert.equal(pushCount >= 1, true);
 });
+
+test('SyncAppService executePush updates sync meta and entity lastSyncedAt on success', async () => {
+    const context = createContext();
+    const now = '2026-05-08T12:00:00.000Z';
+
+    context.window.LocalStorageAdapter.saveSnapshot({
+        ...context.window.StorageSchema.createEmptySnapshot(),
+        funds: [{ id: 'fund-1', syncId: 'fund-1', updatedAt: '2026-05-08T11:00:00.000Z', lastSyncedAt: null }],
+        trades: [{ id: 'trade-1', syncId: 'trade-1', updatedAt: '2026-05-08T11:30:00.000Z', lastSyncedAt: null }],
+        syncMeta: context.window.LocalStorageAdapter.getSyncMeta()
+    });
+
+    mockPushAdapter(context, {
+        async push() {
+            return { success: true, revision: 12 };
+        }
+    });
+
+    context.window.SyncAppService._getNowIso = () => now;
+
+    const result = await context.window.SyncAppService._executePush();
+    const snapshot = context.window.LocalStorageAdapter.loadSnapshot();
+    const syncMeta = context.window.LocalStorageAdapter.getSyncMeta();
+
+    assert.equal(result.success, true);
+    assert.equal(syncMeta.cloudRevision, 12);
+    assert.equal(syncMeta.pendingChanges, 0);
+    assert.equal(syncMeta.syncStatus, 'idle');
+    assert.equal(snapshot.funds[0].lastSyncedAt, now);
+    assert.equal(snapshot.trades[0].lastSyncedAt, now);
+});
+
+test('SyncAppService executePull emits sync applied event after snapshot changes', async () => {
+    const context = createContext();
+    const emitted = [];
+
+    context.window.EventBus.emit = (event, payload) => {
+        emitted.push({ event, payload });
+    };
+    context.window.LocalStorageAdapter.saveSnapshot({
+        ...context.window.StorageSchema.createEmptySnapshot(),
+        funds: [],
+        trades: [],
+        syncMeta: context.window.LocalStorageAdapter.getSyncMeta()
+    });
+    context.window.LocalStorageAdapter.getCurrentSyncAdapter = () => ({
+        getStatus() {
+            return { canPull: true, canPush: true };
+        },
+        async pull() {
+            return {
+                success: true,
+                funds: [{ id: 'fund-1', syncId: 'fund-1', updatedAt: '2026-05-08T10:00:00.000Z' }],
+                trades: [],
+                revision: 2
+            };
+        },
+        markSyncComplete() {}
+    });
+
+    const result = await context.window.SyncAppService._executePull();
+
+    assert.equal(result.success, true);
+    assert.equal(emitted.some(item => item.event === context.window.EventType.SYNC_DATA_APPLIED), true);
+});
+
+test('SyncAppService schedules retry with backoff after push failure', async () => {
+    const context = createContext();
+    const delays = [];
+    let pushCount = 0;
+
+    const originalSetTimeout = context.setTimeout;
+    context.setTimeout = (callback, delay) => {
+        delays.push(delay);
+        return originalSetTimeout(() => {}, 0);
+    };
+
+    mockPushAdapter(context, {
+        async push() {
+            pushCount += 1;
+            return { success: false, reason: 'network_error' };
+        }
+    });
+
+    await context.window.SyncAppService._executePush();
+
+    assert.equal(pushCount, 1);
+    assert.equal(delays.some(delay => delay >= 3000), true);
+});
