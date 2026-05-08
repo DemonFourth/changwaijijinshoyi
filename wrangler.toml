@@ -1,4 +1,4 @@
-name = "fund-calculator-sync"
+name = "changwaijijinshoyi"
 main = "workers/worker.js"
 compatibility_date = "2024-01-01"
 
