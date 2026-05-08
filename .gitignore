@@ -35,3 +35,11 @@ opencode.json
 
 # git worktrees
 .worktrees/
+
+# 开发过程文件（不上传）
+.codeartsdoer/
+docs/superpowers/
+AGENTS.md
+fund-data-2026-05-06.json
+test-calculation.html
+
