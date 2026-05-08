@@ -1,482 +1,380 @@
 # 场外基金收益计算器
 
-一个用于计算场外基金（支付宝买卖的基金）收益的Web应用。
+一个面向支付宝场外基金交易场景的收益计算 Web 应用，支持本地优先使用、可选 Cloudflare Pages + D1 云同步、加权平均成本法收益统计、FIFO 手续费计算与多轮持仓分析。
 
-**设计原则**：场外基金以长期持有为主，交易频率低，UI和交互设计体现长期持有特点——默认按收益率排序、图表时间轴适配长周期。
+**设计原则**：场外基金以长期持有为主，默认按收益率排序，图表与交互更适配长周期观察；在架构上坚持页面编排、应用服务写入、仓储/适配器持久化分层，降低功能迭代时的耦合成本。
 
 ## 功能特性
 
 ### 核心功能
 - ✅ 基金管理：添加、编辑、删除基金
-- ✅ 实时数据：自动获取基金净值数据
+- ✅ 实时数据：自动获取基金净值与估算数据
 - ✅ 交易记录：记录买入、卖出、分红等交易（支持备注）
-- ✅ 加权平均成本法：持仓成本含手续费，卖出时成本价不变
-- ✅ 收益统计：持仓收益、已实现收益、总收益
-- ✅ 数据持久化：LocalStorage本地存储
-- ✅ 数据导入导出：JSON格式数据备份
+- ✅ 加权平均成本法：用于持仓成本、浮动盈亏、已实现收益统计
+- ✅ FIFO 手续费计算：用于按持有天数匹配卖出费率
+- ✅ 数据导入导出：JSON 格式备份与恢复
+- ✅ 本地优先：页面打开即可使用本地快照
 
-### UI增强功能（v2.0）
-- ✅ 深色/浅色主题切换：CSS变量设计令牌体系，支持系统主题自动适配
-- ✅ 涨跌颜色统一管理：--color-rise/--color-fall变量，正收益红色、负收益绿色
-- ✅ 交易类型Badge样式：买入蓝、卖出橙、分红紫，参考目标项目样式
-- ✅ 多轮持仓分组展示：交易记录按持仓周期分组，收益独立计算
-- ✅ 分红再投资支持：分红模式选择（现金分红/分红再投资）
-- ✅ 基金名称硬编码管理：刷新数据不更新名称，完全由用户控制
-- ✅ 持仓分组：自动按"持仓中"/"已清仓"分组显示，支持折叠/展开
-- ✅ 详情页标题栏行情：基金名称+代码+最新净值+估算涨幅一目了然
-- ✅ ECharts专业图表：收益趋势、买卖对比、收益率变化，主题自适应
-- ✅ 卡片/列表双视图：网格卡片或紧凑列表，支持按收益率/收益额/市值/名称排序
-- ✅ 大数字格式化：自动转万/亿单位，悬浮显示完整值
-- ✅ 交易备注：每笔交易可添加50字备注
-- ✅ 交易记录分页筛选：按类型/日期范围筛选，支持10/20/50条分页
-- ✅ Top5盈亏榜单：盈利Top5和亏损Top5快速查看
-- ✅ FIFO计算验证：验证移动加权平均法计算正确性，数学等价验证
+### UI 与分析能力
+- ✅ 深色/浅色主题切换：CSS 设计令牌驱动，支持系统主题适配
+- ✅ 卡片/列表双视图：支持按收益率/收益额/市值/名称排序
+- ✅ 多轮持仓分组：自动识别建仓、加仓、减仓、清仓周期
+- ✅ 详情页图表分析：收益趋势、买卖对比、收益率变化
+- ✅ 大数字格式化：自动转万/亿，悬浮显示完整值
+- ✅ 交易记录分页筛选：按类型/日期范围筛选，支持分页
+- ✅ Top5 盈亏榜单：盈利/亏损基金快速查看
+- ✅ FIFO 计算验证：验证收益与手续费计算链路
+- ✅ 基金转换计算器：支持转换费用测算与交易记录落库
 
-### 云同步功能
-- ✅ Cloudflare D1 云端存储：跨设备数据同步
-- ✅ 本地优先：打开页面立即使用本地数据
-- ✅ 密码保护：可选密码验证
-- ✅ 冲突检测与解决：记录级冲突自动检测，用户逐项选择
-- ✅ 删除同步：tombstone 软删除，防止旧数据复活
-- ✅ 手动同步：工具箱中支持立即同步、强制上传/下载
+### 云同步能力
+- ✅ Cloudflare Pages Functions + D1：无独立 Worker 的同步接口部署方式
+- ✅ 本地优先 + 云端补齐：先渲染本地，再做后台同步
+- ✅ push / pull / resolve：支持上传、拉取、冲突解决
+- ✅ tombstone 软删除：防止旧数据回流复活
+- ✅ 记录级冲突检测：用户逐项选择本地版或云端版
+- ✅ 同步状态跟踪：`pendingChanges`、`syncStatus`、`lastSyncAt`、`lastSyncedAt`
+- ✅ 手动同步：工具箱支持立即同步、强制上传、强制下载
 
 ### 技术特性
-- 🎯 纯前端实现，无需后端服务
-- 🎯 响应式设计，支持移动端
-- 🎯 模块化架构，统一管理模块，易于维护扩展
-- 🎯 事件驱动，模块解耦
-- 🎯 CSS变量设计令牌，主题切换零延迟
-- 🎯 GB2312编码处理，正确解析基金API数据
-- 🎯 Cloudflare Pages + D1 云端同步（无独立 Worker）
+- 🎯 原生 HTML / CSS / JavaScript，无前端框架
+- 🎯 自定义模块注册 + 事件总线，模块解耦
+- 🎯 本地存储与云同步适配器分层，便于后续扩展 provider
+- 🎯 运行时配置加载，自动判断本地模式或混合存储模式
+- 🎯 GB2312 编码处理，兼容基金 API 返回格式
 
-### 2. 云端部署
+## 使用方式
 
-#### 2.1 创建 D1 数据库
+### 本地使用
+1. 直接用浏览器打开 `index.html`
+2. 若无 `/api/*` 接口，则自动工作在本地模式
+3. 页面会提示“当前使用本地数据”
+
+### 云端部署
+
+#### 1. 创建 D1 数据库
 1. Cloudflare Dashboard → Workers & Pages → D1 → Create Database
-2. 名称：`fund-calculator-db`
+2. 名称可设为：`fund-calculator-db`
 
-#### 2.2 部署 Pages（含前端 + 同步接口）
+#### 2. 部署 Pages（前端 + Pages Functions）
 1. Dashboard → Workers & Pages → Create → Pages → Connect to Git
 2. 选择 GitHub 仓库和分支
 3. Build command 留空，Build output directory 留空
-4. **绑定 D1**：Settings → Bindings → Add → D1 → 选择 `fund-calculator-db`，binding name 填 `DB`
+4. 在 Settings → Bindings 中添加 D1 绑定
+5. 绑定名填写：`DB`
 
-> **无需配置环境变量**：Pages Functions 自动检测 `env.DB` 是否存在，存在则启用云同步，不存在则自动降级到本地模式。
+> 无需额外环境变量。运行时会检测 `env.DB` 是否存在：存在则启用云同步，不存在则自动降级为本地模式。
 
-#### 2.3 验证
+#### 3. 验证
 1. 打开 Pages URL
-2. 本地静态打开（无 `/api/*`）：提示 "当前使用本地数据"
-3. 线上 Pages 打开（有 `/api/*` 且 D1 已绑定）：提示 "当前使用混合存储（本地 + 云端同步）"
-4. 在工具箱中点击 "立即同步" 验证云端同步
-
-### 3. 添加基金
-1. 点击右上角"添加基金"按钮
-2. 输入6位基金代码（如：519732）
-3. 点击确定，系统会自动获取基金信息
-
-### 4. 添加交易记录
-1. 点击基金卡片进入详情页
-2. 点击"添加交易"按钮
-3. 填写交易信息：
-   - 交易日期
-   - 交易类型（买入/卖出/分红）
-   - 份额
-   - 金额
-   - 手续费
-   - 备注（可选，最多50字）
-4. 点击确定保存
-
-### 5. 查看收益
-- 汇总页：查看所有基金的总体收益情况、Top5盈亏榜单
-- 详情页：查看单只基金的详细收益分析、专业图表、交易记录（支持筛选分页）
-
-### 6. 主题切换
-- 点击右上角主题按钮切换深色/浅色模式
-- 自动跟随系统主题偏好
+2. 无 `/api/*` 时应提示“当前使用本地数据”
+3. 有 `/api/*` 且 D1 已绑定时应提示“当前使用混合存储（本地 + 云端同步）”
+4. 在工具箱点击“立即同步”验证云端同步链路
 
 ## 项目结构
 
-```
+```text
 jijinshouyi/
-├── index.html              # 主页面
+├── index.html
 ├── css/
-│   ├── tokens.css          # CSS设计令牌（浅色+深色主题变量）
-│   └── style.css           # 样式文件（使用CSS变量）
+│   ├── tokens.css
+│   └── style.css
 ├── js/
-│   ├── namespace.js        # 全局命名空间
-│   ├── moduleRegistry.js   # 模块注册器
-│   ├── eventBus.js         # 事件总线
-│   ├── config.js           # 配置管理
-│   ├── utils.js            # 工具函数
-│   ├── themeManager.js     # 主题管理（深色/浅色切换）
-│   ├── bigNumberFormatter.js # 大数字格式化（万/亿单位）
-│   ├── paginator.js        # 通用分页组件
-│   ├── storage.js          # 存储管理
-│   ├── dataService.js      # 数据服务
-│   ├── fundAPI.js          # 基金API
-│   ├── calculatorV2.js     # 计算引擎（加权平均成本法）
-│   ├── fifoCalculator.js   # FIFO计算引擎（先进先出法）
-│   ├── fifoValidator.js    # FIFO验证控制器
-│   ├── fundManager.js      # 基金管理器
-│   ├── tradeManager.js     # 交易管理器
-│   ├── chartManager.js     # ECharts图表管理
-│   ├── router.js           # 路由管理
-│   ├── modal.js            # 弹窗管理
-│   ├── overview.js         # 汇总页（双视图/分组/Top5）
-│   ├── detail.js           # 详情页（图表/分页筛选）
-│   ├── app.js              # 应用入口
-│   ├── runtimeConfigLoader.js  # 运行时配置加载器
+│   ├── namespace.js
+│   ├── moduleRegistry.js
+│   ├── eventBus.js
+│   ├── config.js
+│   ├── utils.js
+│   ├── app.js
+│   ├── overview.js
+│   ├── detail.js
+│   ├── modal.js
+│   ├── toolPage.js
+│   ├── dataService.js
+│   ├── fundManager.js
+│   ├── tradeManager.js
+│   ├── chartManager.js
+│   ├── router.js
+│   ├── runtimeConfigLoader.js
+│   ├── storage.js
+│   ├── calculatorV2.js
+│   ├── fifoCalculator.js
+│   ├── fifoValidator.js
+│   ├── feeCalculator.js
+│   ├── conversionCalculator.js
+│   ├── fundAPI.js
+│   ├── application/
+│   │   ├── appSettingsService.js
+│   │   ├── fundAppService.js
+│   │   ├── importAppService.js
+│   │   ├── syncAppService.js
+│   │   └── tradeAppService.js
+│   ├── repositories/
+│   │   ├── fundRepository.js
+│   │   └── tradeRepository.js
+│   ├── storage/
+│   │   ├── schema.js
+│   │   ├── migrations.js
+│   │   ├── localStorageAdapter.js
+│   │   ├── localSyncAdapter.js
+│   │   ├── cloudflareD1SyncAdapter.js
+│   │   └── syncAdapterRegistry.js
+│   ├── detail/
+│   │   ├── detailEditHelper.js
+│   │   ├── detailFundUpdateHelper.js
+│   │   ├── detailHoldingHelper.js
+│   │   ├── detailMenuHelper.js
+│   │   └── detailTradeActionHelper.js
+│   └── modal/
+│       ├── syncConflictModalHelper.js
+│       └── tradeModalHelper.js
 ├── functions/
 │   ├── api/
-│   │   ├── runtime-config.js   # 运行时配置接口
+│   │   ├── runtime-config.js
 │   │   └── sync/
-│   │       ├── pull.js         # 云端拉取
-│   │       ├── push.js         # 云端推送
-│   │       └── resolve.js      # 冲突解决
+│   │       ├── pull.js
+│   │       ├── push.js
+│   │       └── resolve.js
 │   └── _shared/
-│       ├── d1Schema.js         # D1 建表与初始化
-│       ├── syncRepository.js   # 同步数据访问层
-│       └── syncUtils.js        # 同步辅助工具
-├── lib/
-│   └── echarts.min.js      # ECharts图表库（本地）
-├── docs/
-│   ├── DIAGNOSIS.md        # 问题诊断文档
-│   └── SOLUTION.md         # 解决方案文档
+│       ├── d1Schema.js
+│       ├── syncRepository.js
+│       └── syncUtils.js
 ├── tests/
-│   ├── test-api.html       # API测试
-│   ├── test-debug.html     # 调试测试
-│   ├── test-simple.html    # 简单测试
-│   └── test-tradeManager.html  # TradeManager测试
-└── README.md               # 说明文档
+│   ├── helpers/
+│   │   └── loadBrowserModules.cjs
+│   └── *.test.cjs
+├── lib/
+│   └── echarts.min.js
+└── README.md
 ```
+
+## 架构分层
+
+### 1. 页面层
+页面层文件如 `js/overview.js`、`js/detail.js`、`js/modal.js`、`js/toolPage.js` 只负责：
+- 页面编排
+- DOM 事件绑定
+- 调用 helper / manager / application service
+- 响应事件总线刷新页面
+
+**约束**：页面层不直接承担底层存储细节，不新增散落的 LocalStorage 读写。
+
+### 2. Application 层
+`js/application/*.js` 负责业务写操作与用例编排：
+- `FundAppService`：基金新增、编辑、删除
+- `TradeAppService`：交易新增、编辑、删除
+- `ImportAppService`：导入/清空业务数据
+- `AppSettingsService`：设置、导入导出入口
+- `SyncAppService`：同步状态、push / pull / resolve、补偿链路
+
+**约束**：新增业务写操作优先走 application 层，而不是直接从页面层调用存储。
+
+### 3. Repository / Manager 层
+- `js/repositories/*.js`：仓储访问，聚合 snapshot 中的基金/交易读写
+- `FundManager` / `TradeManager`：页面和计算展示使用的运行时读取入口
+
+**约束**：
+- 页面/UI 侧优先通过 manager 读数据
+- application 层和数据聚合层可通过 repository 读写业务数据
+
+### 4. Storage / Adapter 层
+- `StorageSchema`：统一数据模型归一化
+- `StorageMigrations`：schema 迁移
+- `LocalStorageAdapter`：本地 snapshot 持久化
+- `LocalSyncAdapter` / `CloudflareD1SyncAdapter`：同步 provider 适配器
+- `SyncAdapterRegistry`：provider 注册与选择
+
+**约束**：
+- 不允许新增代码直接散落读写旧 `fundsKey/tradesKey` 结构
+- 新增云端 provider 时，必须按 adapter 方式接入，禁止把云端调用直接写进页面层或 manager 层
+
+## 同步机制
+
+### 本地优先基线
+应用启动时先加载本地 snapshot，再根据运行时配置决定是否连接 `/api/sync/*`。这样即使云端不可用，页面也能立即展示本地数据。
+
+### 同步核心数据
+云端同步只覆盖核心业务域：
+- `funds`
+- `trades`
+- `syncMeta`
+
+以下内容保留本地，不参与云同步：
+- 主题偏好
+- 视图偏好
+- 筛选状态
+- 本地缓存
+
+### 关键字段
+- `syncId`：业务实体的同步主键
+- `deletedAt`：tombstone 软删除时间
+- `lastSyncedAt`：该实体最近成功同步到云端的时间
+- `pendingChanges`：待同步变更数量
+- `syncStatus`：同步状态（如 `idle` / `pending` / `error`）
+- `lastSyncAt` / `lastPushedAt`：最近同步与推送时间
+
+### push / pull / resolve 流程
+1. 本地业务写操作完成后，通过 `SyncAppService.notifyBusinessDataChanged()` 标记待同步
+2. `push` 成功后：
+   - 更新 `syncMeta`
+   - 回填实体 `lastSyncedAt`
+3. `pull` 合并云端快照后：
+   - 写回本地 snapshot
+   - 广播 `SYNC_DATA_APPLIED`
+4. 若检测到冲突：
+   - 返回冲突列表
+   - 通过 `SyncConflictModalHelper` 提示用户选择本地版/云端版
+   - `resolve` 成功后广播统一刷新事件
+
+### 刷新链路
+同步数据落地后，统一通过 `EventType.SYNC_DATA_APPLIED` 触发：
+- `Overview.refresh()`
+- `Detail.refresh()`
+- `ToolPage.renderSyncStatus()`
+
+### 失败补偿与重试
+- 页面关闭 / 隐藏时触发同步补偿
+- push 失败后按退避策略重试
+- 达到上限后落为错误状态，避免无限重试
 
 ## 核心算法
 
-### 场外基金交易数据说明
-
-场外基金（如支付宝买卖的基金）与股票的交易数据含义不同：
-
-**买入示例**：净值1.5，买入990份，手续费15元
-- 金额 = 1.5 × 990 + 15 = 1500元（自动计算，可手动修改）
-- 持仓总成本 += 金额（即用户实际支付的金额，含手续费）
-- 持仓成本价 = 持仓总成本 / 持仓总份额
-
-**卖出示例**：净值2.0，卖出1000份，手续费20元
-- 金额 = 2.0 × 1000 - 20 = 1980元（到手金额，自动计算，可手动修改）
-- 持仓总成本 -= 卖出份额 × 持仓成本价（成本价不变）
-- 已实现收益 = 到手金额 - 卖出份额 × 持仓成本价
-
-| 项目 | 买入 | 卖出 |
-|------|------|------|
-| 净值 | 手动输入 | 手动输入 |
-| 份额 | 手动输入 | 手动输入 |
-| 手续费 | 手动输入 | 手动输入 |
-| 金额 | 自动计算：净值×份额+手续费（可手动修改） | 自动计算：净值×份额-手续费（可手动修改） |
-| 持仓总成本 | += 金额 | -= 卖出份额 × 持仓成本价 |
-
-**金额字段说明**：金额由系统根据净值、份额、手续费自动计算并填入，用户点击金额输入框可手动修改。若手动输入值与自动计算值不一致，系统会以警告色提示，但不强制要求修改。
-
-**关键区别**：买入时金额=净值×份额+手续费（总支付），卖出时金额=净值×份额-手续费（到手金额）。
-
 ### 加权平均成本法
+**用途**：计算基金持仓成本与收益。
 
-场外基金分为A类和C类：
-- **A类基金**：买入和卖出时都收取手续费，手续费是真实投入，计入持仓成本
-- **C类基金**：买入时不收取手续费，只在卖出时可能收取手续费
+规则：
+1. 买入：持仓总成本 += 买入金额（含手续费）
+2. 卖出：持仓总成本 -= 卖出份额 × 持仓成本价
+3. 持仓成本价 = 持仓总成本 / 持仓总份额
+4. 每次买入后重新计算成本价
 
-计算规则：
+### FIFO
+**用途**：计算卖出手续费，不用于收益统计。
 
-1. **买入操作**：
-   - 持仓总成本 += amount（用户实际支付的金额，由表单自动计算为净值×份额+手续费）
-   - 持仓成本价 = 持仓总成本 / 持仓总份额（加权平均）
-2. **卖出操作**：
-   - 持仓成本价不变
-   - 持仓总成本 -= 卖出份额 × 持仓成本价
-   - 已实现收益 = 到手金额(amount) - 卖出份额 × 持仓成本价
-3. **持仓成本价**：持仓总成本 / 持有份额（保留4位小数）
+规则：
+1. 按买入时间顺序构建 FIFO 队列
+2. 卖出时从最早买入批次依次扣减
+3. 一笔卖出可跨多个买入批次
+4. 每个批次按持有天数匹配卖出费率区间
 
-### 收益计算
+### 两种计算方式的职责边界
 
-- **浮动盈亏** = 当前市值 - 持仓总成本 = 持有份额 × (当前净值 - 持仓成本价)
-- **已实现收益** = 各笔卖出到手金额 - 对应份额×卖出时成本价
-- **总收益** = 浮动盈亏 + 已实现收益
-- **收益率** = 总收益 / 总投入 × 100%
-
-### 已清仓基金处理
-
-当持有份额 ≤ 0.0001（精度阈值EPSILON）时视为已清仓：
-- 持有份额、持仓总成本、当前市值、浮动盈亏均归零
-- 持仓成本价显示 ¥0.0000
-- 持仓收益率显示 "-"
-- 持仓周期状态标记为"已结束"
-
-## 工具箱功能
-
-### 基金转换计算器
-
-**位置**：工具箱页面 → 基金转换计算器
-
-**功能**：计算从A基金转换到B基金过程中的手续费和资金结算，支持将计算结果保存为交易记录。
-
-#### 使用场景
-
-- 计算基金转换（A基金转到B基金）的总手续费
-- 计算转换过程中的资金差额（退还或补交）
-- 支持不同持有天数对应不同卖出费率的场景
-- 快速生成转换交易记录
-
-#### 费率模式
-
-**单费率模式**：
-- 适用于所有份额使用同一卖出费率的情况
-- 输入A基金的统一卖出费率即可
-
-**分段费率模式**：
-- 适用于不同份额持有天数不同，对应不同卖出费率的情况
-- 例如：C类基金部分份额持有超过30天（0%费率），部分份额持有不足30天（0.5%费率）
-- 支持动态添加/删除多个费率段
-- 实时校验费率段份额总和与A基金总份额一致性
-
-#### 计算逻辑
-
-**A基金（转出基金）卖出计算**：
-
-| 项目 | 公式 |
-|------|------|
-| 转出金额 | 净值 × 份额 |
-| 卖出手续费（单费率） | 转出金额 × (卖出费率 / 100) |
-| 卖出手续费（分段费率） | Σ(每段份额 × 净值 × 该段费率 / 100) |
-| 实际到账 | 转出金额 - 卖出手续费 |
-
-**B基金（转入基金）买入计算**：
-
-| 项目 | 公式 |
-|------|------|
-| 基础金额 | 净值 × 份额 |
-| 买入手续费 | 基础金额 × (买入费率 / 100) |
-| 实际支付 | 基础金额 + 买入手续费 |
-
-**资金结算**：
-
-| 项目 | 公式 |
-|------|------|
-| 总手续费 | 卖出手续费 + 买入手续费 |
-| 差额 | 实际到账 - 实际支付 |
-| 结果 | 差额 > 0 时退还，差额 < 0 时补交 |
-
-#### 计算示例
-
-**示例1：单费率模式**
-
-| 参数 | A基金（富国A） | B基金（永赢数字经济A） |
-|------|---------------|----------------------|
-| 净值 | 1.4303 | 1.6051 |
-| 份额 | 36384.34 | 31654.46 |
-| 费率 | 卖出 0.5% | 买入 0.15% |
-
-计算结果：
-- 转出金额：52040.52
-- 卖出手续费：260.20
-- 实际到账：51780.32
-- 基础金额：50808.57
-- 买入手续费：76.21
-- 实际支付：50884.79
-- 总手续费：336.42
-- 退还金额：895.53
-
-**示例2：分段费率模式**
-
-| 参数 | A基金（华泰C） | B基金（永赢数字经济A） |
-|------|---------------|----------------------|
-| 净值 | 2.0410 | 1.8678 |
-| 总份额 | 2330.58 | 2526.96 |
-| 费率段1 | 1914.04份 @ 0% | 买入 0.15% |
-| 费率段2 | 416.54份 @ 0.5% | - |
-
-计算结果：
-- 卖出手续费：4.25（仅第2段产生）
-- 买入手续费：7.08
-- 总手续费：11.33
-- 退还金额：25.52
-
-#### 保存交易记录
-
-- 选择转入基金后，可点击"保存到交易记录"按钮
-- 自动生成两条交易记录：
-  - A基金卖出记录（备注包含"转换"标识）
-  - B基金买入记录（备注包含"转换"标识）
-- 分段费率模式下，卖出记录备注自动包含费率明细，如：`[费率:1914.04份@0%, 416.54份@0.5%]`
-
-#### 核心模块
-
-| 模块 | 文件 | 职责 |
-|------|------|------|
-| ConversionCalculator | `js/conversionCalculator.js` | 计算引擎，支持单费率和分段费率 |
-| ToolPage | `js/toolPage.js` | UI交互，费率模式切换、费率段管理、结果渲染 |
-
-## API说明
-
-### 基金数据API
-- **地址**：`http://fundgz.1234567.com.cn/js/{基金代码}.js`
-- **格式**：JSONP（GB2312编码）
-- **示例**：`http://fundgz.1234567.com.cn/js/519732.js`
-
-### 返回数据格式
-```javascript
-jsonpgz({
-    "fundcode": "519732",      // 基金代码
-    "name": "万家行业优选混合",  // 基金名称
-    "dwjz": "1.2345",          // 单位净值
-    "jzrq": "2024-01-18",      // 净值日期
-    "gsz": "1.2350",           // 估算净值
-    "gztime": "2024-01-19",    // 估算日期
-    "gszzl": "0.12"            // 估算增长率
-})
-```
+| 维度 | 加权平均成本法 | FIFO |
+|------|----------------|------|
+| 用途 | 持仓成本、浮动盈亏、已实现收益 | 卖出手续费 |
+| 批次处理 | 不区分批次，统一成本价 | 区分批次，先进先出 |
+| 主要文件 | `js/calculatorV2.js` | `js/fifoCalculator.js`、`js/feeCalculator.js` |
 
 ## 数据存储
 
-### LocalStorage键名
-- `fund_calculator_funds`：基金数据
-- `fund_calculator_trades`：交易记录
-- `fund_calculator_settings`：应用设置
-- `fund_calculator_theme`：主题设置
-- `fund_calculator_view_prefs`：视图偏好（视图模式/排序字段/排序方向）
+### 业务快照
+业务数据以统一 snapshot 结构存储，由 `LocalStorageAdapter` 管理，并通过 `StorageSchema` 做字段归一化。
 
-### 数据导出格式
+### 典型本地数据
+- 基金与交易快照
+- `syncMeta`
+- 应用设置
+- 主题设置
+- 视图偏好
+
+### 导出格式
 ```json
 {
-    "version": "1.0.0",
-    "exportTime": "2024-01-19T10:00:00.000Z",
-    "funds": [...],
-    "trades": [...],
-    "settings": {...}
+  "version": "1.0.0",
+  "exportTime": "2024-01-19T10:00:00.000Z",
+  "funds": [],
+  "trades": [],
+  "settings": {}
 }
 ```
 
-## 浏览器兼容性
+## 开发规范
 
+### 代码风格
+- 禁止在对象方法内部使用 `this` 调用其他方法，应使用明确对象名
+- 回答与协作说明以中文为主，专有名词除外
+- 新增功能优先复用现有目录结构与 helper
+
+### 分层约束
+- 页面层只负责编排、事件绑定、调用 helper / service
+- 业务写操作统一优先走 `js/application/*.js`
+- 数据读取统一优先通过 manager 或 repository
+- 持久化统一通过 `LocalStorageAdapter` 与 `StorageSchema`
+- 计算结果保持运行时生成，不持久化到业务模型
+
+### 测试约束
+修改以下关键路径时，必须补或更新 `node:test` 测试：
+- 数据模型与存储
+- application 层
+- 同步链路
+- `detail` / `modal` / `overview` 关键路径
+
+### 同步扩展约束
+- 同步统一通过 `LocalStorageAdapter.getCurrentSyncAdapter()` 与 `SyncAdapterRegistry`
+- 新增 provider 必须实现 adapter 接口
+- 禁止把云端请求直接散落到页面层、manager 层
+
+## 开发与验证
+
+### 安装依赖
+```bash
+npm install
+```
+
+### 运行测试
+```bash
+npm test
+```
+
+### 运行代码检查
+```bash
+npm run lint
+```
+
+也可拆分执行：
+```bash
+npm run lint:js
+npm run lint:css
+```
+
+> 当前 lint 结果允许存在少量历史 warning，但不应新增 error。
+
+## 浏览器兼容性
 - ✅ Chrome 80+
 - ✅ Firefox 75+
 - ✅ Safari 13+
 - ✅ Edge 80+
 
 ## 注意事项
-
-1. **基金代码**：必须是6位数字
-2. **交易日期**：格式为 YYYY-MM-DD
-3. **份额和金额**：必须大于0
-4. **卖出限制**：卖出份额不能超过持有份额
-5. **数据备份**：建议定期导出数据备份
-
-## 开发说明
-
-### 📚 开发规范文档
-
-**重要**: 开发前请务必阅读以下文档，避免重复问题：
-
-- **[开发规范与最佳实践](./docs/DEVELOPMENT_STANDARDS.md)** - 完整的开发规范、常见问题解决方案
-- **[快速参考](./docs/QUICK_REFERENCE.md)** - 一页纸快速参考卡片
-- **[问题诊断](./docs/DIAGNOSIS.md)** - 问题诊断方法和步骤
-- **[解决方案](./docs/SOLUTION.md)** - 已解决问题的详细记录
-
-### ⚠️ 最重要的规则
-
-**禁止在对象方法内部使用`this`调用其他方法**：
-
-```javascript
-// ❌ 错误 - 会导致作用域解析异常
-const MyObject = {
-    methodA() {
-        return this.methodB();  // 错误！
-    }
-};
-
-// ✅ 正确 - 使用明确的对象名
-const MyObject = {
-    methodA() {
-        return MyObject.methodB();  // 正确！
-    }
-};
-```
-
-### 模块系统
-应用采用自定义的模块注册系统：
-```javascript
-// 注册模块
-ModuleRegistry.register('ModuleName', ModuleObject);
-
-// 获取模块
-const module = ModuleRegistry.get('ModuleName');
-```
-
-### 事件系统
-模块间通过事件总线通信：
-```javascript
-// 订阅事件
-EventBus.on(EventType.FUND_ADDED, (data) => {
-    console.log('Fund added:', data);
-});
-
-// 触发事件
-EventBus.emit(EventType.FUND_ADDED, { fund });
-```
-
-### 配置管理
-统一管理应用配置：
-```javascript
-// 获取配置
-const timeout = Config.get('api.timeout');
-
-// 设置配置
-Config.set('api.timeout', 15000);
-```
+1. 基金代码必须是 6 位数字
+2. 交易日期格式为 `YYYY-MM-DD`
+3. 份额和金额必须大于 0
+4. 卖出份额不能超过当前持有份额
+5. 建议定期导出数据备份
 
 ## 版本历史
 
+### v2.3.0
+- ✅ 引入 application / repository / storage adapter 分层
+- ✅ 增强本地优先云同步链路与冲突处理
+- ✅ 补强同步测试、集成测试与统一刷新事件链路
+
 ### v2.2.0 (2026-04-28)
-- ✅ FIFO计算验证功能：新增验证按钮，验证移动加权平均法计算正确性
-- ✅ 交易记录表格重构：扁平表格+持仓周期列，参考目标项目样式
-- ✅ Badge样式优化：买入蓝、卖出橙、分红紫，与目标项目保持一致
-- ✅ 多个bug修复：分红类型样式类名、FIFO验证器方法名等
+- ✅ FIFO 计算验证功能
+- ✅ 交易记录表格重构
+- ✅ Badge 样式优化
+- ✅ 多个 bug 修复
 
 ### v2.1.0 (2026-04-27)
-- ✅ 涨跌颜色统一管理：CSS变量--color-rise/--color-fall应用于所有收益显示
-- ✅ 交易类型Badge样式优化：买入红、卖出绿、分红紫，与编辑按钮风格一致
-- ✅ 多轮持仓分组展示：交易记录按持仓周期分组，每个周期独立计算收益
-- ✅ 分红再投资支持：新增分红模式选择，支持现金分红和分红再投资
-- ✅ 基金名称硬编码管理：刷新数据不再更新名称字段，完全由用户控制
-- ✅ 浅色主题涨跌颜色修复：补充浅色主题CSS变量定义
+- ✅ 涨跌颜色统一管理
+- ✅ 多轮持仓分组展示
+- ✅ 分红再投资支持
+- ✅ 基金名称硬编码管理
 
 ### v2.0.0 (2026-04-25)
-- ✅ CSS设计令牌体系（tokens.css），63个CSS变量
-- ✅ 深色/浅色主题切换，支持系统主题自动适配
-- ✅ ECharts专业图表替代简单HTML图表（收益趋势/买卖对比/收益率变化）
+- ✅ CSS 设计令牌体系
+- ✅ 深色/浅色主题切换
+- ✅ ECharts 专业图表
 - ✅ 卡片/列表双视图 + 多字段排序
-- ✅ 持仓分组（持仓中/已清仓），支持折叠
-- ✅ 详情页标题栏行情数据展示
-- ✅ 大数字格式化（万/亿单位 + 悬浮完整值）
-- ✅ 交易备注字段（最多50字）
-- ✅ 交易记录分页与筛选（类型/日期范围）
-- ✅ Top5盈亏榜单
-- ✅ 统一模块管理，新增ThemeManager/ChartManager/BigNumberFormatter/Paginator模块
-
-### v1.0.0 (2024-01-19)
-- ✅ 初始版本发布
-- ✅ 实现核心功能
-- ✅ FIFO收益计算
-- ✅ 基金API集成
-- ✅ 数据导入导出
 
 ## 许可证
-
 MIT License
-
-## 作者
-
-CodeArts Agent
-
-## 反馈与建议
-
-如有问题或建议，欢迎反馈！
->>>>>>> feature/cloudflare-d1-sync
