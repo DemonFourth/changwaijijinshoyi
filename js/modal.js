@@ -1735,11 +1735,10 @@ const Modal = {
                     updateData.remark = newRemark;
                 }
 
-                const success = FundManager.updateFund(fundId, updateData);
+                const success = await FundManager.updateFund(fundId, updateData);
                 if (success) {
                     Modal.hide();
                     Utils.showToast('基金信息已更新', 'success');
-                    EventBus.emit(EventType.FUND_UPDATED, { fundId });
                     Detail.refresh();
                 } else {
                     Utils.showToast('保存失败', 'error');

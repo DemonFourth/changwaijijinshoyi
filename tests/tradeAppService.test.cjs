@@ -149,3 +149,44 @@ test('TradeAppService deleteTrade delegates to repository softDelete and emits s
     ]);
     assert.deepEqual(notifyCalls, ['event']);
 });
+
+test('TradeAppService deleteTradesByFund soft deletes related trades and emits batch side effects', async () => {
+    const context = loadTradeAppServiceContext();
+    const events = trackEvents(context);
+    const notifyCalls = [];
+    let savedSnapshot = null;
+
+    context.window.LocalStorageAdapter.loadSnapshot = () => ({
+        funds: [],
+        trades: [
+            { id: 'trade-1', fundId: 'fund-1', deletedAt: null },
+            { id: 'trade-2', fundId: 'fund-1', deletedAt: null },
+            { id: 'trade-3', fundId: 'fund-2', deletedAt: null }
+        ],
+        syncMeta: {}
+    });
+    context.window.LocalStorageAdapter.saveSnapshot = (snapshot) => {
+        savedSnapshot = snapshot;
+        return true;
+    };
+    context.window.SyncAppService = {
+        notifyBusinessDataChanged(source) {
+            notifyCalls.push(source);
+            return Promise.resolve();
+        }
+    };
+
+    const result = await context.window.TradeAppService.deleteTradesByFund('fund-1');
+
+    assert.equal(result.success, true);
+    assert.equal(result.fundId, 'fund-1');
+    assert.equal(JSON.stringify(result.affectedTradeIds), JSON.stringify(['trade-1', 'trade-2']));
+    assert.ok(savedSnapshot.trades[0].deletedAt);
+    assert.ok(savedSnapshot.trades[1].deletedAt);
+    assert.equal(savedSnapshot.trades[2].deletedAt, null);
+    assert.deepEqual(events.map(item => item.event), [
+        context.window.EventType.TRADE_UPDATED,
+        context.window.EventType.CALCULATION_UPDATED
+    ]);
+    assert.deepEqual(notifyCalls, ['batch-delete']);
+});

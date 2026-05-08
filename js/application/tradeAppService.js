@@ -73,6 +73,39 @@ const TradeAppService = {
         }
 
         return { success: true, trade, fundId: trade ? trade.fundId : null, reason: '' };
+    },
+
+    async deleteTradesByFund(fundId) {
+        const snapshot = window.LocalStorageAdapter.loadSnapshot();
+        const now = new Date().toISOString();
+        const affectedTradeIds = [];
+
+        snapshot.trades = snapshot.trades.map(trade => {
+            if (trade.fundId !== fundId || trade.deletedAt) {
+                return trade;
+            }
+
+            affectedTradeIds.push(trade.id);
+            return {
+                ...trade,
+                deletedAt: now,
+                updatedAt: now
+            };
+        });
+
+        const success = window.LocalStorageAdapter.saveSnapshot(snapshot);
+
+        if (!success) {
+            return { success: false, fundId, affectedTradeIds: [], reason: 'delete_failed' };
+        }
+
+        EventBus.emit(EventType.TRADE_UPDATED, { fundId, affectedTradeIds, reason: 'batch-delete' });
+        EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
+        if (typeof window.SyncAppService !== 'undefined') {
+            await window.SyncAppService.notifyBusinessDataChanged('batch-delete');
+        }
+
+        return { success: true, fundId, affectedTradeIds, reason: '' };
     }
 };
 

@@ -55,14 +55,9 @@ const DataService = {
     },
 
     saveFunds(funds) {
+        console.warn('[DataService.saveFunds] deprecated, use FundAppService');
         this.fundsCache = funds;
-        const success = window.FundRepository.saveAll(funds);
-
-        if (success) {
-            EventBus.emit(EventType.FUND_UPDATED, { funds });
-        }
-
-        return success;
+        return window.FundRepository.saveAll(funds);
     },
 
     getFund(fundId) {
@@ -128,14 +123,9 @@ const DataService = {
     },
 
     saveTrades(trades) {
+        console.warn('[DataService.saveTrades] deprecated, use TradeAppService');
         this.tradesCache = trades;
-        const success = window.TradeRepository.saveAll(trades);
-
-        if (success) {
-            EventBus.emit(EventType.TRADE_UPDATED, { trades });
-        }
-
-        return success;
+        return window.TradeRepository.saveAll(trades);
     },
 
     getTradesByFund(fundId) {
@@ -192,32 +182,14 @@ const DataService = {
     },
 
     async deleteTradesByFund(fundId) {
-        const snapshot = window.LocalStorageAdapter.loadSnapshot();
-        const now = new Date().toISOString();
-        snapshot.trades = snapshot.trades.map(trade => {
-            if (trade.fundId !== fundId) {
-                return trade;
-            }
+        const result = await window.TradeAppService.deleteTradesByFund(fundId);
 
-            return {
-                ...trade,
-                deletedAt: now,
-                updatedAt: now
-            };
-        });
-
-        const success = window.LocalStorageAdapter.saveSnapshot(snapshot);
-
-        if (success) {
+        if (result.success) {
             this.tradesCache = null;
             this.invalidateCache(fundId);
-            EventBus.emit(EventType.TRADE_UPDATED, { fundId, reason: 'batch-delete' });
-            if (typeof window.SyncAppService !== 'undefined') {
-                await window.SyncAppService.notifyBusinessDataChanged('batch-delete');
-            }
         }
 
-        return success;
+        return result;
     },
 
     validateFund(fund) {

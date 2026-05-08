@@ -83,3 +83,76 @@ test('DataService addTrade delegates to TradeAppService and only invalidates cac
     assert.equal(events.filter(event => event === context.window.EventType.TRADE_ADDED).length, 1);
 }
 );
+
+test('DataService deleteTradesByFund delegates to TradeAppService and does not emit duplicate events', async () => {
+    const context = loadDataServiceContext();
+    const events = [];
+    let deleteCalls = 0;
+    let invalidatedFundId = null;
+
+    const originalEmit = context.window.EventBus.emit.bind(context.window.EventBus);
+    context.window.EventBus.emit = (event, payload) => {
+        events.push(event);
+        return originalEmit(event, payload);
+    };
+    context.window.TradeAppService.deleteTradesByFund = async (fundId) => {
+        deleteCalls++;
+        context.window.EventBus.emit(context.window.EventType.TRADE_UPDATED, { fundId });
+        return { success: true, fundId, affectedTradeIds: ['trade-1'], reason: '' };
+    };
+    context.window.DataService.invalidateCache = (fundId) => {
+        invalidatedFundId = fundId;
+    };
+
+    const result = await context.window.DataService.deleteTradesByFund('fund-1');
+
+    assert.equal(result.success, true);
+    assert.equal(deleteCalls, 1);
+    assert.equal(invalidatedFundId, 'fund-1');
+    assert.equal(events.filter(event => event === context.window.EventType.TRADE_UPDATED).length, 1);
+}
+);
+
+test('DataService saveFunds remains compatible but does not emit FUND_UPDATED', () => {
+    const context = loadDataServiceContext();
+    const events = [];
+    let saveCalls = 0;
+
+    const originalEmit = context.window.EventBus.emit.bind(context.window.EventBus);
+    context.window.EventBus.emit = (event, payload) => {
+        events.push(event);
+        return originalEmit(event, payload);
+    };
+    context.window.FundRepository.saveAll = () => {
+        saveCalls++;
+        return true;
+    };
+
+    const result = context.window.DataService.saveFunds([{ id: 'fund-1' }]);
+
+    assert.equal(result, true);
+    assert.equal(saveCalls, 1);
+    assert.equal(events.filter(event => event === context.window.EventType.FUND_UPDATED).length, 0);
+});
+
+test('DataService saveTrades remains compatible but does not emit TRADE_UPDATED', () => {
+    const context = loadDataServiceContext();
+    const events = [];
+    let saveCalls = 0;
+
+    const originalEmit = context.window.EventBus.emit.bind(context.window.EventBus);
+    context.window.EventBus.emit = (event, payload) => {
+        events.push(event);
+        return originalEmit(event, payload);
+    };
+    context.window.TradeRepository.saveAll = () => {
+        saveCalls++;
+        return true;
+    };
+
+    const result = context.window.DataService.saveTrades([{ id: 'trade-1' }]);
+
+    assert.equal(result, true);
+    assert.equal(saveCalls, 1);
+    assert.equal(events.filter(event => event === context.window.EventType.TRADE_UPDATED).length, 0);
+});
