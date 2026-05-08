@@ -865,14 +865,14 @@ const Modal = {
             const file = fileInput.files[0];
             const reader = new FileReader();
 
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
                     const merge = mergeCheckbox.checked;
 
-                    const success = DataService.importData(data, merge);
+                    const result = await window.AppSettingsService.importData(data, merge);
 
-                    if (success) {
+                    if (result && result.success) {
                         Utils.showToast('数据导入成功', 'success');
                         Modal.hide();
                         if (typeof Overview !== 'undefined') {
@@ -1550,10 +1550,9 @@ const Modal = {
                     try {
                         const text = await file.text();
                         const data = JSON.parse(text);
-                        const success = window.AppSettingsService.importData(data, false);
-                        if (success) {
+                        const result = await window.AppSettingsService.importData(data, false);
+                        if (result && result.success) {
                             Utils.showToast('数据导入成功');
-                            EventBus.emit(EventType.DATA_IMPORTED);
                         } else {
                             Utils.showToast('数据格式错误', 'error');
                         }
@@ -1569,9 +1568,10 @@ const Modal = {
         if (btnClear) {
             btnClear.addEventListener('click', () => {
                 if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
-                    window.AppSettingsService.clearAllData();
-                    Utils.showToast('数据已清除');
-                    location.reload();
+                    Promise.resolve(window.AppSettingsService.clearAllData()).then(() => {
+                        Utils.showToast('数据已清除');
+                        location.reload();
+                    });
                 }
             });
         }

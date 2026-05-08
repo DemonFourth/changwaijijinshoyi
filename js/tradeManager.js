@@ -67,23 +67,19 @@ const TradeManager = {
         }
 
         // 保存交易记录
-        const success = window.TradeAppService.addTrade(trade);
+        const resultPromise = window.TradeAppService.addTrade(trade);
 
-        if (success) {
-            DataService.tradesCache = null;
-            DataService.invalidateCache(trade.fundId);
-            EventBus.emit(EventType.TRADE_ADDED, { trade });
-            EventBus.emit(EventType.TRADE_UPDATED, { trade });
-            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: trade.fundId });
-        }
+        return Promise.resolve(resultPromise).then(result => {
+            if (result.success) {
+                DataService.tradesCache = null;
+                DataService.invalidateCache(trade.fundId);
+                Utils.showToast('交易记录添加成功', 'success');
+                return trade;
+            }
 
-        if (success) {
-            Utils.showToast('交易记录添加成功', 'success');
-            return trade;
-        } else {
             Utils.showToast('交易记录添加失败', 'error');
             return null;
-        }
+        });
     },
 
     /**
@@ -110,22 +106,19 @@ const TradeManager = {
         }
 
         // 保存更新
-        const success = window.TradeAppService.updateTrade(tradeId, updates);
+        const resultPromise = window.TradeAppService.updateTrade(tradeId, updates);
 
-        if (success) {
-            DataService.tradesCache = null;
-            DataService.invalidateCache(updatedTrade.fundId);
-            EventBus.emit(EventType.TRADE_UPDATED, { trade: window.TradeAppService.getTrade(tradeId) });
-            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: updatedTrade.fundId });
-        }
+        return Promise.resolve(resultPromise).then(result => {
+            if (result.success) {
+                DataService.tradesCache = null;
+                DataService.invalidateCache(updatedTrade.fundId);
+                Utils.showToast('交易记录更新成功', 'success');
+            } else {
+                Utils.showToast('交易记录更新失败', 'error');
+            }
 
-        if (success) {
-            Utils.showToast('交易记录更新成功', 'success');
-        } else {
-            Utils.showToast('交易记录更新失败', 'error');
-        }
-
-        return success;
+            return result.success;
+        });
     },
 
     /**
@@ -135,22 +128,19 @@ const TradeManager = {
      */
     deleteTrade(tradeId) {
         const trade = window.TradeAppService.getTrade(tradeId);
-        const success = window.TradeAppService.deleteTrade(tradeId);
+        const resultPromise = window.TradeAppService.deleteTrade(tradeId);
 
-        if (success && trade) {
-            DataService.tradesCache = null;
-            DataService.invalidateCache(trade.fundId);
-            EventBus.emit(EventType.TRADE_DELETED, { trade });
-            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: trade.fundId });
-        }
+        return Promise.resolve(resultPromise).then(result => {
+            if (result.success && trade) {
+                DataService.tradesCache = null;
+                DataService.invalidateCache(trade.fundId);
+                Utils.showToast('交易记录删除成功', 'success');
+            } else {
+                Utils.showToast('交易记录删除失败', 'error');
+            }
 
-        if (success) {
-            Utils.showToast('交易记录删除成功', 'success');
-        } else {
-            Utils.showToast('交易记录删除失败', 'error');
-        }
-
-        return success;
+            return result.success;
+        });
     },
 
     /**

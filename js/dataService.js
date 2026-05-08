@@ -69,63 +69,57 @@ const DataService = {
         return window.FundRepository.getById(fundId);
     },
 
-    addFund(fund) {
+    async addFund(fund) {
         const funds = this.loadFunds();
 
         if (funds.find(f => f.id === fund.id)) {
             console.error('Fund already exists:', fund.id);
-            return false;
+            return { success: false, fund: null, affectedTradeIds: [], reason: 'already_exists' };
         }
 
-        const success = window.FundAppService.addFund(fund);
+        const result = await window.FundAppService.addFund(fund);
 
-        if (success) {
+        if (result.success) {
             this.fundsCache = null;
-            EventBus.emit(EventType.FUND_ADDED, { fund });
-            EventBus.emit(EventType.FUND_UPDATED, { fund });
         }
 
-        return success;
+        return result;
     },
 
-    updateFund(fundId, updates) {
+    async updateFund(fundId, updates) {
         const currentFund = window.FundRepository.getById(fundId);
 
         if (!currentFund) {
             console.error('Fund not found:', fundId);
-            return false;
+            return { success: false, fund: null, affectedTradeIds: [], reason: 'not_found' };
         }
 
-        const success = window.FundAppService.updateFund(fundId, updates);
+        const result = await window.FundAppService.updateFund(fundId, updates);
 
-        if (success) {
+        if (result.success) {
             this.fundsCache = null;
-            EventBus.emit(EventType.FUND_UPDATED, { fund: window.FundRepository.getById(fundId) });
         }
 
-        return success;
+        return result;
     },
 
-    deleteFund(fundId) {
+    async deleteFund(fundId) {
         const deletedFund = window.FundRepository.getById(fundId);
 
         if (!deletedFund) {
             console.error('Fund not found:', fundId);
-            return false;
+            return { success: false, fund: null, affectedTradeIds: [], reason: 'not_found' };
         }
 
-        const success = window.FundAppService.deleteFund(fundId);
+        const result = await window.FundAppService.deleteFund(fundId);
 
-        if (success) {
+        if (result.success) {
             this.fundsCache = null;
             this.tradesCache = null;
             this.invalidateCache(fundId);
-            EventBus.emit(EventType.FUND_DELETED, { fund: deletedFund });
-            EventBus.emit(EventType.TRADE_UPDATED, { fundId });
-            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
         }
 
-        return success;
+        return result;
     },
 
     loadTrades() {
@@ -148,63 +142,56 @@ const DataService = {
         return window.TradeRepository.getByFundId(fundId);
     },
 
-    addTrade(trade) {
-        const success = window.TradeAppService.addTrade(trade);
+    async addTrade(trade) {
+        const result = await window.TradeAppService.addTrade(trade);
 
-        if (success) {
+        if (result.success) {
             this.tradesCache = null;
             this.invalidateCache(trade.fundId);
-            EventBus.emit(EventType.TRADE_ADDED, { trade });
-            EventBus.emit(EventType.TRADE_UPDATED, { trade });
-            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: trade.fundId });
         }
 
-        return success;
+        return result;
     },
 
-    updateTrade(tradeId, updates) {
+    async updateTrade(tradeId, updates) {
         const trade = window.TradeRepository.getById(tradeId);
 
         if (!trade) {
             console.error('Trade not found:', tradeId);
-            return false;
+            return { success: false, trade: null, fundId: null, reason: 'not_found' };
         }
 
         const fundId = trade.fundId;
-        const success = window.TradeAppService.updateTrade(tradeId, updates);
+        const result = await window.TradeAppService.updateTrade(tradeId, updates);
 
-        if (success) {
+        if (result.success) {
             this.tradesCache = null;
             this.invalidateCache(fundId);
-            EventBus.emit(EventType.TRADE_UPDATED, { trade: window.TradeRepository.getById(tradeId) });
-            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
         }
 
-        return success;
+        return result;
     },
 
-    deleteTrade(tradeId) {
+    async deleteTrade(tradeId) {
         const deletedTrade = window.TradeRepository.getById(tradeId);
 
         if (!deletedTrade) {
             console.error('Trade not found:', tradeId);
-            return false;
+            return { success: false, trade: null, fundId: null, reason: 'not_found' };
         }
 
         const fundId = deletedTrade.fundId;
-        const success = window.TradeAppService.deleteTrade(tradeId);
+        const result = await window.TradeAppService.deleteTrade(tradeId);
 
-        if (success) {
+        if (result.success) {
             this.tradesCache = null;
             this.invalidateCache(fundId);
-            EventBus.emit(EventType.TRADE_DELETED, { trade: deletedTrade });
-            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
         }
 
-        return success;
+        return result;
     },
 
-    deleteTradesByFund(fundId) {
+    async deleteTradesByFund(fundId) {
         const snapshot = window.LocalStorageAdapter.loadSnapshot();
         const now = new Date().toISOString();
         snapshot.trades = snapshot.trades.map(trade => {
@@ -224,6 +211,10 @@ const DataService = {
         if (success) {
             this.tradesCache = null;
             this.invalidateCache(fundId);
+            EventBus.emit(EventType.TRADE_UPDATED, { fundId, reason: 'batch-delete' });
+            if (typeof window.SyncAppService !== 'undefined') {
+                await window.SyncAppService.notifyBusinessDataChanged('batch-delete');
+            }
         }
 
         return success;
@@ -293,34 +284,30 @@ const DataService = {
         return data;
     },
 
-    importData(data, merge = false) {
-        const success = Storage.importAll(data, merge);
+    async importData(data, merge = false) {
+        const result = await window.ImportAppService.importData(data, { merge });
 
-        if (success) {
+        if (result.success) {
             this.fundsCache = null;
             this.tradesCache = null;
             this._calculationCache.clear();
             this.loadFunds();
             this.loadTrades();
-
-            EventBus.emit(EventType.DATA_IMPORTED, { data, merge });
         }
 
-        return success;
+        return result;
     },
 
-    clearAll() {
-        this.fundsCache = [];
-        this.tradesCache = [];
-        this._calculationCache.clear();
+    async clearAll() {
+        const result = await window.ImportAppService.clearAll();
 
-        const success = Storage.clear();
-
-        if (success) {
-            EventBus.emit(EventType.DATA_CLEARED);
+        if (result.success) {
+            this.fundsCache = [];
+            this.tradesCache = [];
+            this._calculationCache.clear();
         }
 
-        return success;
+        return result;
     }
 };
 

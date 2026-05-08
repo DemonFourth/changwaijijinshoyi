@@ -123,15 +123,13 @@ const FundManager = {
                 NameCache.set(fundData.code, fundName, nameSource);
             }
 
-            const success = fundAppServiceModule.addFund(fund);
+            const result = await fundAppServiceModule.addFund(fund);
 
-            if (success) {
+            if (result.success) {
                 DataService.fundsCache = null;
-                EventBus.emit(EventType.FUND_ADDED, { fund });
-                EventBus.emit(EventType.FUND_UPDATED, { fund });
             }
 
-            if (!success) {
+            if (!result.success) {
                 throw new Error('保存基金失败');
             }
 
@@ -159,20 +157,18 @@ const FundManager = {
             updates.updateTime = new Date().toISOString();
         }
 
-        const success = fundAppServiceModule.updateFund(fundId, updates);
+        const resultPromise = fundAppServiceModule.updateFund(fundId, updates);
 
-        if (success) {
-            DataService.fundsCache = null;
-            EventBus.emit(EventType.FUND_UPDATED, { fund: fundAppServiceModule.getFund(fundId) });
-        }
+        return Promise.resolve(resultPromise).then(result => {
+            if (result.success) {
+                DataService.fundsCache = null;
+                Utils.showToast('基金更新成功', 'success');
+            } else {
+                Utils.showToast('基金更新失败', 'error');
+            }
 
-        if (success) {
-            Utils.showToast('基金更新成功', 'success');
-        } else {
-            Utils.showToast('基金更新失败', 'error');
-        }
-
-        return success;
+            return result.success;
+        });
     },
 
     /**
@@ -181,25 +177,20 @@ const FundManager = {
      * @returns {boolean}
      */
     deleteFund(fundId) {
-        const deletedFund = fundAppServiceModule.getFund(fundId);
-        const success = fundAppServiceModule.deleteFund(fundId);
+        const resultPromise = fundAppServiceModule.deleteFund(fundId);
 
-        if (success) {
-            DataService.fundsCache = null;
-            DataService.tradesCache = null;
-            DataService.invalidateCache(fundId);
-            EventBus.emit(EventType.FUND_DELETED, { fund: deletedFund });
-            EventBus.emit(EventType.TRADE_UPDATED, { fundId });
-            EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
-        }
+        return Promise.resolve(resultPromise).then(result => {
+            if (result.success) {
+                DataService.fundsCache = null;
+                DataService.tradesCache = null;
+                DataService.invalidateCache(fundId);
+                Utils.showToast('基金删除成功', 'success');
+            } else {
+                Utils.showToast('基金删除失败', 'error');
+            }
 
-        if (success) {
-            Utils.showToast('基金删除成功', 'success');
-        } else {
-            Utils.showToast('基金删除失败', 'error');
-        }
-
-        return success;
+            return result.success;
+        });
     },
 
     /**

@@ -25,17 +25,35 @@ function loadTradeAppServiceContext() {
     ]);
 }
 
-test('TradeAppService addTrade normalizes persisted trade fields', () => {
+function trackEvents(context) {
+    const events = [];
+    const originalEmit = context.window.EventBus.emit.bind(context.window.EventBus);
+    context.window.EventBus.emit = (event, payload) => {
+        events.push({ event, payload });
+        return originalEmit(event, payload);
+    };
+    return events;
+}
+
+test('TradeAppService addTrade normalizes persisted trade fields and emits side effects', async () => {
     const context = loadTradeAppServiceContext();
+    const events = trackEvents(context);
     const savedPayloads = [];
+    const notifyCalls = [];
 
     context.window.TradeRepository.getAll = () => [];
     context.window.TradeRepository.saveAll = (trades) => {
         savedPayloads.push(trades);
         return true;
     };
+    context.window.SyncAppService = {
+        notifyBusinessDataChanged(source) {
+            notifyCalls.push(source);
+            return Promise.resolve();
+        }
+    };
 
-    const result = context.window.TradeAppService.addTrade({
+    const result = await context.window.TradeAppService.addTrade({
         id: 'trade-1',
         fundId: 'fund-1',
         date: '2024-01-01',
@@ -46,15 +64,23 @@ test('TradeAppService addTrade normalizes persisted trade fields', () => {
         fee: '0.10'
     });
 
-    assert.equal(result, true);
+    assert.equal(result.success, true);
     assert.equal(savedPayloads.length, 1);
     assert.equal(savedPayloads[0][0].syncId, 'trade-1');
     assert.equal(savedPayloads[0][0].shares, 100.5);
     assert.equal(savedPayloads[0][0].fee, 0.1);
+    assert.deepEqual(events.map(item => item.event), [
+        context.window.EventType.TRADE_ADDED,
+        context.window.EventType.TRADE_UPDATED,
+        context.window.EventType.CALCULATION_UPDATED
+    ]);
+    assert.deepEqual(notifyCalls, ['event']);
 });
 
-test('TradeAppService updateTrade refreshes updatedAt and merges fields', () => {
+test('TradeAppService updateTrade refreshes updatedAt and emits side effects', async () => {
     const context = loadTradeAppServiceContext();
+    const events = trackEvents(context);
+    const notifyCalls = [];
     const original = {
         id: 'trade-1',
         fundId: 'fund-1',
@@ -75,26 +101,51 @@ test('TradeAppService updateTrade refreshes updatedAt and merges fields', () => 
         savedTrades = trades;
         return true;
     };
+    context.window.SyncAppService = {
+        notifyBusinessDataChanged(source) {
+            notifyCalls.push(source);
+            return Promise.resolve();
+        }
+    };
 
-    const result = context.window.TradeAppService.updateTrade('trade-1', { amount: 121.5, fee: 0.2 });
+    const result = await context.window.TradeAppService.updateTrade('trade-1', { amount: 121.5, fee: 0.2 });
 
-    assert.equal(result, true);
+    assert.equal(result.success, true);
     assert.equal(savedTrades[0].amount, 121.5);
     assert.equal(savedTrades[0].fee, 0.2);
     assert.notEqual(savedTrades[0].updatedAt, original.updatedAt);
+    assert.deepEqual(events.map(item => item.event), [
+        context.window.EventType.TRADE_UPDATED,
+        context.window.EventType.CALCULATION_UPDATED
+    ]);
+    assert.deepEqual(notifyCalls, ['event']);
 });
 
-test('TradeAppService deleteTrade delegates to repository softDelete', () => {
+test('TradeAppService deleteTrade delegates to repository softDelete and emits side effects', async () => {
     const context = loadTradeAppServiceContext();
+    const events = trackEvents(context);
+    const notifyCalls = [];
     let deletedTradeId = null;
 
+    context.window.TradeRepository.getById = () => ({ id: 'trade-1', fundId: 'fund-1' });
     context.window.TradeRepository.softDelete = (tradeId) => {
         deletedTradeId = tradeId;
         return true;
     };
+    context.window.SyncAppService = {
+        notifyBusinessDataChanged(source) {
+            notifyCalls.push(source);
+            return Promise.resolve();
+        }
+    };
 
-    const result = context.window.TradeAppService.deleteTrade('trade-1');
+    const result = await context.window.TradeAppService.deleteTrade('trade-1');
 
-    assert.equal(result, true);
+    assert.equal(result.success, true);
     assert.equal(deletedTradeId, 'trade-1');
+    assert.deepEqual(events.map(item => item.event), [
+        context.window.EventType.TRADE_DELETED,
+        context.window.EventType.CALCULATION_UPDATED
+    ]);
+    assert.deepEqual(notifyCalls, ['event']);
 });

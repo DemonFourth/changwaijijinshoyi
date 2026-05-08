@@ -185,47 +185,11 @@ const Storage = {
     },
 
     importAll(data, merge = false) {
-        try {
-            if (!data || typeof data !== 'object') {
-                console.error('Invalid import data format');
-                return false;
-            }
-
-            const incomingFunds = Array.isArray(data.funds)
-                ? data.funds.map(fund => window.StorageSchema.createFundEntity(fund))
-                : [];
-            const incomingTrades = Array.isArray(data.trades)
-                ? data.trades.map(trade => window.StorageSchema.createTradeEntity(trade))
-                : [];
-
-            if (merge) {
-                const mergedFunds = this.mergeArrays(this.loadFunds(), incomingFunds, 'id');
-                const mergedTrades = this.mergeArrays(this.loadTrades(), incomingTrades, 'id');
-                this.saveFunds(mergedFunds);
-                this.saveTrades(mergedTrades);
-            } else {
-                this.saveFunds(incomingFunds);
-                this.saveTrades(incomingTrades);
-            }
-
-            if (data.settings && typeof data.settings === 'object') {
-                if (merge) {
-                    const existingSettings = this.loadSettings();
-                    this.saveSettings({ ...existingSettings, ...data.settings });
-                } else {
-                    this.saveSettings(data.settings);
-                }
-            }
-
-            if (data.syncMeta && typeof data.syncMeta === 'object' && typeof window.LocalStorageAdapter !== 'undefined') {
-                window.LocalStorageAdapter.updateSyncMeta(data.syncMeta);
-            }
-
-            return true;
-        } catch (error) {
-            console.error('Import data failed:', error);
+        console.warn('[Storage.importAll] deprecated, use ImportAppService.importData');
+        if (!window.ImportAppService || typeof window.ImportAppService.importData !== 'function') {
             return false;
         }
+        return window.ImportAppService.importData(data, { merge });
     },
 
     mergeArrays(existing, imported, keyField) {

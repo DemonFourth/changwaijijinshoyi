@@ -19,12 +19,12 @@ const AppSettingsService = {
         return Storage.exportAll();
     },
 
-    importData(data, merge = false) {
-        return Storage.importAll(data, merge);
+    async importData(data, merge = false) {
+        return window.ImportAppService.importData(data, { merge });
     },
 
-    clearAllData() {
-        return DataService.clearAll();
+    async clearAllData() {
+        return window.ImportAppService.clearAll();
     }
 };
 

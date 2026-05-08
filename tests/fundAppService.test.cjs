@@ -25,30 +25,56 @@ function loadFundAppServiceContext() {
     ]);
 }
 
-test('FundAppService addFund normalizes persisted fields', () => {
+function trackEvents(context) {
+    const events = [];
+    const originalEmit = context.window.EventBus.emit.bind(context.window.EventBus);
+    context.window.EventBus.emit = (event, payload) => {
+        events.push({ event, payload });
+        return originalEmit(event, payload);
+    };
+    return events;
+}
+
+test('FundAppService addFund normalizes persisted fields and emits sync side effects', async () => {
     const context = loadFundAppServiceContext();
+    const events = trackEvents(context);
     const savedPayloads = [];
+    const notifyCalls = [];
 
     context.window.FundRepository.getAll = () => [];
     context.window.FundRepository.saveAll = (funds) => {
         savedPayloads.push(funds);
         return true;
     };
+    context.window.SyncAppService = {
+        notifyBusinessDataChanged(source) {
+            notifyCalls.push(source);
+            return Promise.resolve();
+        }
+    };
 
-    const result = context.window.FundAppService.addFund({
+    const result = await context.window.FundAppService.addFund({
         id: 'fund-1',
         code: '000001',
         name: '测试基金'
     });
 
-    assert.equal(result, true);
+    assert.equal(result.success, true);
+    assert.equal(result.fund.id, 'fund-1');
     assert.equal(savedPayloads.length, 1);
     assert.equal(savedPayloads[0][0].syncId, 'fund-1');
     assert.equal(savedPayloads[0][0].deletedAt, null);
+    assert.deepEqual(events.map(item => item.event), [
+        context.window.EventType.FUND_ADDED,
+        context.window.EventType.FUND_UPDATED
+    ]);
+    assert.deepEqual(notifyCalls, ['event']);
 });
 
-test('FundAppService updateFund refreshes updatedAt and preserves id', () => {
+test('FundAppService updateFund refreshes updatedAt and emits update side effects', async () => {
     const context = loadFundAppServiceContext();
+    const events = trackEvents(context);
+    const notifyCalls = [];
     const original = {
         id: 'fund-1',
         code: '000001',
@@ -65,17 +91,27 @@ test('FundAppService updateFund refreshes updatedAt and preserves id', () => {
         savedFunds = funds;
         return true;
     };
+    context.window.SyncAppService = {
+        notifyBusinessDataChanged(source) {
+            notifyCalls.push(source);
+            return Promise.resolve();
+        }
+    };
 
-    const result = context.window.FundAppService.updateFund('fund-1', { name: '新名称' });
+    const result = await context.window.FundAppService.updateFund('fund-1', { name: '新名称' });
 
-    assert.equal(result, true);
+    assert.equal(result.success, true);
     assert.equal(savedFunds[0].id, 'fund-1');
     assert.equal(savedFunds[0].name, '新名称');
     assert.notEqual(savedFunds[0].updatedAt, original.updatedAt);
+    assert.deepEqual(events.map(item => item.event), [context.window.EventType.FUND_UPDATED]);
+    assert.deepEqual(notifyCalls, ['event']);
 });
 
-test('FundAppService deleteFund soft deletes related trades in snapshot', () => {
+test('FundAppService deleteFund soft deletes related trades and emits delete side effects', async () => {
     const context = loadFundAppServiceContext();
+    const events = trackEvents(context);
+    const notifyCalls = [];
     let savedSnapshot = null;
     let deletedFundId = null;
 
@@ -95,11 +131,24 @@ test('FundAppService deleteFund soft deletes related trades in snapshot', () => 
         deletedFundId = fundId;
         return true;
     };
+    context.window.SyncAppService = {
+        notifyBusinessDataChanged(source) {
+            notifyCalls.push(source);
+            return Promise.resolve();
+        }
+    };
 
-    const result = context.window.FundAppService.deleteFund('fund-1');
+    const result = await context.window.FundAppService.deleteFund('fund-1');
 
-    assert.equal(result, true);
+    assert.equal(result.success, true);
     assert.equal(deletedFundId, 'fund-1');
+    assert.equal(result.affectedTradeIds.length, 1);
     assert.ok(savedSnapshot.trades[0].deletedAt);
     assert.equal(savedSnapshot.trades[1].deletedAt, null);
+    assert.deepEqual(events.map(item => item.event), [
+        context.window.EventType.FUND_DELETED,
+        context.window.EventType.TRADE_UPDATED,
+        context.window.EventType.CALCULATION_UPDATED
+    ]);
+    assert.deepEqual(notifyCalls, ['event']);
 });
