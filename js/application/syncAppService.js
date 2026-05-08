@@ -1,53 +1,95 @@
 const SyncAppService = {
     _syncInProgress: false,
     _pendingChanges: [],
+    _pushTimeout: null,
 
     async init(config = {}) {
         const { enabled, basePath, timeout } = config;
 
         if (enabled && basePath) {
-            // 启用云端同步
             window.CloudflareD1SyncAdapter.init({
                 basePath: basePath,
                 timeout: timeout || 10000
             });
             window.SyncAdapterRegistry.registerCloudflareAdapter();
 
-            // 切换 provider 到 cloudflare
             const snapshot = window.LocalStorageAdapter.loadSnapshot();
             snapshot.syncMeta = { ...snapshot.syncMeta, provider: 'cloudflare' };
             window.LocalStorageAdapter.saveSnapshot(snapshot);
         } else {
-            // 切换 provider 到 local
             const snapshot = window.LocalStorageAdapter.loadSnapshot();
             snapshot.syncMeta = { ...snapshot.syncMeta, provider: 'local' };
             window.LocalStorageAdapter.saveSnapshot(snapshot);
         }
 
         this._setupEventListeners();
+
+        if (document && typeof document.addEventListener === 'function') {
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    return;
+                }
+
+                const syncMeta = window.LocalStorageAdapter.getSyncMeta();
+                if ((syncMeta.pendingChanges || 0) > 0 && syncMeta.syncStatus === 'pending') {
+                    this._executePush();
+                }
+            });
+        }
     },
 
     _setupEventListeners() {
-        EventBus.on(EventType.FUND_ADDED, () => this._onDataChanged());
-        EventBus.on(EventType.FUND_UPDATED, () => this._onDataChanged());
-        EventBus.on(EventType.FUND_DELETED, () => this._onDataChanged());
+        EventBus.on(EventType.FUND_ADDED, () => SyncAppService._onDataChanged());
+        EventBus.on(EventType.FUND_UPDATED, () => SyncAppService._onDataChanged());
+        EventBus.on(EventType.FUND_DELETED, () => SyncAppService._onDataChanged());
 
-        EventBus.on(EventType.TRADE_ADDED, () => this._onDataChanged());
-        EventBus.on(EventType.TRADE_UPDATED, () => this._onDataChanged());
-        EventBus.on(EventType.TRADE_DELETED, () => this._onDataChanged());
+        EventBus.on(EventType.TRADE_ADDED, () => SyncAppService._onDataChanged());
+        EventBus.on(EventType.TRADE_UPDATED, () => SyncAppService._onDataChanged());
+        EventBus.on(EventType.TRADE_DELETED, () => SyncAppService._onDataChanged());
+    },
+
+    async notifyBusinessDataChanged(source = 'unknown') {
+        const adapter = window.SyncAdapterRegistry.getCurrentAdapter();
+        if (!adapter || typeof adapter.getStatus !== 'function') {
+            return;
+        }
+
+        const status = adapter.getStatus();
+        if (!status || !status.canPush) {
+            return;
+        }
+
+        const syncMeta = window.LocalStorageAdapter.getSyncMeta();
+        const delay = SyncAppService._getPushDelay(source);
+        window.LocalStorageAdapter.updateSyncMeta({
+            pendingChanges: (syncMeta.pendingChanges || 0) + 1,
+            syncStatus: 'pending',
+            lastPendingAt: new Date().toISOString(),
+            pendingSource: source
+        });
+
+        clearTimeout(SyncAppService._pushTimeout);
+        SyncAppService._pushTimeout = setTimeout(() => {
+            SyncAppService._executePush();
+        }, delay);
+
+        console.log(`[SyncAppService] notifyBusinessDataChanged: source=${source}, delay=${delay}ms`);
     },
 
     _onDataChanged() {
-        const syncMeta = window.LocalStorageAdapter.getSyncMeta();
-        window.LocalStorageAdapter.updateSyncMeta({
-            pendingChanges: (syncMeta.pendingChanges || 0) + 1,
-            syncStatus: 'pending'
-        });
+        return SyncAppService.notifyBusinessDataChanged('event');
+    },
 
-        clearTimeout(this._pushTimeout);
-        this._pushTimeout = setTimeout(() => {
-            this._executePush();
-        }, 5000);
+    _getPushDelay(source) {
+        const delayMap = {
+            import: 0,
+            clear: 0,
+            'batch-delete': 1000,
+            event: 2000,
+            unknown: 5000
+        };
+
+        return delayMap[source] ?? 5000;
     },
 
     async startBackgroundSync() {
@@ -66,6 +108,10 @@ const SyncAppService = {
 
     async _executePull() {
         const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
+        if (!adapter || typeof adapter.getStatus !== 'function') {
+            return { success: true, reason: 'not_configured' };
+        }
+
         const status = adapter.getStatus();
 
         if (!status.canPull) {
@@ -119,24 +165,28 @@ const SyncAppService = {
     },
 
     async _executePush() {
-        if (this._syncInProgress) {
+        if (SyncAppService._syncInProgress) {
             return { success: false, reason: 'sync_in_progress' };
         }
 
         const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
+        if (!adapter || typeof adapter.getStatus !== 'function') {
+            return { success: true, reason: 'not_configured' };
+        }
+
         const status = adapter.getStatus();
 
         if (!status.canPush) {
             return { success: true, reason: 'not_configured' };
         }
 
-        this._syncInProgress = true;
+        SyncAppService._syncInProgress = true;
         window.LocalStorageAdapter.updateSyncMeta({ syncStatus: 'syncing' });
 
         const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
         const result = await adapter.push(localSnapshot.funds, localSnapshot.trades);
 
-        this._syncInProgress = false;
+        SyncAppService._syncInProgress = false;
 
         if (result.conflict) {
             return {

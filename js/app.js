@@ -28,6 +28,7 @@ const App = {
             const syncEnabled = Config.get('sync.enabled', false);
             const syncBasePath = Config.get('sync.basePath', '');
             await SyncAppService.init({ enabled: syncEnabled, basePath: syncBasePath, timeout: Config.get('sync.timeout') });
+            this.setupSyncCompensation();
 
             // 显示存储模式提示
             const storageMode = RuntimeConfigLoader.getStorageMode();
@@ -273,8 +274,46 @@ const App = {
                 error: event.reason
             });
         };
+    },
+
+    setupSyncCompensation() {
+        if (App._syncCompensationBound) {
+            return;
+        }
+        App._syncCompensationBound = true;
+
+        const compensate = async () => {
+            const syncMeta = window.LocalStorageAdapter.getSyncMeta();
+            if ((syncMeta.pendingChanges || 0) <= 0 || syncMeta.syncStatus !== 'pending') {
+                return;
+            }
+
+            const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
+            if (!adapter || typeof adapter.isConfigured !== 'function' || !adapter.isConfigured()) {
+                return;
+            }
+
+            const snapshot = window.LocalStorageAdapter.loadSnapshot();
+            const result = await adapter.push(snapshot.funds, snapshot.trades);
+            if (result && result.success) {
+                window.LocalStorageAdapter.updateSyncMeta({
+                    syncStatus: 'idle',
+                    pendingChanges: 0
+                });
+                console.log('[SyncCompensation] 页面关闭前快速同步成功');
+            }
+        };
+
+        window.addEventListener('beforeunload', compensate);
+        window.addEventListener('pagehide', compensate);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                compensate();
+            }
+        });
     }
 };
+
 
 // 设置全局错误处理
 App.setupErrorHandler();
