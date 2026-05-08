@@ -31,7 +31,7 @@ test('CloudflareD1SyncAdapter registers and provides sync methods', () => {
     assert.equal(typeof context.window.CloudflareD1SyncAdapter.isConfigured, 'function');
 });
 
-test('CloudflareD1SyncAdapter returns not_configured when workerUrl not set', () => {
+test('CloudflareD1SyncAdapter returns not_configured when basePath not set', () => {
     const context = loadScripts([
         script('js/namespace.js'),
         script('js/moduleRegistry.js'),
@@ -51,4 +51,27 @@ test('CloudflareD1SyncAdapter returns not_configured when workerUrl not set', ()
     assert.equal(status.configured, false);
     assert.equal(status.canPull, false);
     assert.equal(status.canPush, false);
+});
+
+test('CloudflareD1SyncAdapter returns configured when basePath is set', () => {
+    const context = loadScripts([
+        script('js/namespace.js'),
+        script('js/moduleRegistry.js'),
+        script('js/eventBus.js'),
+        script('js/config.js'),
+        script('js/utils.js'),
+        script('js/storage.js'),
+        script('js/storage/schema.js'),
+        script('js/storage/migrations.js'),
+        script('js/storage/localStorageAdapter.js'),
+        script('js/storage/localSyncAdapter.js'),
+        script('js/storage/syncAdapterRegistry.js'),
+        script('js/storage/cloudflareD1SyncAdapter.js')
+    ]);
+
+    context.window.CloudflareD1SyncAdapter.init({ basePath: '/api/sync', timeout: 10000 });
+    const status = context.window.CloudflareD1SyncAdapter.getStatus();
+    assert.equal(status.configured, true);
+    assert.equal(status.canPull, true);
+    assert.equal(status.canPush, true);
 });

@@ -25,8 +25,9 @@ const App = {
             DataService.init();
 
             // 初始化同步服务（使用运行时配置）
-            const workerUrl = Config.get('sync.workerUrl');
-            await SyncAppService.init({ workerUrl, timeout: Config.get('sync.timeout') });
+            const syncEnabled = Config.get('sync.enabled', false);
+            const syncBasePath = Config.get('sync.basePath', '');
+            await SyncAppService.init({ enabled: syncEnabled, basePath: syncBasePath, timeout: Config.get('sync.timeout') });
 
             // 显示存储模式提示
             const storageMode = RuntimeConfigLoader.getStorageMode();

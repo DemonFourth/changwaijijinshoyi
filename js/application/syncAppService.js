@@ -3,11 +3,13 @@ const SyncAppService = {
     _pendingChanges: [],
 
     async init(config = {}) {
-        if (config.workerUrl) {
+        const { enabled, basePath, timeout } = config;
+
+        if (enabled && basePath) {
             // 启用云端同步
             window.CloudflareD1SyncAdapter.init({
-                workerUrl: config.workerUrl,
-                timeout: config.timeout || 10000
+                basePath: basePath,
+                timeout: timeout || 10000
             });
             window.SyncAdapterRegistry.registerCloudflareAdapter();
 

@@ -1,6 +1,6 @@
 const CloudflareD1SyncAdapter = {
     _config: {
-        workerUrl: null,
+        basePath: null,
         timeout: 10000
     },
 
@@ -12,7 +12,7 @@ const CloudflareD1SyncAdapter = {
     },
 
     isConfigured() {
-        return !!CloudflareD1SyncAdapter._config.workerUrl;
+        return !!CloudflareD1SyncAdapter._config.basePath;
     },
 
     getStatus() {
@@ -39,32 +39,18 @@ const CloudflareD1SyncAdapter = {
         };
     },
 
+    /**
+     * 检查认证状态（无鉴权模式，始终返回无需密码）
+     */
     async checkAuthStatus() {
-        if (!CloudflareD1SyncAdapter.isConfigured()) {
-            return { authEnabled: false, authenticated: false };
-        }
-
-        try {
-            const response = await CloudflareD1SyncAdapter._request('/auth/status', 'GET');
-            return response;
-        } catch (error) {
-            console.warn('[CloudflareD1SyncAdapter] Auth status check failed:', error.message);
-            // 返回安全的默认值，让 pull 继续执行
-            return { authEnabled: false, authenticated: true, error: error.message };
-        }
+        return { authEnabled: false, authenticated: true };
     },
 
-    async login(password) {
-        if (!CloudflareD1SyncAdapter.isConfigured()) {
-            return { success: false, reason: 'not_configured' };
-        }
-
-        try {
-            const response = await CloudflareD1SyncAdapter._request('/auth/login', 'POST', { password });
-            return response;
-        } catch (error) {
-            return { success: false, reason: error.message };
-        }
+    /**
+     * 登录（无鉴权模式，始终返回成功）
+     */
+    async login() {
+        return { success: true };
     },
 
     async pull() {
@@ -174,7 +160,7 @@ const CloudflareD1SyncAdapter = {
     },
 
     async _request(endpoint, method, body = null) {
-        const { workerUrl, timeout } = CloudflareD1SyncAdapter._config;
+        const { basePath, timeout } = CloudflareD1SyncAdapter._config;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -193,7 +179,7 @@ const CloudflareD1SyncAdapter = {
             const queryString = Object.entries(body)
                 .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
                 .join('&');
-            const url = workerUrl + endpoint + (queryString ? '?' + queryString : '');
+            const url = basePath + endpoint + (queryString ? '?' + queryString : '');
             const response = await fetch(url, options);
             clearTimeout(timeoutId);
 
@@ -211,7 +197,7 @@ const CloudflareD1SyncAdapter = {
         }
 
         try {
-            const url = workerUrl + endpoint;
+            const url = basePath + endpoint;
             const response = await fetch(url, options);
             clearTimeout(timeoutId);
 

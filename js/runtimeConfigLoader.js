@@ -44,11 +44,19 @@ const RuntimeConfigLoader = {
     },
 
     /**
-     * 获取 Worker URL
+     * 是否启用云同步（Pages Functions 模式）
+     * @returns {boolean}
+     */
+    isSyncEnabled() {
+        return !!Config.get('sync.enabled', false);
+    },
+
+    /**
+     * 获取云同步 API 基础路径（同源 /api/sync）
      * @returns {string}
      */
-    getWorkerUrl() {
-        return Config.get('sync.workerUrl', '');
+    getSyncBasePath() {
+        return Config.get('sync.basePath', '');
     }
 };
 

@@ -98,8 +98,10 @@ const Config = {
 
     // 同步配置
     sync: {
-        // Cloudflare Workers 同步服务地址（默认空字符串，运行时由 runtimeConfigLoader 从 /api/runtime-config 注入）
-        workerUrl: '',
+        // 是否启用云同步（默认 false，本地静态模式为 false；Pages 部署后由 runtime-config 注入为 true）
+        enabled: false,
+        // 云同步 API 基础路径（同源 /api/sync，由 runtime-config 注入）
+        basePath: '',
         // 同步请求超时时间（毫秒）
         timeout: 10000
     },

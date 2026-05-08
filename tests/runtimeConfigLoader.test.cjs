@@ -21,7 +21,8 @@ test('RuntimeConfigLoader exposes load and getter methods', () => {
     assert.ok(context.window.RuntimeConfigLoader, 'expected RuntimeConfigLoader to exist');
     assert.equal(typeof context.window.RuntimeConfigLoader.load, 'function');
     assert.equal(typeof context.window.RuntimeConfigLoader.getStorageMode, 'function');
-    assert.equal(typeof context.window.RuntimeConfigLoader.getWorkerUrl, 'function');
+    assert.equal(typeof context.window.RuntimeConfigLoader.isSyncEnabled, 'function');
+    assert.equal(typeof context.window.RuntimeConfigLoader.getSyncBasePath, 'function');
 });
 
 test('RuntimeConfigLoader returns local mode by default', () => {
@@ -36,9 +37,10 @@ test('RuntimeConfigLoader returns local mode by default', () => {
     // 默认没有加载过运行时配置，应为 local
     const mode = context.window.RuntimeConfigLoader.getStorageMode();
     assert.equal(mode, 'local');
+    assert.equal(context.window.RuntimeConfigLoader.isSyncEnabled(), false);
 });
 
-test('RuntimeConfigLoader returns workerUrl from config after load', () => {
+test('RuntimeConfigLoader returns sync config from /api/runtime-config after load', () => {
     const context = loadScripts([
         script('js/namespace.js'),
         script('js/moduleRegistry.js'),
@@ -47,15 +49,13 @@ test('RuntimeConfigLoader returns workerUrl from config after load', () => {
         script('js/runtimeConfigLoader.js')
     ]);
 
-    // 模拟加载后的配置
+    // 模拟加载后的配置（Pages Functions 模式）
     context.window.Config.load({
-        sync: { workerUrl: 'https://test-worker.workers.dev', timeout: 5000 },
+        sync: { enabled: true, basePath: '/api/sync', timeout: 10000 },
         storageMode: 'hybrid'
     });
 
-    const workerUrl = context.window.RuntimeConfigLoader.getWorkerUrl();
-    assert.equal(workerUrl, 'https://test-worker.workers.dev');
-
-    const mode = context.window.RuntimeConfigLoader.getStorageMode();
-    assert.equal(mode, 'hybrid');
+    assert.equal(context.window.RuntimeConfigLoader.isSyncEnabled(), true);
+    assert.equal(context.window.RuntimeConfigLoader.getSyncBasePath(), '/api/sync');
+    assert.equal(context.window.RuntimeConfigLoader.getStorageMode(), 'hybrid');
 });
