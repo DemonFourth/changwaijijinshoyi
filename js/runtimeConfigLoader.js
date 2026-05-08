@@ -10,6 +10,12 @@ const RuntimeConfigLoader = {
      * @returns {Promise<boolean>} 是否成功加载
      */
     async load() {
+        const protocol = window.location && window.location.protocol;
+        if (protocol === 'file:') {
+            console.warn('[RuntimeConfigLoader] file protocol detected, using local defaults');
+            return false;
+        }
+
         if (typeof fetch !== 'function') {
             console.warn('[RuntimeConfigLoader] fetch not available, using local defaults');
             return false;
