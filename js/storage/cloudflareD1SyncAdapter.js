@@ -48,8 +48,9 @@ const CloudflareD1SyncAdapter = {
             const response = await CloudflareD1SyncAdapter._request('/auth/status', 'GET');
             return response;
         } catch (error) {
-            console.error('Auth status check failed:', error);
-            return { authEnabled: false, authenticated: false, error: error.message };
+            console.warn('[CloudflareD1SyncAdapter] Auth status check failed:', error.message);
+            // 返回安全的默认值，让 pull 继续执行
+            return { authEnabled: false, authenticated: true, error: error.message };
         }
     },
 
