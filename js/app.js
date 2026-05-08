@@ -239,11 +239,11 @@ const App = {
                 Overview.refresh();
             }
         }
-        },
+    },
 
-        /**
-         * 处理全局错误
-         */
+    /**
+     * 处理全局错误
+     */
     setupErrorHandler() {
         window.onerror = (message, source, lineno, colno, error) => {
             console.error('Global error:', {

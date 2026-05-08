@@ -47,7 +47,7 @@
 - 🎯 事件驱动，模块解耦
 - 🎯 CSS变量设计令牌，主题切换零延迟
 - 🎯 GB2312编码处理，正确解析基金API数据
-- 🎯 Cloudflare Workers + D1 云端同步
+- 🎯 Cloudflare Pages + D1 云端同步（无独立 Worker）
 
 ### 2. 云端部署
 
@@ -55,33 +55,19 @@
 1. Cloudflare Dashboard → Workers & Pages → D1 → Create Database
 2. 名称：`fund-calculator-db`
 
-#### 2.2 部署 Worker（后端）
-1. Dashboard → Workers & Pages → Create → Workers → Import a repository
-2. 选择 GitHub 仓库和分支
-3. Deploy command: `npx wrangler deploy --config wrangler.toml`
-4. **绑定 D1**：Settings → Bindings → Add → D1 → 选择 `fund-calculator-db`，binding name 填 `DB`
-5. **配置环境变量**：
-   - `AUTH_ENABLED`：`false` 或 `true`
-   - `APP_PASSWORD`：访问密码（AUTH_ENABLED=true 时有效）
-   - `SESSION_SECRET`：随机字符串
-
-#### 2.3 部署 Pages（前端）
+#### 2.2 部署 Pages（含前端 + 同步接口）
 1. Dashboard → Workers & Pages → Create → Pages → Connect to Git
 2. 选择 GitHub 仓库和分支
 3. Build command 留空，Build output directory 留空
+4. **绑定 D1**：Settings → Bindings → Add → D1 → 选择 `fund-calculator-db`，binding name 填 `DB`
 
-#### 2.4 配置运行时配置
-在 Pages 的 **Settings → Environment Variables** 中添加：
-- `WORKER_URL`：Worker 的 URL（如 `https://fund-calculator-sync.xxx.workers.dev`）
-- `SYNC_TIMEOUT`（可选）：同步超时时间，默认 10000
+> **无需配置环境变量**：Pages Functions 自动检测 `env.DB` 是否存在，存在则启用云同步，不存在则自动降级到本地模式。
 
-> **无需修改前端代码**：前端通过 `/api/runtime-config` 自动获取配置。
-> 以后换 Worker 地址只需改 Pages 的 `WORKER_URL` 环境变量。
-
-#### 2.5 验证
+#### 2.3 验证
 1. 打开 Pages URL
-2. 应看到 "当前使用混合存储（本地 + 云端同步）" 提示
-3. 在工具箱中点击 "立即同步" 验证云端同步
+2. 本地静态打开（无 `/api/*`）：提示 "当前使用本地数据"
+3. 线上 Pages 打开（有 `/api/*` 且 D1 已绑定）：提示 "当前使用混合存储（本地 + 云端同步）"
+4. 在工具箱中点击 "立即同步" 验证云端同步
 
 ### 3. 添加基金
 1. 点击右上角"添加基金"按钮
@@ -138,7 +124,19 @@ jijinshouyi/
 │   ├── modal.js            # 弹窗管理
 │   ├── overview.js         # 汇总页（双视图/分组/Top5）
 │   ├── detail.js           # 详情页（图表/分页筛选）
-│   └── app.js              # 应用入口
+│   ├── app.js              # 应用入口
+│   ├── runtimeConfigLoader.js  # 运行时配置加载器
+├── functions/
+│   ├── api/
+│   │   ├── runtime-config.js   # 运行时配置接口
+│   │   └── sync/
+│   │       ├── pull.js         # 云端拉取
+│   │       ├── push.js         # 云端推送
+│   │       └── resolve.js      # 冲突解决
+│   └── _shared/
+│       ├── d1Schema.js         # D1 建表与初始化
+│       ├── syncRepository.js   # 同步数据访问层
+│       └── syncUtils.js        # 同步辅助工具
 ├── lib/
 │   └── echarts.min.js      # ECharts图表库（本地）
 ├── docs/
