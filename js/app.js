@@ -42,11 +42,7 @@ const App = {
                 try {
                     const syncResult = await SyncAppService.startBackgroundSync();
 
-                    if (syncResult.needPassword) {
-                        // 需要密码验证，显示密码页
-                        document.getElementById('auth-page').classList.remove('hidden');
-                        document.getElementById('page-overview').classList.add('hidden');
-                    } else if (syncResult.hasConflicts) {
+                    if (syncResult.hasConflicts) {
                         // 有冲突，显示冲突处理
                         SyncConflictModalHelper.show(syncResult.conflicts, async (resolutions) => {
                             await SyncAppService.resolveConflicts(syncResult.conflicts, resolutions);
@@ -100,9 +96,6 @@ const App = {
 
             // 绑定 header 返回按钮
             this.setupHeaderBackButton();
-
-            // 绑定密码页事件
-            this.setupAuthPage();
 
             // 监听路由变化
             this.setupRouteListener();
@@ -246,62 +239,11 @@ const App = {
                 Overview.refresh();
             }
         }
-    },
+        },
 
-    /**
-     * 绑定密码页事件
-     */
-    setupAuthPage() {
-        const btnSubmit = document.getElementById('btn-auth-submit');
-        const inputPassword = document.getElementById('auth-password');
-        const errorMsg = document.getElementById('auth-error');
-
-        btnSubmit?.addEventListener('click', async () => {
-            const password = inputPassword.value;
-            if (!password) {
-                errorMsg.textContent = '请输入密码';
-                errorMsg.classList.remove('hidden');
-                return;
-            }
-
-            const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
-            if (typeof adapter.login !== 'function') {
-                errorMsg.textContent = '未配置云同步服务';
-                errorMsg.classList.remove('hidden');
-                return;
-            }
-
-            const result = await adapter.login(password);
-
-            if (result.success) {
-                document.getElementById('auth-page').classList.add('hidden');
-                document.getElementById('page-overview').classList.remove('hidden');
-                document.getElementById('page-overview').classList.add('active');
-
-                // 登录成功后执行同步
-                const syncResult = await SyncAppService.startBackgroundSync();
-                if (syncResult.hasConflicts) {
-                    SyncConflictModalHelper.show(syncResult.conflicts, async (resolutions) => {
-                        await SyncAppService.resolveConflicts(syncResult.conflicts, resolutions);
-                        Overview.refresh();
-                    });
-                }
-            } else {
-                errorMsg.textContent = result.reason || '密码错误';
-                errorMsg.classList.remove('hidden');
-            }
-        });
-
-        inputPassword?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                btnSubmit.click();
-            }
-        });
-    },
-
-    /**
-     * 处理全局错误
-     */
+        /**
+         * 处理全局错误
+         */
     setupErrorHandler() {
         window.onerror = (message, source, lineno, colno, error) => {
             console.error('Global error:', {
