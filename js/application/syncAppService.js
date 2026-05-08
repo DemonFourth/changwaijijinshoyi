@@ -85,6 +85,24 @@ const SyncAppService = {
         }
 
         const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
+        const localFunds = localSnapshot.funds || [];
+        const localTrades = localSnapshot.trades || [];
+        const cloudFunds = result.funds || [];
+        const cloudTrades = result.trades || [];
+
+        // 本地空，云端有数据 → 直接填充
+        if ((localFunds.length === 0 && localTrades.length === 0) &&
+            (cloudFunds.length > 0 || cloudTrades.length > 0)) {
+            const newSnapshot = {
+                ...localSnapshot,
+                funds: cloudFunds,
+                trades: cloudTrades
+            };
+            window.LocalStorageAdapter.saveSnapshot(newSnapshot);
+            return { success: true, reason: 'filled_from_cloud' };
+        }
+
+        // 本地有数据 → 差异检测与合并
         const mergeResult = this._mergeData(localSnapshot, result);
 
         if (mergeResult.hasConflicts) {
