@@ -7,7 +7,7 @@ const Config = {
     // API配置
     api: {
         // 基金数据API基础地址
-        baseUrl: 'http://fundgz.1234567.com.cn/js',
+        baseUrl: 'https://fundgz.1234567.com.cn/js',
         // API请求超时时间（毫秒）
         timeout: 10000,
         // 请求重试次数
