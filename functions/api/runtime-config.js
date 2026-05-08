@@ -1,26 +1,26 @@
 /**
  * Cloudflare Pages Function - 运行时配置接口
  * 返回当前部署环境的配置信息
+ *
+ * 本地静态模式：没有 env.DB 绑定，返回 local 模式
+ * Pages 部署模式：有 env.DB 绑定，返回 hybrid 模式
  */
 
 export const onRequest = async (context) => {
     const env = context.env;
-    
-    // 从环境变量读取配置
-    const workerUrl = env.WORKER_URL || '';
-    const syncTimeout = parseInt(env.SYNC_TIMEOUT || '10000', 10);
-    
-    // 判断存储模式
-    const storageMode = workerUrl ? 'hybrid' : 'local';
-    
+
+    // 检测是否有 D1 绑定
+    const hasD1 = !!env.DB;
+
     const config = {
         sync: {
-            workerUrl: workerUrl,
-            timeout: syncTimeout
+            enabled: hasD1,
+            basePath: hasD1 ? '/api/sync' : '',
+            timeout: 10000
         },
-        storageMode: storageMode
+        storageMode: hasD1 ? 'hybrid' : 'local'
     };
-    
+
     return new Response(JSON.stringify(config), {
         headers: {
             'Content-Type': 'application/json',
