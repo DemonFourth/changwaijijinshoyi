@@ -186,6 +186,25 @@ const CloudflareD1SyncAdapter = {
             credentials: 'include'
         };
 
+        // GET/HEAD 请求不能带 body，改为 URL 查询参数
+        const GET_OR_HEAD_METHODS = ['GET', 'HEAD'];
+        if (body && GET_OR_HEAD_METHODS.includes(method.toUpperCase())) {
+            const queryString = Object.entries(body)
+                .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+                .join('&');
+            const url = workerUrl + endpoint + (queryString ? '?' + queryString : '');
+            const response = await fetch(url, options);
+            clearTimeout(timeoutId);
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            return data;
+        }
+
         if (body) {
             options.body = JSON.stringify(body);
         }
