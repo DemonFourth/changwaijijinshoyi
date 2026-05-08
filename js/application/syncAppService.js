@@ -3,12 +3,29 @@ const SyncAppService = {
     _pendingChanges: [],
 
     async init(config = {}) {
+        const syncMeta = window.LocalStorageAdapter.getSyncMeta();
+
         if (config.workerUrl) {
+            // 启用云端同步
             window.CloudflareD1SyncAdapter.init({
                 workerUrl: config.workerUrl,
                 timeout: config.timeout || 10000
             });
             window.SyncAdapterRegistry.registerCloudflareAdapter();
+
+            // 切换 provider 到 cloudflare
+            syncMeta.provider = 'cloudflare';
+            window.LocalStorageAdapter.saveSnapshot({
+                ...window.LocalStorageAdapter.loadSnapshot(),
+                syncMeta: syncMeta
+            });
+        } else {
+            // 切换 provider 到 local
+            syncMeta.provider = 'local';
+            window.LocalStorageAdapter.saveSnapshot({
+                ...window.LocalStorageAdapter.loadSnapshot(),
+                syncMeta: syncMeta
+            });
         }
 
         this._setupEventListeners();
