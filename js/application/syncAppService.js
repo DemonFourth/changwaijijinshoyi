@@ -3,8 +3,6 @@ const SyncAppService = {
     _pendingChanges: [],
 
     async init(config = {}) {
-        const syncMeta = window.LocalStorageAdapter.getSyncMeta();
-
         if (config.workerUrl) {
             // 启用云端同步
             window.CloudflareD1SyncAdapter.init({
@@ -14,18 +12,14 @@ const SyncAppService = {
             window.SyncAdapterRegistry.registerCloudflareAdapter();
 
             // 切换 provider 到 cloudflare
-            syncMeta.provider = 'cloudflare';
-            window.LocalStorageAdapter.saveSnapshot({
-                ...window.LocalStorageAdapter.loadSnapshot(),
-                syncMeta: syncMeta
-            });
+            const snapshot = window.LocalStorageAdapter.loadSnapshot();
+            snapshot.syncMeta = { ...snapshot.syncMeta, provider: 'cloudflare' };
+            window.LocalStorageAdapter.saveSnapshot(snapshot);
         } else {
             // 切换 provider 到 local
-            syncMeta.provider = 'local';
-            window.LocalStorageAdapter.saveSnapshot({
-                ...window.LocalStorageAdapter.loadSnapshot(),
-                syncMeta: syncMeta
-            });
+            const snapshot = window.LocalStorageAdapter.loadSnapshot();
+            snapshot.syncMeta = { ...snapshot.syncMeta, provider: 'local' };
+            window.LocalStorageAdapter.saveSnapshot(snapshot);
         }
 
         this._setupEventListeners();
