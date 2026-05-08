@@ -49,12 +49,46 @@
 - 🎯 GB2312编码处理，正确解析基金API数据
 - 🎯 Cloudflare Workers + D1 云端同步
 
-### 2. 添加基金
+### 2. 云端部署
+
+#### 2.1 创建 D1 数据库
+1. Cloudflare Dashboard → Workers & Pages → D1 → Create Database
+2. 名称：`fund-calculator-db`
+
+#### 2.2 部署 Worker（后端）
+1. Dashboard → Workers & Pages → Create → Workers → Import a repository
+2. 选择 GitHub 仓库和分支
+3. Deploy command: `npx wrangler deploy --config wrangler.toml`
+4. **绑定 D1**：Settings → Bindings → Add → D1 → 选择 `fund-calculator-db`，binding name 填 `DB`
+5. **配置环境变量**：
+   - `AUTH_ENABLED`：`false` 或 `true`
+   - `APP_PASSWORD`：访问密码（AUTH_ENABLED=true 时有效）
+   - `SESSION_SECRET`：随机字符串
+
+#### 2.3 部署 Pages（前端）
+1. Dashboard → Workers & Pages → Create → Pages → Connect to Git
+2. 选择 GitHub 仓库和分支
+3. Build command 留空，Build output directory 留空
+
+#### 2.4 配置运行时配置
+在 Pages 的 **Settings → Environment Variables** 中添加：
+- `WORKER_URL`：Worker 的 URL（如 `https://fund-calculator-sync.xxx.workers.dev`）
+- `SYNC_TIMEOUT`（可选）：同步超时时间，默认 10000
+
+> **无需修改前端代码**：前端通过 `/api/runtime-config` 自动获取配置。
+> 以后换 Worker 地址只需改 Pages 的 `WORKER_URL` 环境变量。
+
+#### 2.5 验证
+1. 打开 Pages URL
+2. 应看到 "当前使用混合存储（本地 + 云端同步）" 提示
+3. 在工具箱中点击 "立即同步" 验证云端同步
+
+### 3. 添加基金
 1. 点击右上角"添加基金"按钮
 2. 输入6位基金代码（如：519732）
 3. 点击确定，系统会自动获取基金信息
 
-### 3. 添加交易记录
+### 4. 添加交易记录
 1. 点击基金卡片进入详情页
 2. 点击"添加交易"按钮
 3. 填写交易信息：
@@ -66,11 +100,11 @@
    - 备注（可选，最多50字）
 4. 点击确定保存
 
-### 4. 查看收益
+### 5. 查看收益
 - 汇总页：查看所有基金的总体收益情况、Top5盈亏榜单
 - 详情页：查看单只基金的详细收益分析、专业图表、交易记录（支持筛选分页）
 
-### 5. 主题切换
+### 6. 主题切换
 - 点击右上角主题按钮切换深色/浅色模式
 - 自动跟随系统主题偏好
 

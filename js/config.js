@@ -98,7 +98,7 @@ const Config = {
 
     // 同步配置
     sync: {
-        // Cloudflare Workers 同步服务地址（本地为空字符串，表示不使用云端同步）
+        // Cloudflare Workers 同步服务地址（默认空字符串，运行时由 runtimeConfigLoader 从 /api/runtime-config 注入）
         workerUrl: '',
         // 同步请求超时时间（毫秒）
         timeout: 10000

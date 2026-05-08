@@ -3,7 +3,7 @@
  * 初始化所有模块并启动应用
  */
 
-/* global TooltipManager, SyncAppService, SyncConflictModalHelper */
+/* global TooltipManager, SyncAppService, SyncConflictModalHelper, RuntimeConfigLoader */
 
 const App = {
     /**
@@ -18,15 +18,19 @@ const App = {
             // 显示加载提示
             Utils.showLoading();
 
+            // 加载运行时配置（从 /api/runtime-config 获取环境配置）
+            await RuntimeConfigLoader.load();
+
             // 初始化数据服务
             DataService.init();
 
-            // 初始化同步服务
+            // 初始化同步服务（使用运行时配置）
             const workerUrl = Config.get('sync.workerUrl');
             await SyncAppService.init({ workerUrl, timeout: Config.get('sync.timeout') });
 
             // 显示存储模式提示
-            if (workerUrl) {
+            const storageMode = RuntimeConfigLoader.getStorageMode();
+            if (storageMode === 'hybrid') {
                 Utils.showToast('当前使用混合存储（本地 + 云端同步）', 'info');
             } else {
                 Utils.showToast('当前使用本地数据', 'info');
