@@ -1,0 +1,137 @@
+/* CSS设计令牌 - 浅色主题 - 清新现代风 */
+:root {
+    /* 品牌色 - 清新绿 */
+    --color-brand-primary: #a8e6cf;
+    --color-brand-secondary: #88d8b0;
+    --color-brand-gradient: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
+
+    /* 语义色 - 清新现代风 */
+    --color-success: #48bb78;        /* 绿色 - 买入 */
+    --color-danger: #ed8936;         /* 珊瑚橙 - 卖出 */
+    --color-warning: #4299e1;       /* 天蓝 - 分红 */
+    --color-info: #4299e1;
+    --color-profit: #48bb78;         /* 绿色 - 收益 */
+    --color-loss: #ed8936;           /* 珊瑚橙 - 亏损 */
+
+    /* 背景色 - 清新现代风 */
+    --color-bg-primary: #f7fafc;
+    --color-bg-secondary: #ffffff;
+    --color-bg-tertiary: #f7fafc;
+    --color-bg-hover: #f0fff4;
+    --color-bg-card: #ffffff;
+    --color-bg-remark: #f7fafc;
+
+    /* 文字色 - 清新现代风 */
+    --color-text-primary: #2d3748;
+    --color-text-secondary: #718096;
+    --color-text-tertiary: #a0aec0;
+    --color-text-inverse: #2d3748; /* 浅色表头文字用深色 */
+    --color-text-on-brand: #2d3748; /* 品牌色上的文字 */
+
+    /* 边框色 - 清新现代风 */
+    --color-border-primary: #e2e8f0;
+    --color-border-secondary: #cbd5e0;
+    --color-border-focus: #a8e6cf;
+
+    /* 阴影 - 清新现代风 */
+    --shadow-sm: 0 2px 8px rgb(72 187 120 / 8%);
+    --shadow-md: 0 4px 16px rgb(72 187 120 / 12%);
+    --shadow-lg: 0 6px 20px rgb(72 187 120 / 16%);
+
+    /* 圆角 */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-full: 50%;
+
+    /* 间距 */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+
+    /* 过渡 */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+
+    /* 持仓轮次配色 - 浅色主题 */
+    --color-cycle-1: #b2f2bb;  /* 浅绿 */
+    --color-cycle-2: #ffa94d;  /* 橙色 */
+    --color-cycle-3: #63b3ed;  /* 明亮蓝 */
+    --color-cycle-4: #ed64a6;  /* 粉红 */
+    --color-cycle-bg-even: var(--color-bg-tertiary);
+    --color-cycle-bg-odd: var(--color-bg-secondary);
+
+    /* 涨跌颜色 */
+    --color-rise: #ed8936;
+    --color-fall: #48bb78;
+    --color-rise-bg: rgb(237 137 54 / 15%);
+    --color-fall-bg: rgb(72 187 120 / 15%);
+
+    /* Tooltip 问号颜色 */
+    --color-tooltip: #667eea;
+}
+
+/* CSS设计令牌 - 深色主题 - 暗紫轻奢风 */
+[data-theme="dark"] {
+    /* 品牌色 - 暗紫系 */
+    --color-brand-primary: #44337a;
+    --color-brand-secondary: #5b21b6;
+    --color-brand-gradient: linear-gradient(135deg, #44337a 0%, #9f7aea 100%);
+
+    /* 语义色 - 亮色保证对比度 */
+    --color-success: #68d391;        /* 亮绿 - 买入 */
+    --color-danger: #fc8181;         /* 浅红 - 卖出 */
+    --color-warning: #fbd38d;
+    --color-info: #b794f4;          /* 淡紫 - 分红 */
+    --color-profit: #68d391;         /* 亮绿 */
+    --color-loss: #fc8181;           /* 浅红 */
+
+    /* 背景色 - 深紫黑系 */
+    --color-bg-primary: #0d0a14;
+    --color-bg-secondary: #14111a;
+    --color-bg-tertiary: #1e1828;
+    --color-bg-hover: #261e30;
+    --color-bg-card: #1e1828;
+    --color-bg-remark: #1e1828;
+
+    /* 文字色 */
+    --color-text-primary: #e2e8f0;
+    --color-text-secondary: #a0aec0;
+    --color-text-tertiary: #718096;
+    --color-text-inverse: #14111a;
+    --color-text-on-brand: #ffffff;
+
+    /* 边框色 */
+    --color-border-primary: #3d2a4d;
+    --color-border-secondary: #44337a;
+    --color-border-focus: #9f7aea;
+
+    /* 阴影 - 紫调 */
+    --shadow-sm: 0 2px 8px rgb(159 122 234 / 20%);
+    --shadow-md: 0 4px 16px rgb(159 122 234 / 25%);
+    --shadow-lg: 0 6px 20px rgb(159 122 234 / 30%);
+
+    /* 持仓轮次配色 - 深色主题 */
+    --color-cycle-1: #68d391;  /* 亮绿 */
+    --color-cycle-2: #f6ad55;  /* 亮橙 */
+    --color-cycle-3: #63b3ed;  /* 明亮蓝 */
+    --color-cycle-4: #f687b3;  /* 粉色 */
+    --color-cycle-bg-even: var(--color-bg-tertiary);
+    --color-cycle-bg-odd: var(--color-bg-secondary);
+
+    /* 涨跌颜色 - 保持对比度 */
+    --color-rise: #fc8181;
+    --color-fall: #68d391;
+    --color-rise-bg: rgb(252 129 129 / 15%);
+    --color-fall-bg: rgb(104 211 145 / 15%);
+
+    /* Tooltip 问号颜色 */
+    --color-tooltip: #667eea;
+
+    /* 间距 */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+}

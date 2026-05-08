@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>场外基金收益计算器</title>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- ECharts本地库 -->
+    <script src="lib/echarts.min.js"></script>
+    <!-- 应用容器 -->
+    <div id="app">
+        <!-- 密码验证页 -->
+        <div id="auth-page" class="page hidden">
+            <div class="auth-container">
+                <h2>请输入访问密码</h2>
+                <div class="form-group">
+                    <input type="password" id="auth-password" placeholder="请输入密码" />
+                </div>
+                <button id="btn-auth-submit" class="btn btn-primary">确认</button>
+                <p id="auth-error" class="error-message hidden"></p>
+            </div>
+        </div>
+
+        <!-- 标题栏 -->
+        <header class="header">
+            <div class="header-left">
+                <button id="btn-header-back" class="btn btn-header-back hidden" type="button">← 返回</button>
+                <h1 class="title" id="header-title">场外基金收益计算器</h1>
+            </div>
+            <div class="header-actions">
+                <button id="btn-tools" class="btn btn-secondary" type="button">🧰 工具箱</button>
+                <span id="sync-status" class="sync-status hidden">
+                    <span class="sync-icon">⟳</span>
+                    <span class="sync-text">同步中</span>
+                </span>
+                <button id="btn-export" class="btn btn-secondary" type="button">导出数据</button>
+                <button id="btn-import" class="btn btn-secondary" type="button">导入数据</button>
+                <button id="btn-theme" class="btn btn-icon" type="button" data-tooltip="切换主题">🌙</button>
+                <button id="btn-settings" class="btn btn-icon" type="button">⚙️</button>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main id="main-content" class="main-content">
+            <!-- 汇总页 -->
+            <div id="page-overview" class="page active">
+                <!-- 当前持仓统计卡片区 -->
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-label">当前持仓成本
+                            <span class="tooltip-icon" data-tooltip="<strong>说明：</strong>所有基金当前持仓的成本总和<br><strong>计算：</strong>Σ(当前持仓成本)">?</span>
+                        </div>
+                        <div class="stat-value" id="total-invest">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">当前持仓市值
+                            <span class="tooltip-icon" data-tooltip="<strong>说明：</strong>所有基金当前持仓的市值总和<br><strong>计算：</strong>Σ(持有份额 × 最新净值)">?</span>
+                        </div>
+                        <div class="stat-value" id="total-value">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">当前持仓盈亏
+                            <span class="tooltip-icon" data-tooltip="<strong>说明：</strong>所有基金当前持仓的浮动盈亏<br><strong>计算：</strong>当前市值 - 当前持仓成本">?</span>
+                        </div>
+                        <div class="stat-value" id="total-profit">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">当前持仓收益率
+                            <span class="tooltip-icon" data-tooltip="<strong>说明：</strong>所有基金当前持仓的收益率加权平均值<br><strong>计算：</strong>当前持仓盈亏 ÷ 当前持仓成本 × 100%">?</span>
+                        </div>
+                        <div class="stat-value" id="total-rate">0.00%</div>
+                    </div>
+                </div>
+
+                <!-- 全部持仓统计卡片区 -->
+                <div class="stats-container" id="stats-container-all">
+                    <div class="stat-card">
+                        <div class="stat-label">累计投入
+                            <span class="tooltip-icon" data-tooltip="<strong>说明：</strong>所有基金历史所有持仓周期的投入总和<br><strong>计算：</strong>Σ(各周期买入金额)">?</span>
+                        </div>
+                        <div class="stat-value" id="total-invest-all">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">累计手续费
+                            <span class="tooltip-icon" data-tooltip="<strong>说明：</strong>所有基金历史所有交易的手续费总和<br><strong>计算：</strong>Σ(买入手续费) + Σ(卖出手续费)">?</span>
+                        </div>
+                        <div class="stat-value" id="total-fee-all">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">累计收益
+                            <span class="tooltip-icon" data-tooltip="<strong>说明：</strong>所有基金历史所有持仓周期的总收益<br><strong>计算：</strong>Σ(已实现收益) + Σ(浮动盈亏)">?</span>
+                        </div>
+                        <div class="stat-value" id="total-profit-all">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">累计收益率
+                            <span class="tooltip-icon" data-tooltip="<strong>说明：</strong>所有基金历史所有持仓周期的收益率<br><strong>计算：</strong>累计收益 ÷ 累计投入 × 100%">?</span>
+                        </div>
+                        <div class="stat-value" id="total-rate-all">0.00%</div>
+                    </div>
+                </div>
+
+                <!-- Top5盈亏榜单 -->
+                <div class="top5-container"></div>
+
+                <!-- 基金列表 -->
+                <div class="fund-list-container">
+                    <div class="list-header">
+                        <h2>我的基金</h2>
+                        <div class="list-controls">
+                            <div class="view-toggle">
+                                <button class="btn-view active" data-view="card" data-tooltip="卡片视图" type="button">▦</button>
+                                <button class="btn-view" data-view="list" data-tooltip="列表视图" type="button">☰</button>
+                            </div>
+                            <select class="sort-select" id="sort-field">
+                                <option value="profitRate">按收益率</option>
+                                <option value="profitAmount">按收益额</option>
+                                <option value="marketValue">按市值</option>
+                                <option value="name">按名称</option>
+                            </select>
+                            <button class="btn-sort-order" id="sort-order" data-tooltip="降序" type="button">↓</button>
+                            <button id="btn-add-fund" class="btn btn-primary" type="button">+ 添加基金</button>
+                        </div>
+                    </div>
+                    <div id="fund-list" class="fund-list">
+                        <!-- 基金卡片将动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="chart-container">
+                    <h3 class="chart-section-title">收益趋势</h3>
+                    <div id="chart-profit-trend" class="chart"></div>
+                </div>
+            </div>
+
+            <!-- 详情页 -->
+            <div id="page-detail" class="page">
+                <!-- 基金信息 - 优化后的数据仪表盘风格 -->
+                <div class="fund-info">
+                    <!-- 基金标题区 -->
+                    <div class="fund-title-area">
+                        <div class="fund-name" id="detail-fund-name">基金详情</div>
+                        <div class="fund-code" id="detail-fund-code"></div>
+                        <div class="title-actions">
+                            <button id="btn-edit-fund" class="btn btn-secondary btn-sm" type="button">编辑</button>
+                            <button id="btn-delete-fund" class="btn btn-danger btn-sm" type="button">删除</button>
+                            <button id="btn-fee-settings" class="btn btn-secondary btn-sm" type="button">交易费率设置</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 核心数据区 -->
+                    <div class="fund-core-stats">
+                        <div class="core-stat">
+                            <span class="core-label">最新净值</span>
+                            <div class="core-value-wrapper">
+                                <span class="core-value" id="info-net-value">-</span>
+                                <span class="core-date" id="info-net-date"></span>
+                            </div>
+                        </div>
+                        <div class="core-stat">
+                            <span class="core-label">估算净值</span>
+                            <div class="core-value-wrapper">
+                                <span class="core-value" id="info-estimated-value">-</span>
+                                <span class="core-date" id="info-update-time"></span>
+                            </div>
+                            <span class="core-change" id="info-estimated-growth"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 详细信息网格 -->
+                    <div class="fund-details-grid">
+                        <div class="detail-item">
+                            <span class="detail-icon">🏷️</span>
+                            <span class="detail-label">基金代码</span>
+                            <span class="detail-value" id="info-code">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">📊</span>
+                            <span class="detail-label">基金名称</span>
+                            <span class="detail-value" id="info-name">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">📝</span>
+                            <span class="detail-label">备注</span>
+                            <span class="detail-value" id="info-remark">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 持仓信息 - 优化为卡片风格 -->
+                <div class="holding-info">
+                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0; flex: 1;">持仓信息</h3>
+                        <button id="btn-fifo-verify" class="btn btn-secondary btn-sm" type="button">验证计算</button>
+                    </div>
+                    <div class="holding-cards">
+                        <!-- 持仓概况卡片 -->
+                        <div class="holding-card">
+                            <div class="holding-card-title">持仓概况</div>
+                            <div class="holding-card-body">
+                                <div class="holding-stat">
+                                    <span class="stat-label">持有份额
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>未卖出买入交易的份额总和<br><strong>说明：</strong>当前实际持有的基金份额数量">?</span>
+                                    </span>
+                                    <span class="stat-value" id="holding-shares">0</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">持有成本价
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>持有成本 ÷ 持有份额<br><strong>说明：</strong>每股的平均持仓成本">?</span>
+                                    </span>
+                                    <span class="stat-value" id="cost-per-share">¥0.0000</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">持有成本
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>Σ(买入金额)，含手续费<br><strong>说明：</strong>当前持仓的总成本">?</span>
+                                    </span>
+                                    <span class="stat-value" id="holding-cost">¥0.00</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">当前市值
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>持有份额 × 最新净值<br><strong>说明：</strong>按最新净值计算（非估算净值）">?</span>
+                                    </span>
+                                    <span class="stat-value" id="holding-value">¥0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    
+<!-- 持有收益卡片 -->
+                        <div class="holding-card">
+                            <div class="holding-card-title">持有收益</div>
+                            <div class="holding-card-body">
+                                <div class="holding-stat highlight">
+                                    <span class="stat-label">浮动盈亏
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>当前市值 - 持有成本<br><strong>说明：</strong>未实现收益，随最新净值波动">?</span>
+                                    </span>
+                                    <span class="stat-value" id="holding-profit">¥0.00</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">持仓收益率
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>浮动盈亏 ÷ 持有成本 × 100%<br><strong>说明：</strong>浮动盈亏占持有成本的比例">?</span>
+                                    </span>
+                                    <span class="stat-value" id="holding-rate">0.00%</span>
+                                </div>
+                                <div class="holding-stat highlight estimated">
+                                    <span class="stat-label">预估浮动盈亏
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>预估市值 - 持有成本<br><strong>说明：</strong>使用估算净值计算的预估收益">?</span>
+                                    </span>
+                                    <span class="stat-value" id="holding-profit-estimated">¥0.00</span>
+                                </div>
+<div class="holding-stat">
+                                    <span class="stat-label">预估收益率
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>预估浮动盈亏 ÷ 持有成本 × 100%<br><strong>说明：</strong>使用估算净值计算的预估收益率">?</span>
+                                    </span>
+                                    <span class="stat-value" id="holding-rate-estimated">0.00%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 总收益卡片 -->
+                        <div class="holding-card">
+                            <div class="holding-card-title">总收益</div>
+                            <div class="holding-card-body">
+                                <div class="holding-stat">
+                                    <span class="stat-label">已实现收益
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>Σ(卖出到手金额 - 卖出份额×持仓成本价)<br><strong>说明：</strong>已卖出部分的实际收益">?</span>
+                                    </span>
+                                    <span class="stat-value" id="realized-profit">¥0.00</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">总投入
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>Σ(所有买入金额)，含手续费<br><strong>说明：</strong>所有持仓周期的投入总和">?</span>
+                                    </span>
+                                    <span class="stat-value" id="detail-total-invest">¥0.00</span>
+                                </div>
+                                <div class="holding-stat">
+                                    <span class="stat-label">总收益
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>已实现收益 + 浮动盈亏<br><strong>说明：</strong>所有收益的总和">?</span>
+                                    </span>
+                                    <span class="stat-value" id="detail-total-profit">¥0.00</span>
+                                </div>
+                                <div class="holding-stat highlight">
+                                    <span class="stat-label">总收益率
+                                        <span class="tooltip-icon" data-tooltip="<strong>计算公式：</strong>总收益 ÷ 总投入 × 100%<br><strong>说明：</strong>总收益占总投入的比例">?</span>
+                                    </span>
+                                    <span class="stat-value" id="detail-total-rate">0.00%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 持仓周期 -->
+                <div class="cycle-info-section" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">
+                    <h3 style="margin-bottom: 15px;">持仓周期</h3>
+                    <div class="cycle-summary" style="display: flex; gap: 20px; margin-bottom: 15px;">
+                        <div class="cycle-stat-item">
+                            <span class="label">总周期数：</span>
+                            <span id="cycle-count" class="value">0</span>
+                        </div>
+                        <div class="cycle-stat-item">
+                            <span class="label">已结束：</span>
+                            <span id="closed-cycles" class="value">0</span>
+                        </div>
+                        <div class="cycle-stat-item">
+                            <span class="label">进行中：</span>
+                            <span id="active-cycles" class="value">0</span>
+                        </div>
+                    </div>
+                    <div id="cycle-list" style="margin-top: 10px;">
+                        <!-- 周期列表将在这里动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 交易记录 -->
+                <div class="trade-records">
+                    <div class="records-header">
+                        <h3>交易记录</h3>
+                        <button id="btn-add-trade" class="btn btn-primary" type="button">+ 添加交易</button>
+                    </div>
+                    <div class="trade-filter-bar">
+                        <select id="filter-trade-type" class="filter-select">
+                            <option value="">全部类型</option>
+                            <option value="buy">买入</option>
+                            <option value="sell">卖出</option>
+                            <option value="dividend">分红</option>
+                        </select>
+                        <input type="date" id="filter-start-date" class="filter-date" data-tooltip="开始日期">
+                        <span class="filter-sep">~</span>
+                        <input type="date" id="filter-end-date" class="filter-date" data-tooltip="结束日期">
+                        <button class="btn btn-secondary btn-sm" id="btn-clear-filter" type="button">清除筛选</button>
+                        <span class="filter-result-count" id="filter-result-count"></span>
+                    </div>
+                    <table class="trade-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>操作</th>
+                                <th>价格(元)</th>
+                                <th>份额</th>
+                                <th>手续费(元)</th>
+                                <th>金额(元)</th>
+                                <th>收益</th>
+                                <th>持仓周期</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trade-list">
+                            <!-- 交易记录将动态生成 -->
+                        </tbody>
+                    </table>
+                    <div id="trade-pagination-container" class="pagination-container"></div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="chart-section">
+                    <h3>图表分析</h3>
+                    <div class="chart-container chart-detail-grid">
+                        <div class="chart-item">
+                            <h4>持仓成本趋势</h4>
+                            <div id="chart-cost-trend" class="chart"></div>
+                        </div>
+                        <div class="chart-item">
+                            <h4>持仓份额变化</h4>
+                            <div id="chart-share-change" class="chart"></div>
+                        </div>
+                        <div class="chart-item">
+                            <h4>资金流动</h4>
+                            <div id="chart-fund-flow" class="chart"></div>
+                        </div>
+                        <div class="chart-item">
+                            <h4>持仓周期对比</h4>
+                            <div id="chart-cycle-compare" class="chart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工具箱页 -->
+            <div id="page-tools" class="page">
+                <div class="tool-grid">
+                    <div class="tool-card" data-tool="conversion">
+                        <div class="tool-icon">🔄</div>
+                        <div class="tool-name">基金转换计算器</div>
+                        <div class="tool-desc">计算基金转换过程中的手续费和资金结算</div>
+                    </div>
+                </div>
+
+                <div id="tool-conversion" class="tool-detail hidden">
+                    <div class="tool-section">
+                        <h3>转出基金（A基金）</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">净值</label>
+                                <input type="number" id="conv-a-net-value" class="form-input" step="0.0001" min="0" placeholder="0.0000">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">份额</label>
+                                <input type="number" id="conv-a-shares" class="form-input" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 12px;">
+                            <label class="form-label">费率模式</label>
+                            <div class="fee-mode-toggle">
+                                <label class="radio-label">
+                                    <input type="radio" name="fee-mode" value="single" checked>
+                                    单费率
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="fee-mode" value="tiered">
+                                    分段费率
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="single-fee-section">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">卖出费率(%)</label>
+                                    <input type="number" id="conv-a-sell-rate" class="form-input" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tiered-fee-section" class="hidden">
+                            <div id="tiered-fee-container"></div>
+                            <button type="button" id="btn-add-tier" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
+                                + 添加费率段
+                            </button>
+                            <div id="tiered-shares-validation" class="validation-message"></div>
+                        </div>
+                    </div>
+
+                    <div class="tool-section">
+                        <h3>转入基金（B基金）</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">净值</label>
+                                <input type="number" id="conv-b-net-value" class="form-input" step="0.0001" min="0" placeholder="0.0000">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">份额</label>
+                                <input type="number" id="conv-b-shares" class="form-input" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">买入费率(%)</label>
+                                <input type="number" id="conv-b-buy-rate" class="form-input" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tool-section">
+                        <h3>交易信息</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">交易日期</label>
+                                <input type="date" id="conv-date" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">转入基金</label>
+                                <select id="conv-target-fund" class="form-select">
+                                    <option value="">不生成记录，仅计算</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">备注</label>
+                            <input type="text" id="conv-remark" class="form-input" placeholder="备注信息（可选）" maxlength="50">
+                        </div>
+                    </div>
+
+                    <button id="btn-calc-conversion" class="btn btn-primary btn-block" type="button">计算</button>
+
+                    <div id="conv-result" class="tool-result hidden">
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <span class="result-label">转出金额</span>
+                                <span class="result-value" id="conv-result-transfer">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">A基金卖出手续费</span>
+                                <span class="result-value" id="conv-result-sell-fee">-</span>
+                            </div>
+                            <div class="result-item highlight">
+                                <span class="result-label">实际到手</span>
+                                <span class="result-value" id="conv-result-received">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">B基金基础金额</span>
+                                <span class="result-value" id="conv-result-base">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">B基金买入手续费</span>
+                                <span class="result-value" id="conv-result-buy-fee">-</span>
+                            </div>
+                            <div class="result-item highlight">
+                                <span class="result-label">实际支付</span>
+                                <span class="result-value" id="conv-result-paid">-</span>
+                            </div>
+                        </div>
+
+                        <div class="result-summary">
+                            <div class="summary-item">
+                                <span>退还/补交金额：</span>
+                                <span id="conv-result-balance" class="summary-value">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span>总手续费：</span>
+                                <span id="conv-result-total-fee" class="summary-value">-</span>
+                            </div>
+                        </div>
+
+                        <div id="sell-fee-details" class="tool-result-section hidden">
+                            <h4>卖出手续费明细</h4>
+                            <div id="sell-fee-details-list"></div>
+                        </div>
+
+                        <button id="btn-save-conversion" class="btn btn-primary btn-block hidden" type="button">
+                            保存到交易记录
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 悬浮按钮 -->
+        <div class="fab-container">
+            <button id="fab-refresh" class="fab" data-tooltip="刷新数据" type="button">🔄</button>
+        </div>
+    </div>
+
+    <!-- 弹窗容器 -->
+    <div id="modal-container" class="modal-container hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">弹窗标题</h3>
+                <button class="modal-close" type="button">×</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- 弹窗内容将动态生成 -->
+            </div>
+            <div class="modal-footer" id="modal-footer">
+                <!-- 弹窗操作按钮将动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loading" class="loading hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">加载中...</div>
+    </div>
+
+    <!-- 提示消息 -->
+    <div id="toast-container" class="toast-container hidden">
+        <div class="toast-card">
+            <div class="toast-content">
+                <span class="toast-icon" id="toast-icon"></span>
+                <span class="toast-message" id="toast-message"></span>
+                <button class="toast-close" id="toast-close" type="button" aria-label="关闭">×</button>
+            </div>
+            <div class="toast-progress" id="toast-progress"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript文件 -->
+    <script src="js/namespace.js"></script>
+    <script src="js/moduleRegistry.js"></script>
+    <script src="js/eventBus.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/themeManager.js"></script>
+    <script src="js/bigNumberFormatter.js"></script>
+    <script src="js/paginator.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/storage/schema.js"></script>
+    <script src="js/storage/migrations.js"></script>
+    <script src="js/storage/localStorageAdapter.js"></script>
+    <script src="js/storage/localSyncAdapter.js"></script>
+    <script src="js/storage/syncAdapterRegistry.js"></script>
+    <script src="js/storage/cloudflareD1SyncAdapter.js"></script>
+    <script src="js/application/syncAppService.js"></script>
+    <script src="js/modal/syncConflictModalHelper.js"></script>
+    <script src="js/repositories/fundRepository.js"></script>
+    <script src="js/repositories/tradeRepository.js"></script>
+    <script src="js/application/fundAppService.js"></script>
+    <script src="js/application/tradeAppService.js"></script>
+    <script src="js/application/appSettingsService.js"></script>
+    <script src="js/dataService.js"></script>
+    <script src="js/fundAPI.js"></script>
+    <script src="js/calculatorV2.js"></script>
+    <script src="js/fifoCalculator.js"></script>
+    <script src="js/feeCalculator.js"></script>
+    <script src="js/fifoValidator.js"></script>
+    <script src="js/fundManager.js"></script>
+    <script src="js/tradeManager.js"></script>
+    <script src="js/chartManager.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/modal/tradeModalHelper.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/nameValidator.js"></script>
+    <script src="js/nameCache.js"></script>
+    <script src="js/cycleGroupRenderer.js"></script>
+    <script src="js/cycleTradeDisplay.js"></script>
+    <script src="js/detail/detailEditHelper.js"></script>
+    <script src="js/detail/detailTradeActionHelper.js"></script>
+    <script src="js/detail/detailMenuHelper.js"></script>
+    <script src="js/detail/detailFundUpdateHelper.js"></script>
+    <script src="js/detail/detailHoldingHelper.js"></script>
+    <script src="js/overview.js"></script>
+    <script src="js/detail.js"></script>
+
+    <script src="js/conversionCalculator.js"></script>
+    <script src="js/toolPage.js"></script>
+    <script src="js/tooltipManager.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
