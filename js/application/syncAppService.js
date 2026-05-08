@@ -159,6 +159,9 @@ const SyncAppService = {
                 syncStatus: 'error',
                 lastError: reason || 'push_failed'
             });
+            if (window.Utils && typeof window.Utils.showToast === 'function') {
+                window.Utils.showToast('自动同步失败：' + (reason || 'push_failed'), 'error');
+            }
             return;
         }
 
@@ -208,6 +211,9 @@ const SyncAppService = {
 
         if (!result.success) {
             SyncAppService._toLogText('[同步调试] pull 失败', result);
+            if (window.Utils && typeof window.Utils.showToast === 'function') {
+                window.Utils.showToast('自动同步失败：' + (result.reason || 'pull_failed'), 'error');
+            }
             return result;
         }
 
@@ -304,6 +310,9 @@ const SyncAppService = {
 
         if (!result.success) {
             SyncAppService._toLogText('[同步调试] push 失败，准备重试', result);
+            if (window.Utils && typeof window.Utils.showToast === 'function') {
+                window.Utils.showToast('自动同步失败：' + (result.reason || 'push_failed'), 'error');
+            }
             SyncAppService._scheduleRetry(result.reason);
             return result;
         }

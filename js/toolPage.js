@@ -3,11 +3,15 @@
  * 管理工具箱页面的显示和交互
  */
 
-/* global ModuleRegistry, Utils, FundManager, TradeManager, ConversionCalculator, SyncAppService, SyncConflictModalHelper, Overview */
+/* global ModuleRegistry, Utils, FundManager, TradeManager, ConversionCalculator, SyncAppService, SyncConflictModalHelper, Overview, SyncStatusPresenter */
 
 const ToolPage = {
     currentResult: null,
     tierCount: 0,
+
+    buildSyncSectionHtml() {
+        return SyncStatusPresenter.buildToolSectionHtml(window.SyncAppService.getSyncStatus());
+    },
 
     /**
      * 初始化工具页面
@@ -137,47 +141,10 @@ const ToolPage = {
      * 渲染同步状态区域
      */
     renderSyncStatus() {
-        const toolDetail = document.querySelector('.tool-detail[data-tool="conversion"]');
-        if (!toolDetail) return;
+        const syncPanel = document.getElementById('tool-sync-panel');
+        if (!syncPanel) return;
 
-        const syncStatus = SyncAppService.getSyncStatus();
-        const syncStatusHtml = `
-            <div class="tool-section">
-                <h4>云同步状态</h4>
-                <div class="sync-info">
-                    <span class="status-label">状态:</span>
-                    <span class="status-value">${syncStatus.syncStatus || 'idle'}</span>
-                </div>
-                <div class="sync-info">
-                    <span class="status-label">云端版本:</span>
-                    <span class="status-value">${syncStatus.cloudRevision || 0}</span>
-                </div>
-                <div class="sync-actions">
-                    <button class="btn btn-secondary" id="btn-manual-sync">立即同步</button>
-                    <button class="btn btn-secondary" id="btn-force-push">强制上传本地</button>
-                    <button class="btn btn-secondary" id="btn-force-pull">强制下载云端</button>
-                </div>
-            </div>
-        `;
-
-        // 查找工具详情页中合适的位置插入同步状态区域
-        // 在工具详情内容末尾添加
-        const existingSyncSection = toolDetail.querySelector('.tool-section.sync-status-section');
-        if (existingSyncSection) {
-            existingSyncSection.remove();
-        }
-
-        const syncSection = document.createElement('div');
-        syncSection.className = 'tool-section sync-status-section';
-        syncSection.innerHTML = syncStatusHtml;
-
-        // 插入到工具详情末尾（在 result 区域之前）
-        const resultEl = toolDetail.querySelector('.tool-result');
-        if (resultEl) {
-            toolDetail.insertBefore(syncSection, resultEl);
-        } else {
-            toolDetail.appendChild(syncSection);
-        }
+        syncPanel.innerHTML = ToolPage.buildSyncSectionHtml();
     },
 
     /**

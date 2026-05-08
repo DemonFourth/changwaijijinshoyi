@@ -61,7 +61,7 @@ const CloudflareD1SyncAdapter = {
         const syncMeta = window.LocalStorageAdapter.getSyncMeta();
 
         try {
-            const response = await CloudflareD1SyncAdapter._request('/sync/pull', 'GET', {
+            const response = await CloudflareD1SyncAdapter._request('/pull', 'GET', {
                 deviceId: syncMeta.deviceId,
                 cloudRevision: syncMeta.cloudRevision,
                 lastPulledAt: syncMeta.lastPulledAt
@@ -93,7 +93,7 @@ const CloudflareD1SyncAdapter = {
         const syncMeta = window.LocalStorageAdapter.getSyncMeta();
 
         try {
-            const response = await CloudflareD1SyncAdapter._request('/sync/push', 'POST', {
+            const response = await CloudflareD1SyncAdapter._request('/push', 'POST', {
                 deviceId: syncMeta.deviceId,
                 baseRevision: syncMeta.cloudRevision,
                 funds: funds,
@@ -131,7 +131,7 @@ const CloudflareD1SyncAdapter = {
         const syncMeta = window.LocalStorageAdapter.getSyncMeta();
 
         try {
-            const response = await CloudflareD1SyncAdapter._request('/sync/resolve', 'POST', {
+            const response = await CloudflareD1SyncAdapter._request('/resolve', 'POST', {
                 deviceId: syncMeta.deviceId,
                 baseRevision: syncMeta.cloudRevision,
                 conflicts: conflicts,
@@ -159,8 +159,15 @@ const CloudflareD1SyncAdapter = {
         });
     },
 
+    _buildUrl(endpoint) {
+        const { basePath } = CloudflareD1SyncAdapter._config;
+        const normalizedBasePath = String(basePath || '').replace(/\/+$/, '');
+        const normalizedEndpoint = String(endpoint || '').replace(/^\/+/, '');
+        return normalizedBasePath + '/' + normalizedEndpoint;
+    },
+
     async _request(endpoint, method, body = null) {
-        const { basePath, timeout } = CloudflareD1SyncAdapter._config;
+        const { timeout } = CloudflareD1SyncAdapter._config;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -179,7 +186,7 @@ const CloudflareD1SyncAdapter = {
             const queryString = Object.entries(body)
                 .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
                 .join('&');
-            const url = basePath + endpoint + (queryString ? '?' + queryString : '');
+            const url = CloudflareD1SyncAdapter._buildUrl(endpoint) + (queryString ? '?' + queryString : '');
             const response = await fetch(url, options);
             clearTimeout(timeoutId);
 
@@ -197,7 +204,7 @@ const CloudflareD1SyncAdapter = {
         }
 
         try {
-            const url = basePath + endpoint;
+            const url = CloudflareD1SyncAdapter._buildUrl(endpoint);
             const response = await fetch(url, options);
             clearTimeout(timeoutId);
 
