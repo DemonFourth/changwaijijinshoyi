@@ -49,6 +49,36 @@ const SyncStatusPresenter = {
         return iconMap[status] || '?';
     },
 
+    buildToolSectionHtml(syncStatus) {
+        const lastErrorHtml = syncStatus && syncStatus.lastError
+            ? `<div class="sync-info"><span class="status-label">失败原因:</span><span class="status-value">${syncStatus.lastError}</span></div>`
+            : '';
+
+        return `
+            <div class="tool-section sync-status-section">
+                <h4>云同步状态</h4>
+                <div class="sync-info">
+                    <span class="status-label">状态:</span>
+                    <span class="status-value">${SyncStatusPresenter.getStatusLabel(syncStatus)}</span>
+                </div>
+                <div class="sync-info">
+                    <span class="status-label">待同步:</span>
+                    <span class="status-value">${syncStatus && syncStatus.pendingChanges || 0}</span>
+                </div>
+                <div class="sync-info">
+                    <span class="status-label">云端版本:</span>
+                    <span class="status-value">${syncStatus && syncStatus.cloudRevision || 0}</span>
+                </div>
+                ${lastErrorHtml}
+                <div class="sync-actions">
+                    <button class="btn btn-secondary" id="btn-manual-sync">立即同步</button>
+                    <button class="btn btn-secondary" id="btn-force-push">强制上传本地</button>
+                    <button class="btn btn-secondary" id="btn-force-pull">强制下载云端</button>
+                </div>
+            </div>
+        `;
+    },
+
     buildBannerHtml(syncStatus) {
         const status = syncStatus && syncStatus.syncStatus ? syncStatus.syncStatus : 'idle';
         const statusText = SyncStatusPresenter.getStatusLabel(syncStatus);
