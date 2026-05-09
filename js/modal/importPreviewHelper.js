@@ -108,8 +108,8 @@ const ImportPreviewHelper = {
 
     _buildStockRow(item, isDuplicate) {
         const fund = item.fund;
-        const newCount = item.newTrades.length;
-        const dupCount = item.duplicateTrades.length;
+        const newCount = item.newTrades ? item.newTrades.length : 0;
+        const dupCount = item.duplicateTrades ? item.duplicateTrades.length : 0;
         const totalCount = item.trades.length;
 
         let html = '';
@@ -141,7 +141,10 @@ const ImportPreviewHelper = {
         html += '<table class="ip-trade-table">';
         html += '<thead><tr><th>日期</th><th>类型</th><th>净值</th><th>份额</th><th>金额</th><th>状态</th></tr></thead>';
         html += '<tbody>';
-        html += this._buildTradeRows(item.trades, isDuplicate);
+        
+        // tradeItems has {trade, isNew}, trades is raw array
+        const tradeData = item.tradeItems || item.trades;
+        html += this._buildTradeRows(tradeData, isDuplicate);
         html += '</tbody>';
         html += '</table>';
         html += '</div>';
@@ -153,8 +156,10 @@ const ImportPreviewHelper = {
     _buildTradeRows(items, isDuplicate = false) {
         const typeMap = { buy: '买入', sell: '卖出', dividend: '分红' };
 
-        return items.map(trade => {
-            const isNew = trade.isNew !== false;
+        return items.map(item => {
+            // tradeItems has {trade, isNew}, trades is raw trade
+            const trade = item.trade || item;
+            const isNew = item.isNew !== undefined ? item.isNew : !isDuplicate;
             return `
                 <tr class="ip-trade-row ${isNew ? '' : 'ip-trade-row--muted'}">
                     <td>${trade.date}</td>
