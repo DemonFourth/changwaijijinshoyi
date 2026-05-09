@@ -32,7 +32,7 @@
 - ✅ push / pull / resolve：支持上传、拉取、冲突解决
 - ✅ tombstone 软删除：防止旧数据回流复活
 - ✅ 记录级冲突检测：用户逐项选择本地版或云端版
-- ✅ 同步状态跟踪：`pendingChanges`、`syncStatus`、`lastSyncAt`、`lastSyncedAt`
+- ✅ 同步状态跟踪：`pendingChanges`、`syncStatus`、`lastSyncAt`
 - ✅ 手动同步：工具箱支持立即同步、强制上传、强制下载
 
 ### 技术特性
@@ -47,7 +47,7 @@
 ### 本地使用
 1. 直接用浏览器打开 `index.html`
 2. 若无 `/api/*` 接口，则自动工作在本地模式
-3. 页面会提示“当前使用本地数据”
+3. 页面会提示"当前使用本地数据"
 
 ### 云端部署
 
@@ -66,68 +66,78 @@
 
 #### 3. 验证
 1. 打开 Pages URL
-2. 无 `/api/*` 时应提示“当前使用本地数据”
-3. 有 `/api/*` 且 D1 已绑定时应提示“当前使用混合存储（本地 + 云端同步）”
-4. 在工具箱点击“立即同步”验证云端同步链路
+2. 无 `/api/*` 时应提示"当前使用本地数据"
+3. 有 `/api/*` 且 D1 已绑定时应提示"当前使用混合存储（本地 + 云端同步）"
+4. 在工具箱点击"立即同步"验证云端同步链路
 
 ## 项目结构
 
-```text
+```
 jijinshouyi/
 ├── index.html
 ├── css/
-│   ├── tokens.css
+│   ├── tokens.css          # CSS设计令牌（浅色+深色主题变量）
 │   └── style.css
 ├── js/
-│   ├── namespace.js
-│   ├── moduleRegistry.js
-│   ├── eventBus.js
-│   ├── config.js
-│   ├── utils.js
-│   ├── app.js
-│   ├── overview.js
-│   ├── detail.js
-│   ├── modal.js
-│   ├── toolPage.js
-│   ├── dataService.js
-│   ├── fundManager.js
-│   ├── tradeManager.js
-│   ├── chartManager.js
-│   ├── router.js
-│   ├── runtimeConfigLoader.js
-│   ├── storage.js
-│   ├── calculatorV2.js
-│   ├── fifoCalculator.js
-│   ├── fifoValidator.js
-│   ├── feeCalculator.js
-│   ├── conversionCalculator.js
-│   ├── fundAPI.js
-│   ├── application/
-│   │   ├── appSettingsService.js
+│   ├── namespace.js         # 全局命名空间
+│   ├── moduleRegistry.js   # 模块注册器
+│   ├── eventBus.js         # 事件总线
+│   ├── config.js           # 配置管理
+│   ├── utils.js            # 工具函数
+│   ├── app.js              # 应用入口
+│   ├── router.js           # 路由管理
+│   ├── overview.js         # 汇总页
+│   ├── detail.js           # 详情页
+│   ├── modal.js            # 弹窗管理
+│   ├── toolPage.js         # 工具箱页面
+│   ├── dataService.js      # 数据服务
+│   ├── fundManager.js      # 基金管理器
+│   ├── tradeManager.js     # 交易管理器
+│   ├── chartManager.js     # ECharts图表管理
+│   ├── themeManager.js     # 主题管理
+│   ├── syncStatusPresenter.js  # 同步状态展示
+│   ├── bigNumberFormatter.js   # 大数字格式化
+│   ├── paginator.js        # 分页组件
+│   ├── tooltipManager.js   # 悬浮提示管理
+│   ├── conversionCalculator.js  # 基金转换计算
+│   ├── calculatorV2.js     # 加权平均成本法计算引擎
+│   ├── fifoCalculator.js   # FIFO计算引擎
+│   ├── fifoValidator.js    # FIFO验证器
+│   ├── feeCalculator.js     # 费率计算引擎
+│   ├── fundAPI.js          # 基金API
+│   ├── nameCache.js        # 名称缓存
+│   ├── nameValidator.js    # 名称验证
+│   ├── cycleGroupRenderer.js    # 持仓分组渲染
+│   ├── cycleTradeDisplay.js     # 分组交易显示
+│   ├── runtimeConfigLoader.js   # 运行时配置加载
+│   ├── storage.js          # 存储管理（旧版，遗留）
+│   ├── application/        # 应用服务层
 │   │   ├── fundAppService.js
+│   │   ├── tradeAppService.js
 │   │   ├── importAppService.js
-│   │   ├── syncAppService.js
-│   │   └── tradeAppService.js
-│   ├── repositories/
+│   │   ├── appSettingsService.js
+│   │   └── syncAppService.js
+│   ├── repositories/       # 仓储层
 │   │   ├── fundRepository.js
 │   │   └── tradeRepository.js
-│   ├── storage/
+│   ├── storage/            # 存储适配器层
 │   │   ├── schema.js
 │   │   ├── migrations.js
 │   │   ├── localStorageAdapter.js
 │   │   ├── localSyncAdapter.js
 │   │   ├── cloudflareD1SyncAdapter.js
 │   │   └── syncAdapterRegistry.js
-│   ├── detail/
+│   ├── detail/             # 详情页helper
 │   │   ├── detailEditHelper.js
 │   │   ├── detailFundUpdateHelper.js
 │   │   ├── detailHoldingHelper.js
 │   │   ├── detailMenuHelper.js
 │   │   └── detailTradeActionHelper.js
-│   └── modal/
+│   └── modal/              # 弹窗helper
+│       ├── tradeModalHelper.js
 │       ├── syncConflictModalHelper.js
-│       └── tradeModalHelper.js
-├── functions/
+│       └── importPreviewHelper.js
+├── functions/              # Cloudflare Pages Functions
 │   ├── api/
 │   │   ├── runtime-config.js
 │   │   └── sync/
@@ -144,6 +154,9 @@ jijinshouyi/
 │   └── *.test.cjs
 ├── lib/
 │   └── echarts.min.js
+├── .eslintrc.js
+├── package.json
+├── AGENTS.md
 └── README.md
 ```
 
@@ -290,9 +303,13 @@ jijinshouyi/
 ## 开发规范
 
 ### 代码风格
+- 缩进：4个空格
+- 引号：单引号
+- 分号：必须
+- 尾逗号：不允许
+- 变量声明：优先使用 `const`，其次 `let`，禁止 `var`
+- 比较运算符：使用 `===` / `!==`，禁止 `==` / `!`
 - 禁止在对象方法内部使用 `this` 调用其他方法，应使用明确对象名
-- 回答与协作说明以中文为主，专有名词除外
-- 新增功能优先复用现有目录结构与 helper
 
 ### 分层约束
 - 页面层只负责编排、事件绑定、调用 helper / service
@@ -325,6 +342,18 @@ npm install
 npm test
 ```
 
+运行单个测试文件：
+```bash
+node --test tests/routerNavigation.test.cjs
+```
+
+运行匹配模式的测试：
+```bash
+node --test tests/*.test.cjs
+node --test tests/fund*.test.cjs
+node --test tests/*sync*.test.cjs
+```
+
 ### 运行代码检查
 ```bash
 npm run lint
@@ -334,6 +363,11 @@ npm run lint
 ```bash
 npm run lint:js
 npm run lint:css
+```
+
+自动修复：
+```bash
+npm run lint:fix
 ```
 
 > 当前 lint 结果允许存在少量历史 warning，但不应新增 error。
