@@ -117,7 +117,6 @@ const Overview = {
      * 刷新汇总页
      */
     refresh() {
-        this.renderSyncStatusBanner();
         this.updateStats();
         this.updateFundList();
         this.updateTop5();
@@ -125,28 +124,6 @@ const Overview = {
     },
 
     renderSyncStatusBanner() {
-        const page = document.getElementById('page-overview');
-        if (!page) {
-            return;
-        }
-
-        const existing = page.querySelector('.sync-status-banner');
-        if (existing) {
-            existing.remove();
-        }
-
-        const bannerWrapper = document.createElement('div');
-        bannerWrapper.innerHTML = Overview.buildSyncStatusBannerHtml(window.SyncAppService.getSyncStatus());
-        const banner = bannerWrapper.firstElementChild;
-        if (!banner) {
-            return;
-        }
-
-        banner.addEventListener('click', () => {
-            document.getElementById('btn-tools')?.click();
-        });
-        const statsContainer = page.querySelector('.stats-container');
-        page.insertBefore(banner, statsContainer);
     },
 
     /**

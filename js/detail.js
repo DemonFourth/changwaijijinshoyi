@@ -160,7 +160,6 @@ const Detail = {
      */
     async load(fundId) {
         this.currentFundId = fundId;
-        this.renderSyncStatusBanner();
 
         // 自动刷新基金数据（从API获取最新净值）
         try {
@@ -173,35 +172,12 @@ const Detail = {
     },
 
     renderSyncStatusBanner() {
-        const page = document.getElementById('page-detail');
-        if (!page) {
-            return;
-        }
-
-        const existing = page.querySelector('.sync-status-banner');
-        if (existing) {
-            existing.remove();
-        }
-
-        const bannerWrapper = document.createElement('div');
-        bannerWrapper.innerHTML = Detail.buildSyncStatusBannerHtml(window.SyncAppService.getSyncStatus());
-        const banner = bannerWrapper.firstElementChild;
-        if (!banner) {
-            return;
-        }
-
-        banner.addEventListener('click', () => {
-            document.getElementById('btn-tools')?.click();
-        });
-        const fundInfo = page.querySelector('.fund-info');
-        page.insertBefore(banner, fundInfo);
     },
 
     /**
      * 刷新详情页
      */
     refresh() {
-        Detail.renderSyncStatusBanner();
         if (!this.currentFundId) return;
 
         const fund = FundManager.getFund(this.currentFundId);
