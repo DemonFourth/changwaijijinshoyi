@@ -1,27 +1,25 @@
 const SyncConflictModalHelper = {
     show(conflicts, onResolve) {
-        const modal = document.getElementById('modal-container');
+        const container = document.getElementById('modal-container');
+        const title = document.getElementById('modal-title');
+        const body = document.getElementById('modal-body');
+        const footer = document.getElementById('modal-footer');
 
-        const html = `
-            <div class="modal-header">
-                <h3>同步冲突</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>检测到 ${conflicts.length} 个冲突，请选择保留的版本：</p>
-                <div class="conflict-list">
-                    ${conflicts.map((conflict, index) => this._renderConflictItem(conflict, index)).join('')}
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="btn-conflict-use-local">全部使用本地版本</button>
-                <button class="btn btn-secondary" id="btn-conflict-use-cloud">全部使用云端版本</button>
-                <button class="btn btn-primary" id="btn-conflict-apply">应用选择</button>
+        title.textContent = '同步冲突';
+        body.innerHTML = `
+            <p>检测到 ${conflicts.length} 个冲突，请选择保留的版本：</p>
+            <div class="conflict-list">
+                ${conflicts.map((conflict, index) => this._renderConflictItem(conflict, index)).join('')}
             </div>
         `;
+        footer.innerHTML = `
+            <button class="btn btn-secondary" id="btn-conflict-use-local">全部使用本地版本</button>
+            <button class="btn btn-secondary" id="btn-conflict-use-cloud">全部使用云端版本</button>
+            <button class="btn btn-primary" id="btn-conflict-apply">应用选择</button>
+        `;
 
-        modal.innerHTML = html;
-        modal.classList.add('active');
+        container.classList.remove('hidden');
+        container.classList.add('modal-sync-conflict');
 
         this._bindEvents(conflicts, onResolve);
     },
@@ -112,8 +110,7 @@ const SyncConflictModalHelper = {
     },
 
     close() {
-        const modal = document.getElementById('modal-container');
-        modal.classList.remove('active');
+        window.Modal.hide();
     }
 };
 
