@@ -95,6 +95,8 @@ const SyncStatusPresenter = {
         const localFunds = localSnapshot.funds || [];
         const localTrades = localSnapshot.trades || [];
         const cloudRevision = syncStatus && syncStatus.cloudRevision ? syncStatus.cloudRevision : 0;
+        const cloudFunds = syncStatus && syncStatus.cloudFunds !== undefined ? syncStatus.cloudFunds : '-';
+        const cloudTrades = syncStatus && syncStatus.cloudTrades !== undefined ? syncStatus.cloudTrades : '-';
         const lastSyncAt = syncStatus && syncStatus.lastSyncAt ? syncStatus.lastSyncAt : '-';
         const pendingChanges = syncStatus && syncStatus.pendingChanges ? syncStatus.pendingChanges : 0;
         const lastError = syncStatus && syncStatus.lastError ? syncStatus.lastError : '';
@@ -116,11 +118,11 @@ const SyncStatusPresenter = {
                                 <span class="sync-tools-stat-label">版本</span>
                             </div>
                             <div class="sync-tools-stat">
-                                <span class="sync-tools-stat-value">-</span>
+                                <span class="sync-tools-stat-value">${cloudFunds}</span>
                                 <span class="sync-tools-stat-label">基金</span>
                             </div>
                             <div class="sync-tools-stat">
-                                <span class="sync-tools-stat-value">-</span>
+                                <span class="sync-tools-stat-value">${cloudTrades}</span>
                                 <span class="sync-tools-stat-label">交易</span>
                             </div>
                         </div>
@@ -132,7 +134,7 @@ const SyncStatusPresenter = {
                         </div>
                         <div class="sync-tools-card-body">
                             <div class="sync-tools-stat">
-                                <span class="sync-tools-stat-value">-</span>
+                                <span class="sync-tools-stat-value">${cloudRevision}</span>
                                 <span class="sync-tools-stat-label">版本</span>
                             </div>
                             <div class="sync-tools-stat">

@@ -23,6 +23,8 @@ const StorageSchema = {
                 lastPulledAt: null,
                 lastPushedAt: null,
                 cloudRevision: 0,
+                cloudFunds: 0,
+                cloudTrades: 0,
                 syncStatus: 'idle',
                 pendingChanges: 0,
                 lastError: null

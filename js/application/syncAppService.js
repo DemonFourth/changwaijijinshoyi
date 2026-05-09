@@ -229,6 +229,11 @@ const SyncAppService = {
         const cloudFunds = result.funds || [];
         const cloudTrades = result.trades || [];
 
+        window.LocalStorageAdapter.updateSyncMeta({
+            cloudFunds: cloudFunds.length,
+            cloudTrades: cloudTrades.length
+        });
+
         // 本地空，云端有数据 → 直接填充
         if ((localFunds.length === 0 && localTrades.length === 0) &&
             (cloudFunds.length > 0 || cloudTrades.length > 0)) {
