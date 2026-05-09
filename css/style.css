@@ -4133,7 +4133,7 @@ td.negative {
 
 .ip-trade-table th {
     padding: 10px 8px;
-    text-align: left;
+    text-align: center;
     font-weight: 600;
     font-size: 11px;
     color: var(--color-text-secondary);
@@ -4144,9 +4144,31 @@ td.negative {
 }
 
 .ip-trade-table td {
-    padding: 10px 14px;
+    padding: 10px 8px;
+    text-align: center;
     border-bottom: 1px solid var(--color-border-secondary);
     color: var(--color-text-primary);
+}
+
+/* 特定列文本对齐 */
+.ip-trade-table th:first-child,
+.ip-trade-table td:first-child {
+    text-align: left;
+}
+
+.ip-trade-table th:nth-child(2),
+.ip-trade-table td:nth-child(2) {
+    text-align: left;
+}
+
+.ip-trade-table th:nth-child(5),
+.ip-trade-table td:nth-child(5) {
+    text-align: right;
+}
+
+.ip-trade-table th:last-child,
+.ip-trade-table td:last-child {
+    text-align: center;
 }
 
 .ip-trade-table tr:last-child td {
@@ -4220,10 +4242,12 @@ td.negative {
     color: var(--color-text-secondary);
     font-size: 11px;
     width: 85px;
+    text-align: left !important;
 }
 
 .ip-td-type {
     width: 75px;
+    text-align: left !important;
 }
 
 .ip-td-netvalue {
@@ -4242,6 +4266,7 @@ td.negative {
     font-variant-numeric: tabular-nums;
     font-weight: 500;
     width: 100px;
+    text-align: right !important;
 }
 
 .ip-td-amount--highlight {
@@ -4250,7 +4275,7 @@ td.negative {
 
 .ip-td-status {
     width: 65px;
-    text-align: center;
+    text-align: center !important;
 }
 
 /* 重复行数值淡化 */
