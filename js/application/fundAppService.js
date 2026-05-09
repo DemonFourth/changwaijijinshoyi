@@ -35,8 +35,15 @@ const FundAppService = {
             return { success: false, fund: null, affectedTradeIds: [], reason: 'not_found' };
         }
 
+        const existing = funds[index];
+        const metaKeys = new Set(['updatedAt', 'updateTime', 'lastSyncedAt', 'createdAt', 'deletedAt']);
+        const hasChanged = Object.keys(updates).some(key => {
+            if (metaKeys.has(key)) return false;
+            return JSON.stringify(existing[key]) !== JSON.stringify(updates[key]);
+        });
+
         funds[index] = window.StorageSchema.createFundEntity({
-            ...funds[index],
+            ...existing,
             ...updates,
             updatedAt: now,
             updateTime: updates.updateTime || now
@@ -48,9 +55,11 @@ const FundAppService = {
             return { success: false, fund: null, affectedTradeIds: [], reason: 'save_failed' };
         }
 
-        EventBus.emit(EventType.FUND_UPDATED, { fund: funds[index] });
-        if (typeof window.SyncAppService !== 'undefined') {
-            await window.SyncAppService.notifyBusinessDataChanged('event');
+        if (hasChanged) {
+            EventBus.emit(EventType.FUND_UPDATED, { fund: funds[index] });
+            if (typeof window.SyncAppService !== 'undefined') {
+                await window.SyncAppService.notifyBusinessDataChanged('event');
+            }
         }
 
         return { success: true, fund: funds[index], affectedTradeIds: [], reason: '' };
