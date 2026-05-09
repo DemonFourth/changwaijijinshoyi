@@ -27,6 +27,10 @@ const SyncStatusPresenter = {
     updateHeaderIndicator() {
         const container = document.getElementById('sync-status-container');
         if (!container) return;
+        if (window.RuntimeConfigLoader && window.RuntimeConfigLoader.getStorageMode() !== 'hybrid') {
+            container.innerHTML = '';
+            return;
+        }
         const syncStatus = window.SyncAppService ? window.SyncAppService.getSyncStatus() : {};
         container.innerHTML = SyncStatusPresenter.buildHeaderIndicatorHtml(syncStatus);
         const indicator = container.querySelector('#sync-status');
