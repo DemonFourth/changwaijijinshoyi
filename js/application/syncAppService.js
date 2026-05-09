@@ -242,6 +242,22 @@ const SyncAppService = {
             return { success: true, reason: 'filled_from_cloud' };
         }
 
+        // 本地有数据，云端为空（且 revision 有更新）→ 云端被清空了，用空数据覆盖本地
+        const syncMeta = window.LocalStorageAdapter.getSyncMeta();
+        const localCloudRevision = syncMeta.cloudRevision || 0;
+        if ((localFunds.length > 0 || localTrades.length > 0) &&
+            (cloudFunds.length === 0 && cloudTrades.length === 0) &&
+            result.revision > localCloudRevision) {
+            const newSnapshot = {
+                ...localSnapshot,
+                funds: [],
+                trades: []
+            };
+            window.LocalStorageAdapter.saveSnapshot(newSnapshot);
+            SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
+            return { success: true, reason: 'cleared_by_cloud' };
+        }
+
         // 本地有数据 → 差异检测与合并
         const mergeResult = this._mergeData(localSnapshot, result);
 
