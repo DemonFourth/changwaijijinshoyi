@@ -24,7 +24,7 @@ const ImportPreviewHelper = {
         title.textContent = '导入预览';
         console.log('[ImportPreview] Rendering content...');
         
-        const rendered = this._renderContentWithActions();
+        const rendered = this._renderContent();
         body.innerHTML = rendered.content;
         
         const modalEl = container.querySelector('.modal');
