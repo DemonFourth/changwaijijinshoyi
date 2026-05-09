@@ -49,20 +49,23 @@ const ImportPreviewHelper = {
         let html = '';
 
         html += '<div class="ip-stat-cards">';
-        html += `<div class="ip-stat-card ip-stat-card--new"><div class="ip-stat-num">${summary.newFundsCount}</div><div class="ip-stat-label">新增基金</div></div>`;
-        html += `<div class="ip-stat-card ip-stat-card--existing"><div class="ip-stat-num">${summary.existingFundsCount}</div><div class="ip-stat-label">已存在基金</div></div>`;
-        html += `<div class="ip-stat-card ip-stat-card--trades"><div class="ip-stat-num">${summary.newTradesCount}</div><div class="ip-stat-label">新增记录</div></div>`;
-        html += `<div class="ip-stat-card ip-stat-card--duplicate"><div class="ip-stat-num">${summary.duplicateTradesCount}</div><div class="ip-stat-label">重复跳过</div></div>`;
+        html += `<div class="ip-stat-card ip-stat-card--new"><span class="ip-stat-card-icon">📦</span><div class="ip-stat-card-value">${summary.newFundsCount}</div><div class="ip-stat-card-label">新增基金</div></div>`;
+        html += `<div class="ip-stat-card ip-stat-card--existing"><span class="ip-stat-card-icon">📋</span><div class="ip-stat-card-value">${summary.existingFundsCount}</div><div class="ip-stat-card-label">已存在基金</div></div>`;
+        html += `<div class="ip-stat-card ip-stat-card--trades"><span class="ip-stat-card-icon">📝</span><div class="ip-stat-card-value">${summary.newTradesCount}</div><div class="ip-stat-card-label">新增记录</div></div>`;
+        html += `<div class="ip-stat-card ip-stat-card--duplicate"><span class="ip-stat-card-icon">⏭</span><div class="ip-stat-card-value">${summary.duplicateTradesCount}</div><div class="ip-stat-card-label">重复跳过</div></div>`;
         html += '</div>';
 
         if (!hasAnyData) {
-            html += '<div class="ip-empty">没有需要导入的数据</div>';
+            html += '<div class="ip-empty">';
+            html += '<div class="ip-empty-icon">📭</div>';
+            html += '<div class="ip-empty-text">没有需要导入的数据</div>';
+            html += '</div>';
             return html;
         }
 
         if (hasNewTrades) {
-            html += '<div class="ip-stock-section">';
-            html += '<div class="ip-section-label">有新增交易的基金</div>';
+            html += '<div class="ip-section">';
+            html += '<div class="ip-section-header"><span class="ip-section-icon">✨</span><span class="ip-section-title">有新增交易的基金</span><span class="ip-section-count">' + this._analysis.fundsWithNewTrades.length + '只</span></div>';
             for (const item of this._analysis.fundsWithNewTrades) {
                 html += this._buildStockRow(item, false);
             }
@@ -70,23 +73,22 @@ const ImportPreviewHelper = {
         }
 
         if (hasDuplicates) {
-            html += '<div class="ip-stock-section">';
-            html += '<div class="ip-section-label">全部重复的基金</div>';
+            html += '<div class="ip-section">';
+            html += '<div class="ip-section-header"><span class="ip-section-icon">📋</span><span class="ip-section-title">全部重复的基金</span><span class="ip-section-count">' + this._analysis.allDuplicateFunds.length + '只</span></div>';
             for (const item of this._analysis.allDuplicateFunds) {
                 html += this._buildStockRow(item, true);
             }
             html += '</div>';
         }
 
-        html += '<div class="ip-warning-box">';
-        html += '<div class="ip-warning-icon">⚠️</div>';
-        html += '<div class="ip-warning-text">';
-        html += '<div class="ip-warning-title">覆盖警告</div>';
-        
         const { importFundsCount, importTradesCount, existingFundsCount2, existingTradesCount } = summary;
         const fundsDiff = importFundsCount - existingFundsCount2;
         const tradesDiff = importTradesCount - existingTradesCount;
         
+        html += '<div class="ip-warning-box">';
+        html += '<svg class="ip-warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        html += '<div class="ip-warning-content">';
+        html += '<div class="ip-warning-title">覆盖警告</div>';
         if (fundsDiff < 0 || tradesDiff < 0) {
             html += `<div class="ip-warning-desc">导入数据较少：基金 ${importFundsCount} vs 现有 ${existingFundsCount2}，交易 ${importTradesCount} vs 现有 ${existingTradesCount}。覆盖将删除多余数据！</div>`;
         } else {
@@ -96,9 +98,9 @@ const ImportPreviewHelper = {
         html += '</div>';
 
         html += '<div class="ip-actions">';
-        html += '<button class="btn btn-secondary" id="btn-import-cancel">取消</button>';
-        html += '<button class="btn btn-warning" id="btn-import-merge">合并数据</button>';
-        html += '<button class="btn btn-primary" id="btn-import-overwrite">覆盖数据</button>';
+        html += '<button class="ip-btn ip-btn--secondary" id="btn-import-cancel">取消</button>';
+        html += '<button class="ip-btn ip-btn--merge" id="btn-import-merge">合并数据</button>';
+        html += '<button class="ip-btn ip-btn--overwrite" id="btn-import-overwrite">覆盖数据</button>';
         html += '</div>';
 
         return html;
@@ -113,21 +115,26 @@ const ImportPreviewHelper = {
         let html = '';
         html += `<div class="ip-stock-row ${isDuplicate ? 'ip-stock-row--duplicate' : ''}" data-fund-id="${fund.id}">`;
         html += '<div class="ip-stock-row-header">';
-        html += `<span class="ip-stock-name">${fund.name}</span>`;
-        html += `<span class="ip-stock-code">${fund.code}</span>`;
+        html += '<div class="ip-stock-indicator"></div>';
+        html += '<div class="ip-stock-info">';
+        html += `<div class="ip-stock-name">${fund.name}</div>`;
+        html += `<div class="ip-stock-code">${fund.code}</div>`;
+        html += '</div>';
+        html += '<div class="ip-stock-badges">';
 
         if (isDuplicate) {
-            html += `<span class="ip-stock-badge ip-stock-badge--duplicate">${totalCount}条重复</span>`;
+            html += `<span class="ip-badge ip-badge--duplicate">${totalCount}条重复</span>`;
         } else {
             if (newCount > 0) {
-                html += `<span class="ip-stock-badge ip-stock-badge--new">${newCount}条新增</span>`;
+                html += `<span class="ip-badge ip-badge--new">${newCount}条新增</span>`;
             }
             if (dupCount > 0) {
-                html += `<span class="ip-stock-badge ip-stock-badge--duplicate">${dupCount}条重复</span>`;
+                html += `<span class="ip-badge ip-badge--duplicate">${dupCount}条重复</span>`;
             }
         }
 
-        html += `<span class="ip-stock-toggle ip-stock-toggle--collapsed">▼详情</span>`;
+        html += '</div>';
+        html += '<span class="ip-stock-toggle">▼详情</span>';
         html += '</div>';
 
         html += '<div class="ip-stock-detail" style="display: none;">';
@@ -167,11 +174,11 @@ const ImportPreviewHelper = {
 
         if (detail.style.display === 'none' || detail.style.display === '') {
             detail.style.display = 'block';
-            toggle.classList.remove('ip-stock-toggle--collapsed');
+            toggle.classList.add('ip-stock-toggle--expanded');
             toggle.textContent = '▲收起';
         } else {
             detail.style.display = 'none';
-            toggle.classList.add('ip-stock-toggle--collapsed');
+            toggle.classList.remove('ip-stock-toggle--expanded');
             toggle.textContent = '▼详情';
         }
     },
