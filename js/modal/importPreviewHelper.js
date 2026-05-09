@@ -167,12 +167,16 @@ const ImportPreviewHelper = {
         const toggle = row.querySelector('.ip-stock-toggle');
 
         console.log('[ImportPreview] row:', row, 'detail:', detail, 'toggle:', toggle);
+        console.log('[ImportPreview] detail.classList before:', detail.classList.toString());
         
         if (detail.classList.contains('hidden')) {
+            console.log('[ImportPreview] Removing hidden class');
             detail.classList.remove('hidden');
             toggle.classList.remove('ip-stock-toggle--collapsed');
             toggle.textContent = '▲收起';
+            console.log('[ImportPreview] detail.classList after:', detail.classList.toString());
         } else {
+            console.log('[ImportPreview] Adding hidden class');
             detail.classList.add('hidden');
             toggle.classList.add('ip-stock-toggle--collapsed');
             toggle.textContent = '▼详情';
