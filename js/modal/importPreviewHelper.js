@@ -3,20 +3,35 @@ const ImportPreviewHelper = {
     _analysis: null,
 
     show(analysis) {
+        console.log('[ImportPreview] show() called', analysis);
+        console.log('[ImportPreview] ImportPreviewHelper available:', typeof ImportPreviewHelper);
+        
         this._analysis = analysis;
         const container = document.getElementById('modal-container');
         const title = document.getElementById('modal-title');
         const body = document.getElementById('modal-body');
         const footer = document.getElementById('modal-footer');
 
+        console.log('[ImportPreview] container:', container);
+        console.log('[ImportPreview] title:', title);
+        console.log('[ImportPreview] body:', body);
+
+        if (!container || !title || !body) {
+            console.error('[ImportPreview] ERROR: Required modal elements not found!');
+            return;
+        }
+
         title.textContent = '导入预览';
+        console.log('[ImportPreview] Rendering content...');
         body.innerHTML = this._renderContent();
         footer.innerHTML = '';
 
         container.classList.remove('hidden');
         container.classList.add('modal-import-preview');
 
+        console.log('[ImportPreview] Binding events...');
         this._bindEvents();
+        console.log('[ImportPreview] show() complete');
     },
 
     hide() {

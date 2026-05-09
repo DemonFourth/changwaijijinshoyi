@@ -872,10 +872,21 @@ const Modal = {
     },
 
     bindImportEvents() {
+        console.log('[Import] bindImportEvents called');
+        
         const btnConfirm = document.getElementById('btn-confirm-import');
+        console.log('[Import] btnConfirm element:', btnConfirm);
+
+        if (!btnConfirm) {
+            console.error('[Import] ERROR: btn-confirm-import not found!');
+            return;
+        }
 
         btnConfirm.addEventListener('click', () => {
+            console.log('[Import] Import button clicked');
+            
             const fileInput = document.getElementById('input-import-file');
+            console.log('[Import] fileInput:', fileInput);
 
             if (!fileInput.files || fileInput.files.length === 0) {
                 Utils.showToast('请选择文件', 'error');
@@ -883,14 +894,20 @@ const Modal = {
             }
 
             const file = fileInput.files[0];
+            console.log('[Import] File selected:', file.name);
+            
             const reader = new FileReader();
 
             reader.onload = async (e) => {
+                console.log('[Import] File read complete');
                 try {
                     const data = JSON.parse(e.target.result);
-
+                    console.log('[Import] JSON parsed, data keys:', Object.keys(data));
+                    
                     // 先分析导入数据
+                    console.log('[Import] Calling analyzeImportData...');
                     const analysis = window.ImportAppService.analyzeImportData(data);
+                    console.log('[Import] analysis result:', analysis);
 
                     if (!analysis.success) {
                         Utils.showToast('数据分析失败: ' + analysis.reason, 'error');
@@ -898,11 +915,14 @@ const Modal = {
                     }
 
                     // 显示预览
+                    console.log('[Import] Calling ImportPreviewHelper.show...');
                     ImportPreviewHelper.show(analysis);
+                    console.log('[Import] ImportPreviewHelper.show called');
 
                     // 隐藏导入弹窗
                     Modal.hide();
                 } catch (error) {
+                    console.error('[Import] Error during import:', error);
                     Utils.showToast('文件格式错误', 'error');
                 }
             };
