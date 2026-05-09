@@ -154,20 +154,39 @@ const ImportPreviewHelper = {
     },
 
     _buildTradeRows(items, isDuplicate = false) {
-        const typeMap = { buy: '买入', sell: '卖出', dividend: '分红' };
+        const typeConfig = {
+            buy: { label: '买入', icon: '→', class: 'type-buy' },
+            sell: { label: '卖出', icon: '←', class: 'type-sell' },
+            dividend: { label: '分红', icon: '✦', class: 'type-dividend' }
+        };
+
+        const formatNumber = (num, decimals = 2) => {
+            if (num === null || num === undefined || num === '-') return '-';
+            const n = parseFloat(num);
+            if (isNaN(n)) return num;
+            return n.toLocaleString('zh-CN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        };
+
+        const formatAmount = (num) => {
+            if (num === null || num === undefined || num === '-') return '-';
+            const n = parseFloat(num);
+            if (isNaN(n)) return num;
+            return '¥' + n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
 
         return items.map(item => {
-            // tradeItems has {trade, isNew}, trades is raw trade
             const trade = item.trade || item;
             const isNew = item.isNew !== undefined ? item.isNew : !isDuplicate;
+            const config = typeConfig[trade.type] || { label: trade.type, icon: '', class: '' };
+
             return `
                 <tr class="ip-trade-row ${isNew ? '' : 'ip-trade-row--muted'}">
-                    <td>${trade.date}</td>
-                    <td>${typeMap[trade.type] || trade.type}</td>
-                    <td>${trade.netValue}</td>
-                    <td>${trade.shares}</td>
-                    <td>${trade.amount || '-'}</td>
-                    <td><span class="ip-trade-status ${isNew ? 'ip-trade-status--new' : 'ip-trade-status--duplicate'}">${isNew ? '新增' : '重复'}</span></td>
+                    <td class="ip-td-date">${trade.date}</td>
+                    <td class="ip-td-type"><span class="ip-type-badge ${config.class}">${config.icon} ${config.label}</span></td>
+                    <td class="ip-td-netvalue">${formatNumber(trade.netValue, 4)}</td>
+                    <td class="ip-td-shares">${formatNumber(trade.shares)}</td>
+                    <td class="ip-td-amount ${isNew ? 'ip-td-amount--highlight' : ''}">${formatAmount(trade.amount)}</td>
+                    <td class="ip-td-status"><span class="ip-status-badge ${isNew ? 'ip-status-badge--new' : 'ip-status-badge--duplicate'}">${isNew ? '新增' : '重复'}</span></td>
                 </tr>
             `;
         }).join('');

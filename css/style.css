@@ -4158,10 +4158,42 @@ td.negative {
 }
 
 .ip-trade-row--muted td {
-    opacity: 0.6;
+    opacity: 0.55;
+    background: rgba(160, 174, 192, 0.05);
 }
 
-.ip-trade-status {
+.ip-trade-row--muted:hover td {
+    background: rgba(160, 174, 192, 0.1);
+}
+
+/* 交易类型徽章 */
+.ip-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.ip-type-badge.type-buy {
+    background: rgba(72, 187, 120, 0.12);
+    color: var(--color-success);
+}
+
+.ip-type-badge.type-sell {
+    background: rgba(237, 137, 54, 0.12);
+    color: var(--color-danger);
+}
+
+.ip-type-badge.type-dividend {
+    background: rgba(66, 153, 225, 0.12);
+    color: var(--color-info);
+}
+
+/* 状态徽章 */
+.ip-status-badge {
     display: inline-block;
     padding: 2px 8px;
     border-radius: 10px;
@@ -4169,14 +4201,55 @@ td.negative {
     font-weight: 500;
 }
 
-.ip-trade-status--new {
-    background: rgba(72, 187, 120, 0.12);
+.ip-status-badge--new {
+    background: rgba(72, 187, 120, 0.15);
     color: var(--color-success);
 }
 
-.ip-trade-status--duplicate {
-    background: rgba(160, 174, 192, 0.12);
+.ip-status-badge--duplicate {
+    background: rgba(160, 174, 192, 0.15);
+    color: var(--color-text-secondary);
+}
+
+/* 交易表格单元格样式 */
+.ip-td-date {
+    color: var(--color-text-secondary);
+    font-size: 11px;
+}
+
+.ip-td-type {
+    width: 70px;
+}
+
+.ip-td-netvalue {
     color: var(--color-text-tertiary);
+    font-variant-numeric: tabular-nums;
+}
+
+.ip-td-shares {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.ip-td-amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+.ip-td-amount--highlight {
+    color: var(--color-text-primary);
+}
+
+.ip-td-status {
+    width: 60px;
+    text-align: center;
+}
+
+/* 重复行数值淡化 */
+.ip-trade-row--muted .ip-td-netvalue,
+.ip-trade-row--muted .ip-td-shares,
+.ip-trade-row--muted .ip-td-amount {
+    opacity: 0.7;
 }
 
 /* 警告框 */
