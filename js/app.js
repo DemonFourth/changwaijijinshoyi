@@ -29,6 +29,7 @@ const App = {
             const syncBasePath = Config.get('sync.basePath', '');
             await SyncAppService.init({ enabled: syncEnabled, basePath: syncBasePath, timeout: Config.get('sync.timeout') });
             this.setupSyncCompensation();
+            window.SyncStatusPresenter.updateHeaderIndicator();
 
             // 显示存储模式提示
             const storageMode = RuntimeConfigLoader.getStorageMode();
@@ -311,6 +312,16 @@ const App = {
             if (document.hidden) {
                 compensate();
             }
+        });
+
+        EventBus.on(EventType.SYNC_DATA_APPLIED, () => {
+            window.SyncStatusPresenter.updateHeaderIndicator();
+        });
+        EventBus.on(EventType.DATA_IMPORTED, () => {
+            window.SyncStatusPresenter.updateHeaderIndicator();
+        });
+        EventBus.on(EventType.DATA_CLEARED, () => {
+            window.SyncStatusPresenter.updateHeaderIndicator();
         });
     }
 };

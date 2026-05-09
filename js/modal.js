@@ -57,6 +57,11 @@ const Modal = {
             title: '✏️ 编辑基金',
             render: (data) => Modal.renderEditFundForm(data),
             bind: (data) => Modal.bindEditFundEvents(data)
+        },
+        syncTools: {
+            title: '☁️ 云同步详情',
+            render: () => window.SyncStatusPresenter.buildSyncToolsModalBody(window.SyncAppService.getSyncStatus()),
+            bind: () => window.SyncStatusPresenter.bindSyncToolsModalEvents()
         }
     },
 

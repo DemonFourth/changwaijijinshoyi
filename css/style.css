@@ -3729,3 +3729,149 @@ td.negative {
     color: #856404;
     border: 1px solid #ffeeba;
 }
+
+/* 云同步状态指示器（header） */
+.sync-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    transition: background 0.2s, color 0.2s;
+}
+
+.sync-indicator:hover {
+    background: var(--color-border-primary);
+}
+
+.sync-indicator-icon {
+    font-size: 11px;
+}
+
+.sync-indicator-text {
+    font-weight: 500;
+}
+
+.sync-indicator-idle {
+    color: var(--color-success);
+}
+
+.sync-indicator-syncing {
+    color: var(--color-info);
+}
+
+.sync-indicator-syncing .sync-indicator-icon {
+    animation: spin 1s linear infinite;
+}
+
+.sync-indicator-pending {
+    color: var(--color-warning);
+}
+
+.sync-indicator-error {
+    background: rgba(220, 53, 69, 0.1);
+    color: var(--color-danger);
+}
+
+.sync-indicator-conflict {
+    background: rgba(255, 193, 7, 0.1);
+    color: #e6a800;
+}
+
+/* 云同步详情弹窗 */
+.sync-tools-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sync-tools-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.sync-tools-card {
+    border: 1px solid var(--color-border-primary);
+    border-radius: 12px;
+    padding: 12px;
+    background: var(--color-bg-secondary);
+}
+
+.sync-tools-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: var(--color-text-primary);
+}
+
+.sync-tools-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sync-tools-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.sync-tools-stat-value {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--color-text-primary);
+}
+
+.sync-tools-stat-label {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.sync-tools-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    background: var(--color-bg-secondary);
+    border-radius: 8px;
+}
+
+.sync-tools-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.sync-tools-info-label {
+    color: var(--color-text-secondary);
+}
+
+.sync-tools-info-value {
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+.sync-tools-info-error .sync-tools-info-value {
+    color: var(--color-danger);
+    font-size: 12px;
+}
+
+.sync-tools-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sync-tools-actions .btn {
+    flex: 1;
+    min-width: 100px;
+}
