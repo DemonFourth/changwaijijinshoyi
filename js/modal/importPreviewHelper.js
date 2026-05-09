@@ -11,11 +11,7 @@ const ImportPreviewHelper = {
 
         title.textContent = '导入预览';
         body.innerHTML = this._renderContent();
-        footer.innerHTML = `
-            <button class="btn btn-secondary" id="btn-import-cancel">取消</button>
-            <button class="btn btn-warning" id="btn-import-merge">合并数据</button>
-            <button class="btn btn-primary" id="btn-import-overwrite">覆盖数据</button>
-        `;
+        footer.innerHTML = '';
 
         container.classList.remove('hidden');
         container.classList.add('modal-import-preview');
@@ -50,7 +46,7 @@ const ImportPreviewHelper = {
         }
 
         if (hasNewTrades) {
-            html += '<div class="ip-section">';
+            html += '<div class="ip-stock-section">';
             html += '<div class="ip-section-label">有新增交易的基金</div>';
             for (const item of this._analysis.fundsWithNewTrades) {
                 html += this._buildStockRow(item, false);
@@ -59,7 +55,7 @@ const ImportPreviewHelper = {
         }
 
         if (hasDuplicates) {
-            html += '<div class="ip-section">';
+            html += '<div class="ip-stock-section">';
             html += '<div class="ip-section-label">全部重复的基金</div>';
             for (const item of this._analysis.allDuplicateFunds) {
                 html += this._buildStockRow(item, true);
@@ -73,6 +69,12 @@ const ImportPreviewHelper = {
         html += '<div class="ip-warning-title">覆盖警告</div>';
         html += '<div class="ip-warning-desc">覆盖操作将使用导入数据完全替换现有数据，建议使用「合并数据」功能</div>';
         html += '</div>';
+        html += '</div>';
+
+        html += '<div class="ip-actions">';
+        html += '<button class="btn btn-secondary" id="btn-import-cancel">取消</button>';
+        html += '<button class="btn btn-warning" id="btn-import-merge">合并数据</button>';
+        html += '<button class="btn btn-primary" id="btn-import-overwrite">覆盖数据</button>';
         html += '</div>';
 
         return html;
@@ -108,7 +110,7 @@ const ImportPreviewHelper = {
         html += '<table class="ip-trade-table">';
         html += '<thead><tr><th>日期</th><th>类型</th><th>净值</th><th>份额</th><th>金额</th><th>状态</th></tr></thead>';
         html += '<tbody>';
-        html += this._buildTradeRows(item.trades, item.tradeItems);
+        html += this._buildTradeRows(item.trades, isDuplicate);
         html += '</tbody>';
         html += '</table>';
         html += '</div>';
@@ -117,26 +119,18 @@ const ImportPreviewHelper = {
         return html;
     },
 
-    _buildTradeRows(items, tradeItemsMap) {
+    _buildTradeRows(items, isDuplicate = false) {
         const typeMap = { buy: '买入', sell: '卖出', dividend: '分红' };
-        const isItemArray = Array.isArray(tradeItemsMap);
 
         return items.map(trade => {
-            const isNew = isItemArray
-                ? tradeItemsMap.find(t => t.trade.id === trade.id)?.isNew ?? false
-                : (tradeItemsMap[trade.id]?.isNew ?? false);
-
-            const statusClass = isNew ? 'ip-trade-status--new' : 'ip-trade-status--duplicate';
-            const statusText = isNew ? '新增' : '重复';
-
             return `
-                <tr class="ip-trade-row ${isNew ? '' : 'ip-trade-row--muted'}">
+                <tr class="ip-trade-row ${isDuplicate ? 'ip-trade-row--muted' : ''}">
                     <td>${trade.date}</td>
                     <td>${typeMap[trade.type] || trade.type}</td>
                     <td>${trade.netValue}</td>
                     <td>${trade.shares}</td>
                     <td>${trade.amount || '-'}</td>
-                    <td><span class="ip-trade-status ${statusClass}">${statusText}</span></td>
+                    <td><span class="ip-trade-status ${isDuplicate ? 'ip-trade-status--duplicate' : 'ip-trade-status--new'}">${isDuplicate ? '重复' : '新增'}</span></td>
                 </tr>
             `;
         }).join('');
