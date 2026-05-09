@@ -171,6 +171,7 @@ const SyncStatusPresenter = {
 
     _buildSyncToolsActionsHtml() {
         return `
+            <button class="btn btn-secondary" id="btn-refresh-cloud">刷新云端数据</button>
             <button class="btn btn-primary" id="btn-manual-sync">立即同步</button>
             <button class="btn btn-secondary" id="btn-force-push">强制上传本地</button>
             <button class="btn btn-secondary" id="btn-force-pull">强制下载云端</button>
@@ -186,18 +187,20 @@ const SyncStatusPresenter = {
     },
 
     bindSyncToolsModalEvents() {
-        SyncAppService.refreshCloudMeta().then(() => {
-            const body = document.getElementById('modal-body');
-            if (body) {
-                const freshStatus = SyncAppService.getSyncStatus();
-                const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
-                body.innerHTML = SyncStatusPresenter._buildSyncToolsBodyHtml(freshStatus, localSnapshot);
-            }
-            this._bindSyncActionEvents();
-        });
+        this._bindSyncActionEvents();
     },
 
     _bindSyncActionEvents() {
+        document.getElementById('btn-refresh-cloud')?.addEventListener('click', async () => {
+            Utils.showLoading('刷新中...');
+            await SyncAppService.refreshCloudMeta();
+            Utils.hideLoading();
+            const freshStatus = SyncAppService.getSyncStatus();
+            const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
+            document.getElementById('modal-body').querySelector('.sync-tools-modal').outerHTML =
+                SyncStatusPresenter._buildSyncToolsBodyHtml(freshStatus, localSnapshot);
+        });
+
         document.getElementById('btn-manual-sync')?.addEventListener('click', async () => {
             Utils.showLoading('同步中...');
             const result = await SyncAppService.manualSync();
