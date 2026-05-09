@@ -46,6 +46,10 @@ const ImportPreviewHelper = {
     },
 
     hide() {
+        const footer = document.getElementById('modal-footer');
+        if (footer) {
+            footer.style.display = '';
+        }
         window.Modal.hide();
         this._pendingData = null;
         this._analysis = null;
