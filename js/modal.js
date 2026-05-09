@@ -3,7 +3,7 @@
  * 管理各种弹窗的显示和交互
  */
 
-/* global FeeCalculator */
+/* global FeeCalculator ImportPreviewHelper */
 
 const Modal = {
     currentType: null,
@@ -32,6 +32,11 @@ const Modal = {
             title: '导入数据',
             render: () => Modal.renderImportForm(),
             bind: () => Modal.bindImportEvents()
+        },
+        importPreview: {
+            title: '导入预览',
+            render: () => '',
+            bind: () => {}
         },
         export: {
             title: '导出数据',
@@ -871,7 +876,6 @@ const Modal = {
 
         btnConfirm.addEventListener('click', () => {
             const fileInput = document.getElementById('input-import-file');
-            const mergeCheckbox = document.getElementById('input-merge-data');
 
             if (!fileInput.files || fileInput.files.length === 0) {
                 Utils.showToast('请选择文件', 'error');
@@ -884,19 +888,20 @@ const Modal = {
             reader.onload = async (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    const merge = mergeCheckbox.checked;
 
-                    const result = await window.AppSettingsService.importData(data, merge);
+                    // 先分析导入数据
+                    const analysis = window.ImportAppService.analyzeImportData(data);
 
-                    if (result && result.success) {
-                        Utils.showToast('数据导入成功', 'success');
-                        Modal.hide();
-                        if (typeof Overview !== 'undefined') {
-                            Overview.refresh();
-                        }
-                    } else {
-                        Utils.showToast('数据导入失败', 'error');
+                    if (!analysis.success) {
+                        Utils.showToast('数据分析失败: ' + analysis.reason, 'error');
+                        return;
                     }
+
+                    // 显示预览
+                    ImportPreviewHelper.show(analysis);
+
+                    // 隐藏导入弹窗
+                    Modal.hide();
                 } catch (error) {
                     Utils.showToast('文件格式错误', 'error');
                 }

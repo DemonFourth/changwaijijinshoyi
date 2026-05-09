@@ -2615,7 +2615,7 @@ td.negative {
     padding: 0.75rem 1rem;
     border-radius: 12px;
     background: var(--color-surface-secondary, #f5f5f5);
-    color: var(--color-text-primary, #222);
+    color: var(--color-text-primary, #222222);
     cursor: pointer;
 }
 
@@ -3874,4 +3874,147 @@ td.negative {
 .sync-tools-actions .btn {
     flex: 1;
     min-width: 100px;
+}
+
+/* 导入预览弹窗样式 */
+.ip-modal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.ip-stat-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.ip-stat-card {
+    border: 1px solid var(--color-border-primary);
+    border-radius: 12px;
+    padding: 12px;
+    background: var(--color-bg-secondary);
+    text-align: center;
+}
+
+.ip-stat-card-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.ip-stat-card-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+}
+
+.ip-stock-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ip-stock-row {
+    border: 1px solid var(--color-border-primary);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.ip-stock-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--color-bg-tertiary);
+    cursor: pointer;
+}
+
+.ip-stock-row-header:hover {
+    background: var(--color-bg-hover);
+}
+
+.ip-stock-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.ip-stock-code {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ip-stock-count {
+    background: var(--color-bg-primary);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.ip-stock-detail {
+    padding: 12px;
+    background: var(--color-bg-primary);
+    border-top: 1px solid var(--color-border-primary);
+    display: none;
+}
+
+.ip-stock-detail.expanded {
+    display: block;
+}
+
+.ip-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.ip-detail-table th,
+.ip-detail-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.ip-detail-table th {
+    background: var(--color-bg-tertiary);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.ip-warning-box {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid var(--color-warning);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.ip-warning-box-icon {
+    font-size: 18px;
+}
+
+.ip-warning-box-text {
+    font-size: 13px;
+    color: var(--color-text-primary);
+}
+
+.ip-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding-top: 8px;
+}
+
+.btn-danger {
+    background: var(--color-danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
 }
