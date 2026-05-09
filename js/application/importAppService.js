@@ -154,6 +154,107 @@ const ImportAppService = {
             mergedTrades: 0,
             reason: ''
         };
+    },
+
+    analyzeImportData(data) {
+        const normalized = ImportAppService.normalizeImportPayload(data);
+
+        if (!normalized.success) {
+            return {
+                success: false,
+                reason: normalized.reason,
+                summary: null,
+                fundsWithNewTrades: [],
+                allDuplicateFunds: [],
+                normalized: null
+            };
+        }
+
+        const existingFunds = window.FundRepository.getAll();
+        const existingTrades = window.TradeRepository.getAll();
+
+        const existingFundIds = new Set(existingFunds.map(f => f.id));
+        const existingTradeKeys = new Set(
+            existingTrades.map(t => `${t.fundId}|${t.date}|${t.type}|${t.shares}`)
+        );
+
+        const newFunds = [];
+        const existingFundsList = [];
+
+        for (const fund of normalized.funds) {
+            if (existingFundIds.has(fund.id)) {
+                existingFundsList.push(fund);
+            } else {
+                newFunds.push(fund);
+            }
+        }
+
+        const fundsWithNewTrades = [];
+        const allDuplicateFunds = [];
+
+        const processFund = (fund) => {
+            const fundTrades = normalized.trades.filter(t => t.fundId === fund.id);
+            const newTrades = [];
+            const duplicateTrades = [];
+
+            for (const trade of fundTrades) {
+                const tradeKey = `${trade.fundId}|${trade.date}|${trade.type}|${trade.shares}`;
+                if (existingTradeKeys.has(tradeKey)) {
+                    duplicateTrades.push(trade);
+                } else {
+                    newTrades.push(trade);
+                }
+            }
+
+            const tradeItems = fundTrades.map(t => ({
+                trade: t,
+                isNew: !existingTradeKeys.has(`${t.fundId}|${t.date}|${t.type}|${t.shares}`)
+            }));
+
+            return {
+                fund,
+                trades: fundTrades,
+                newTrades,
+                duplicateTrades,
+                tradeItems,
+                isNew: !existingFundIds.has(fund.id)
+            };
+        };
+
+        for (const fund of newFunds) {
+            const result = processFund(fund);
+            if (result.newTrades.length > 0) {
+                fundsWithNewTrades.push(result);
+            } else {
+                allDuplicateFunds.push(result);
+            }
+        }
+
+        for (const fund of existingFundsList) {
+            const result = processFund(fund);
+            if (result.newTrades.length > 0) {
+                fundsWithNewTrades.push(result);
+            } else {
+                allDuplicateFunds.push(result);
+            }
+        }
+
+        const allDuplicateTradesCount = fundsWithNewTrades.reduce((sum, f) => sum + f.duplicateTrades.length, 0)
+            + allDuplicateFunds.reduce((sum, f) => sum + f.trades.length, 0);
+
+        return {
+            success: true,
+            reason: '',
+            summary: {
+                newFundsCount: newFunds.length,
+                existingFundsCount: existingFundsList.length,
+                newTradesCount: fundsWithNewTrades.reduce((sum, f) => sum + f.newTrades.length, 0),
+                duplicateTradesCount: allDuplicateTradesCount
+            },
+            fundsWithNewTrades,
+            allDuplicateFunds,
+            normalized
+        };
     }
 };
 
