@@ -3881,6 +3881,8 @@ td.negative {
     max-height: 75vh;
     overflow-y: auto;
     padding: 4px 0;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 统计卡片区 */
@@ -4326,8 +4328,13 @@ td.negative {
     display: flex;
     gap: 10px;
     justify-content: flex-end;
-    padding-top: 16px;
+    padding: 16px 20px;
+    background: var(--color-bg-secondary);
     border-top: 1px solid var(--color-border-primary);
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin-top: auto;
 }
 
 .ip-btn {
