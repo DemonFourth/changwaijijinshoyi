@@ -3,15 +3,11 @@
  * 管理工具箱页面的显示和交互
  */
 
-/* global ModuleRegistry, Utils, FundManager, TradeManager, ConversionCalculator, SyncAppService, SyncConflictModalHelper, Overview, SyncStatusPresenter */
+/* global ModuleRegistry, Utils, FundManager, TradeManager, ConversionCalculator */
 
 const ToolPage = {
     currentResult: null,
     tierCount: 0,
-
-    buildSyncSectionHtml() {
-        return SyncStatusPresenter.buildToolSectionHtml(window.SyncAppService.getSyncStatus());
-    },
 
     /**
      * 初始化工具页面
@@ -74,77 +70,6 @@ const ToolPage = {
                 ToolPage.validateTieredShares();
             });
         }
-
-        // 同步状态区域
-        ToolPage.renderSyncStatus();
-        if (!ToolPage._syncEventsBound) {
-            ToolPage._syncEventsBound = true;
-            EventBus.on(EventType.DATA_IMPORTED, () => ToolPage.renderSyncStatus());
-            EventBus.on(EventType.DATA_CLEARED, () => ToolPage.renderSyncStatus());
-            EventBus.on(EventType.FUND_UPDATED, () => ToolPage.renderSyncStatus());
-            EventBus.on(EventType.TRADE_UPDATED, () => ToolPage.renderSyncStatus());
-            EventBus.on(EventType.SYNC_DATA_APPLIED, () => ToolPage.renderSyncStatus());
-        }
-
-        // 绑定手动同步事件
-        document.getElementById('btn-manual-sync')?.addEventListener('click', async () => {
-            Utils.showLoading('同步中...');
-            const result = await SyncAppService.manualSync();
-            Utils.hideLoading();
-
-            if (result.success) {
-                Utils.showToast('同步成功', 'success');
-                Overview.refresh();
-            } else if (result.conflict) {
-                SyncConflictModalHelper.show(result.conflicts, async (resolutions) => {
-                    await SyncAppService.resolveConflicts(result.conflicts, resolutions);
-                    Overview.refresh();
-                });
-            } else {
-                Utils.showToast(result.reason || '同步失败', 'error');
-            }
-        });
-
-        document.getElementById('btn-force-push')?.addEventListener('click', async () => {
-            if (!confirm('确定强制上传本地数据覆盖云端吗？此操作不可撤销。')) {
-                return;
-            }
-            Utils.showLoading('上传中...');
-            const result = await SyncAppService.forcePushLocal();
-            Utils.hideLoading();
-
-            if (result.success) {
-                Utils.showToast('强制上传成功', 'success');
-            } else {
-                Utils.showToast(result.reason || '强制上传失败', 'error');
-            }
-        });
-
-        document.getElementById('btn-force-pull')?.addEventListener('click', async () => {
-            if (!confirm('确定强制下载云端数据覆盖本地吗？此操作不可撤销。')) {
-                return;
-            }
-            Utils.showLoading('下载中...');
-            const result = await SyncAppService.forcePullCloud();
-            Utils.hideLoading();
-
-            if (result.success) {
-                Utils.showToast('强制下载成功', 'success');
-                Overview.refresh();
-            } else {
-                Utils.showToast(result.reason || '强制下载失败', 'error');
-            }
-        });
-    },
-
-    /**
-     * 渲染同步状态区域
-     */
-    renderSyncStatus() {
-        const syncPanel = document.getElementById('tool-sync-panel');
-        if (!syncPanel) return;
-
-        syncPanel.innerHTML = ToolPage.buildSyncSectionHtml();
     },
 
     /**
