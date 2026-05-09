@@ -23,7 +23,17 @@ const ImportPreviewHelper = {
 
         title.textContent = '导入预览';
         console.log('[ImportPreview] Rendering content...');
-        body.innerHTML = this._renderContent();
+        
+        const rendered = this._renderContentWithActions();
+        body.innerHTML = rendered.content;
+        
+        const modalEl = container.querySelector('.modal');
+        if (modalEl) {
+            const existingActions = modalEl.querySelector('.ip-actions');
+            if (existingActions) existingActions.remove();
+            modalEl.insertAdjacentHTML('beforeend', rendered.actionsHtml);
+        }
+        
         footer.innerHTML = '';
 
         container.classList.remove('hidden');
@@ -60,7 +70,7 @@ const ImportPreviewHelper = {
             html += '<div class="ip-empty-icon">📭</div>';
             html += '<div class="ip-empty-text">没有需要导入的数据</div>';
             html += '</div>';
-            return html;
+            return { content: html, actionsHtml: '' };
         }
 
         if (hasNewTrades) {
@@ -97,13 +107,14 @@ const ImportPreviewHelper = {
         html += '</div>';
         html += '</div>';
 
-        html += '<div class="ip-actions">';
-        html += '<button class="ip-btn ip-btn--secondary" id="btn-import-cancel">取消</button>';
-        html += '<button class="ip-btn ip-btn--merge" id="btn-import-merge">合并数据</button>';
-        html += '<button class="ip-btn ip-btn--overwrite" id="btn-import-overwrite">覆盖数据</button>';
-        html += '</div>';
-
-        return html;
+        return {
+            content: html,
+            actionsHtml: '<div class="ip-actions">' +
+                '<button class="ip-btn ip-btn--secondary" id="btn-import-cancel">取消</button>' +
+                '<button class="ip-btn ip-btn--merge" id="btn-import-merge">合并数据</button>' +
+                '<button class="ip-btn ip-btn--overwrite" id="btn-import-overwrite">覆盖数据</button>' +
+                '</div>'
+        };
     },
 
     _buildStockRow(item, isDuplicate) {

@@ -1349,6 +1349,10 @@ td.negative {
     flex: 1;
 }
 
+.modal-container:not(.modal-import-preview) .modal-body {
+    flex: 1;
+}
+
 .modal-footer {
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--color-border-primary);
@@ -4331,10 +4335,7 @@ td.negative {
     padding: 16px 20px;
     background: var(--color-bg-secondary);
     border-top: 1px solid var(--color-border-primary);
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
-    margin-top: auto;
+    flex-shrink: 0;
 }
 
 .ip-btn {
