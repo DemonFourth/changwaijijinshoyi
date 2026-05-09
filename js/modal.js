@@ -918,9 +918,6 @@ const Modal = {
                     console.log('[Import] Calling ImportPreviewHelper.show...');
                     ImportPreviewHelper.show(analysis);
                     console.log('[Import] ImportPreviewHelper.show called');
-
-                    // 隐藏导入弹窗
-                    Modal.hide();
                 } catch (error) {
                     console.error('[Import] Error during import:', error);
                     Utils.showToast('文件格式错误', 'error');
