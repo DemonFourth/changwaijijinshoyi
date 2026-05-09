@@ -82,7 +82,16 @@ const ImportPreviewHelper = {
         html += '<div class="ip-warning-icon">⚠️</div>';
         html += '<div class="ip-warning-text">';
         html += '<div class="ip-warning-title">覆盖警告</div>';
-        html += '<div class="ip-warning-desc">覆盖操作将使用导入数据完全替换现有数据，建议使用「合并数据」功能</div>';
+        
+        const { importFundsCount, importTradesCount, existingFundsCount2, existingTradesCount } = summary;
+        const fundsDiff = importFundsCount - existingFundsCount2;
+        const tradesDiff = importTradesCount - existingTradesCount;
+        
+        if (fundsDiff < 0 || tradesDiff < 0) {
+            html += `<div class="ip-warning-desc">导入数据较少：基金 ${importFundsCount} vs 现有 ${existingFundsCount2}，交易 ${importTradesCount} vs 现有 ${existingTradesCount}。覆盖将删除多余数据！</div>`;
+        } else {
+            html += '<div class="ip-warning-desc">覆盖操作将使用导入数据完全替换现有数据，建议使用「合并数据」功能</div>';
+        }
         html += '</div>';
         html += '</div>';
 
@@ -203,10 +212,13 @@ const ImportPreviewHelper = {
 
         btnClose?.addEventListener('click', () => this.hide());
 
-        document.querySelectorAll('.ip-stock-row-header').forEach(header => {
-            header.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('ip-stock-toggle')) return;
-                this._toggleDetail(header);
+        document.querySelectorAll('.ip-stock-toggle').forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const header = toggle.closest('.ip-stock-row-header');
+                if (header) {
+                    this._toggleDetail(header);
+                }
             });
         });
     }

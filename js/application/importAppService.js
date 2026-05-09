@@ -249,7 +249,11 @@ const ImportAppService = {
                 newFundsCount: newFunds.length,
                 existingFundsCount: existingFundsList.length,
                 newTradesCount: fundsWithNewTrades.reduce((sum, f) => sum + f.newTrades.length, 0),
-                duplicateTradesCount: allDuplicateTradesCount
+                duplicateTradesCount: allDuplicateTradesCount,
+                importFundsCount: normalized.funds.length,
+                importTradesCount: normalized.trades.length,
+                existingFundsCount2: existingFunds.length,
+                existingTradesCount: existingTrades.length
             },
             fundsWithNewTrades,
             allDuplicateFunds,
