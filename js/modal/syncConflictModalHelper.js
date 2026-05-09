@@ -24,10 +24,36 @@ const SyncConflictModalHelper = {
         this._bindEvents(conflicts, onResolve);
     },
 
+    _getDiffFields(entityType, local, cloud) {
+        const diffFields = new Set();
+        if (entityType === 'fund') {
+            if (local.name !== cloud.name) diffFields.add('name');
+            if (local.code !== cloud.code) diffFields.add('code');
+            if (local.remark !== cloud.remark) diffFields.add('remark');
+            if (JSON.stringify(local.feeTiers) !== JSON.stringify(cloud.feeTiers)) diffFields.add('feeTiers');
+        } else {
+            if (local.date !== cloud.date) diffFields.add('date');
+            if (local.type !== cloud.type) diffFields.add('type');
+            if (local.netValue !== cloud.netValue) diffFields.add('netValue');
+            if (local.shares !== cloud.shares) diffFields.add('shares');
+            if (local.amount !== cloud.amount) diffFields.add('amount');
+            if (local.fee !== cloud.fee) diffFields.add('fee');
+            if (local.dividendMode !== cloud.dividendMode) diffFields.add('dividendMode');
+            if (local.remark !== cloud.remark) diffFields.add('remark');
+        }
+        return diffFields;
+    },
+
+    _formatFieldLabel(field, value, isDiff) {
+        const label = isDiff ? `<span class="diff-highlight">${field}</span>` : field;
+        return `<div class="detail-row">${label}: ${value}</div>`;
+    },
+
     _renderConflictItem(conflict, index) {
         const entityType = conflict.entityType === 'fund' ? '基金' : '交易';
         const localVersion = conflict.local;
         const cloudVersion = conflict.cloud;
+        const diffFields = this._getDiffFields(entityType, localVersion, cloudVersion);
 
         return `
             <div class="conflict-item" data-index="${index}">
@@ -43,7 +69,7 @@ const SyncConflictModalHelper = {
                             <span class="version-time">${localVersion.updatedAt}</span>
                         </label>
                         <div class="version-detail">
-                            ${this._formatVersionDetail(conflict.entityType, localVersion)}
+                            ${this._formatVersionDetail(entityType, localVersion, diffFields)}
                         </div>
                     </div>
                     <div class="version cloud">
@@ -53,7 +79,7 @@ const SyncConflictModalHelper = {
                             <span class="version-time">${cloudVersion.updatedAt}</span>
                         </label>
                         <div class="version-detail">
-                            ${this._formatVersionDetail(conflict.entityType, cloudVersion)}
+                            ${this._formatVersionDetail(entityType, cloudVersion, diffFields)}
                         </div>
                     </div>
                 </div>
@@ -61,20 +87,40 @@ const SyncConflictModalHelper = {
         `;
     },
 
-    _formatVersionDetail(type, entity) {
+    _formatFeeTiers(tiers) {
+        if (!tiers || (!tiers.buyTiers?.length && !tiers.sellTiers?.length)) return '未设置';
+        const parts = [];
+        if (tiers.buyTiers?.length) {
+            parts.push('买入: ' + tiers.buyTiers.map(t => `${t.minAmount / 10000}-${t.maxAmount ? t.maxAmount / 10000 + '万' : '∞'}: ${t.rate}%`).join(', '));
+        }
+        if (tiers.sellTiers?.length) {
+            parts.push('卖出: ' + tiers.sellTiers.map(t => `${t.minDays}-${t.maxDays ? t.maxDays + '天' : '∞'}: ${t.rate}%`).join(', '));
+        }
+        return parts.join(' | ');
+    },
+
+    _formatVersionDetail(type, entity, diffFields) {
         if (type === 'fund') {
             return `
-                <div class="detail-row">名称: ${entity.name}</div>
-                <div class="detail-row">代码: ${entity.code}</div>
-                <div class="detail-row">备注: ${entity.remark || '-'}</div>
+                ${this._formatFieldLabel('名称', entity.name, diffFields.has('name'))}
+                ${this._formatFieldLabel('代码', entity.code, diffFields.has('code'))}
+                ${this._formatFieldLabel('净值', entity.netValue ?? '-', diffFields.has('netValue'))}
+                ${this._formatFieldLabel('估算净值', entity.estimatedValue ?? '-', diffFields.has('estimatedValue'))}
+                ${this._formatFieldLabel('净值日期', entity.netValueDate ?? '-', diffFields.has('netValueDate'))}
+                ${this._formatFieldLabel('费率配置', this._formatFeeTiers(entity.feeTiers), diffFields.has('feeTiers'))}
+                ${this._formatFieldLabel('备注', entity.remark || '-', diffFields.has('remark'))}
             `;
         } else {
+            const typeMap = { buy: '买入', sell: '卖出', dividend: '分红' };
             return `
-                <div class="detail-row">日期: ${entity.date}</div>
-                <div class="detail-row">类型: ${entity.type}</div>
-                <div class="detail-row">金额: ${entity.amount}</div>
-                <div class="detail-row">份额: ${entity.shares}</div>
-                <div class="detail-row">备注: ${entity.remark || '-'}</div>
+                ${this._formatFieldLabel('日期', entity.date, diffFields.has('date'))}
+                ${this._formatFieldLabel('类型', typeMap[entity.type] || entity.type, diffFields.has('type'))}
+                ${this._formatFieldLabel('净值', entity.netValue, diffFields.has('netValue'))}
+                ${this._formatFieldLabel('份额', entity.shares, diffFields.has('shares'))}
+                ${this._formatFieldLabel('金额', entity.amount, diffFields.has('amount'))}
+                ${this._formatFieldLabel('手续费', entity.fee, diffFields.has('fee'))}
+                ${this._formatFieldLabel('分红方式', entity.dividendMode === 'reinvest' ? '红利再投' : entity.dividendMode === 'cash' ? '现金分红' : '-', diffFields.has('dividendMode'))}
+                ${this._formatFieldLabel('备注', entity.remark || '-', diffFields.has('remark'))}
             `;
         }
     },

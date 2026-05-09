@@ -3709,3 +3709,8 @@ td.negative {
 .detail-row {
     margin-bottom: 4px;
 }
+
+.diff-highlight {
+    color: var(--color-danger, #e74c3c);
+    font-weight: bold;
+}
