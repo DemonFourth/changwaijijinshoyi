@@ -161,10 +161,13 @@ const ImportPreviewHelper = {
     },
 
     _toggleDetail(header) {
+        console.log('[ImportPreview] _toggleDetail called');
         const row = header.closest('.ip-stock-row');
         const detail = row.querySelector('.ip-stock-detail');
         const toggle = row.querySelector('.ip-stock-toggle');
 
+        console.log('[ImportPreview] row:', row, 'detail:', detail, 'toggle:', toggle);
+        
         if (detail.classList.contains('hidden')) {
             detail.classList.remove('hidden');
             toggle.classList.remove('ip-stock-toggle--collapsed');
@@ -212,10 +215,14 @@ const ImportPreviewHelper = {
 
         btnClose?.addEventListener('click', () => this.hide());
 
+        console.log('[ImportPreview] Binding toggle events, toggles found:', document.querySelectorAll('.ip-stock-toggle').length);
         document.querySelectorAll('.ip-stock-toggle').forEach(toggle => {
+            console.log('[ImportPreview] Adding click listener to toggle:', toggle);
             toggle.addEventListener('click', (e) => {
+                console.log('[ImportPreview] Toggle clicked!');
                 e.stopPropagation();
                 const header = toggle.closest('.ip-stock-row-header');
+                console.log('[ImportPreview] header:', header);
                 if (header) {
                     this._toggleDetail(header);
                 }
