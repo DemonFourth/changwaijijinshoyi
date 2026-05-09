@@ -90,8 +90,7 @@ const SyncStatusPresenter = {
         return `<div class="sync-status-banner sync-status-${status}" data-action="open-sync-tools">${statusText}${errorText} · 查看同步工具</div>`;
     },
 
-    buildSyncToolsModalBody(syncStatus) {
-        const localSnapshot = window.LocalStorageAdapter ? window.LocalStorageAdapter.loadSnapshot() : { funds: [], trades: [] };
+    _buildSyncToolsBodyHtml(syncStatus, localSnapshot) {
         const localFunds = localSnapshot.funds || [];
         const localTrades = localSnapshot.trades || [];
         const cloudRevision = syncStatus && syncStatus.cloudRevision ? syncStatus.cloudRevision : 0;
@@ -166,16 +165,39 @@ const SyncStatusPresenter = {
                         <span class="sync-tools-info-value">${lastError}</span>
                     </div>` : ''}
                 </div>
-                <div class="sync-tools-actions">
-                    <button class="btn btn-primary" id="btn-manual-sync">立即同步</button>
-                    <button class="btn btn-secondary" id="btn-force-push">强制上传本地</button>
-                    <button class="btn btn-secondary" id="btn-force-pull">强制下载云端</button>
-                </div>
             </div>
         `;
     },
 
+    _buildSyncToolsActionsHtml() {
+        return `
+            <button class="btn btn-primary" id="btn-manual-sync">立即同步</button>
+            <button class="btn btn-secondary" id="btn-force-push">强制上传本地</button>
+            <button class="btn btn-secondary" id="btn-force-pull">强制下载云端</button>
+        `;
+    },
+
+    buildSyncToolsModalBody(syncStatus) {
+        const localSnapshot = window.LocalStorageAdapter ? window.LocalStorageAdapter.loadSnapshot() : { funds: [], trades: [] };
+        return {
+            content: SyncStatusPresenter._buildSyncToolsBodyHtml(syncStatus, localSnapshot),
+            actions: SyncStatusPresenter._buildSyncToolsActionsHtml()
+        };
+    },
+
     bindSyncToolsModalEvents() {
+        SyncAppService.refreshCloudMeta().then(() => {
+            const body = document.getElementById('modal-body');
+            if (body) {
+                const freshStatus = SyncAppService.getSyncStatus();
+                const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
+                body.innerHTML = SyncStatusPresenter._buildSyncToolsBodyHtml(freshStatus, localSnapshot);
+            }
+            this._bindSyncActionEvents();
+        });
+    },
+
+    _bindSyncActionEvents() {
         document.getElementById('btn-manual-sync')?.addEventListener('click', async () => {
             Utils.showLoading('同步中...');
             const result = await SyncAppService.manualSync();

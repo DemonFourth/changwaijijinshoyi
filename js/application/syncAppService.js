@@ -478,6 +478,21 @@ const SyncAppService = {
         return this._executePull();
     },
 
+    async refreshCloudMeta() {
+        const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
+        if (!adapter || typeof adapter.getStatus !== 'function') return;
+        const status = adapter.getStatus();
+        if (!status || !status.canPull) return;
+        const result = await adapter.pull();
+        if (result && result.success) {
+            window.LocalStorageAdapter.updateSyncMeta({
+                cloudRevision: result.revision || 0,
+                cloudFunds: (result.funds || []).length,
+                cloudTrades: (result.trades || []).length
+            });
+        }
+    },
+
     getSyncStatus() {
         return window.LocalStorageAdapter.getSyncMeta();
     }
