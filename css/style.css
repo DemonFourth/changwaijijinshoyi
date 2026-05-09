@@ -3714,3 +3714,18 @@ td.negative {
     color: var(--color-danger, #e74c3c);
     font-weight: bold;
 }
+
+.conflict-hint {
+    background: var(--color-bg-secondary);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    margin-bottom: 12px;
+    color: var(--color-text-secondary);
+}
+
+.conflict-hint--warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}

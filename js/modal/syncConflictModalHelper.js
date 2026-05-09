@@ -29,6 +29,9 @@ const SyncConflictModalHelper = {
         if (entityType === 'fund') {
             if (local.name !== cloud.name) diffFields.add('name');
             if (local.code !== cloud.code) diffFields.add('code');
+            if (local.netValue !== cloud.netValue) diffFields.add('netValue');
+            if (local.estimatedValue !== cloud.estimatedValue) diffFields.add('estimatedValue');
+            if (local.netValueDate !== cloud.netValueDate) diffFields.add('netValueDate');
             if (local.remark !== cloud.remark) diffFields.add('remark');
             if (JSON.stringify(local.feeTiers) !== JSON.stringify(cloud.feeTiers)) diffFields.add('feeTiers');
         } else {
@@ -55,12 +58,19 @@ const SyncConflictModalHelper = {
         const cloudVersion = conflict.cloud;
         const diffFields = this._getDiffFields(entityType, localVersion, cloudVersion);
 
+        const hasDiff = diffFields.size > 0;
+        const lastSyncedAt = localVersion.lastSyncedAt || cloudVersion.lastSyncedAt || '-';
+        const conflictHint = hasDiff
+            ? '<div class="conflict-hint">以下标红字段存在差异，请仔细核对后选择保留版本</div>'
+            : `<div class="conflict-hint conflict-hint--warning">实体内容完全相同，冲突原因：双方均在 ${lastSyncedAt} 之后分别修改过此记录（仅时间戳不同）。建议选择「全部使用本地版本」或「全部使用云端版本」</div>`;
+
         return `
             <div class="conflict-item" data-index="${index}">
                 <div class="conflict-header">
                     <span class="conflict-type">${entityType}</span>
                     <span class="conflict-id">${localVersion.name || localVersion.date}</span>
                 </div>
+                ${conflictHint}
                 <div class="conflict-versions">
                     <div class="version local">
                         <label>
