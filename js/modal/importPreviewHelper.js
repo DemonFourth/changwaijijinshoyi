@@ -130,7 +130,7 @@ const ImportPreviewHelper = {
         html += `<span class="ip-stock-toggle ip-stock-toggle--collapsed">▼详情</span>`;
         html += '</div>';
 
-        html += '<div class="ip-stock-detail hidden">';
+        html += '<div class="ip-stock-detail" style="display: none;">';
         html += '<table class="ip-trade-table">';
         html += '<thead><tr><th>日期</th><th>类型</th><th>净值</th><th>份额</th><th>金额</th><th>状态</th></tr></thead>';
         html += '<tbody>';
@@ -161,23 +161,16 @@ const ImportPreviewHelper = {
     },
 
     _toggleDetail(header) {
-        console.log('[ImportPreview] _toggleDetail called');
         const row = header.closest('.ip-stock-row');
         const detail = row.querySelector('.ip-stock-detail');
         const toggle = row.querySelector('.ip-stock-toggle');
 
-        console.log('[ImportPreview] row:', row, 'detail:', detail, 'toggle:', toggle);
-        console.log('[ImportPreview] detail.classList before:', detail.classList.toString());
-        
-        if (detail.classList.contains('hidden')) {
-            console.log('[ImportPreview] Removing hidden class');
-            detail.classList.remove('hidden');
+        if (detail.style.display === 'none' || detail.style.display === '') {
+            detail.style.display = 'block';
             toggle.classList.remove('ip-stock-toggle--collapsed');
             toggle.textContent = '▲收起';
-            console.log('[ImportPreview] detail.classList after:', detail.classList.toString());
         } else {
-            console.log('[ImportPreview] Adding hidden class');
-            detail.classList.add('hidden');
+            detail.style.display = 'none';
             toggle.classList.add('ip-stock-toggle--collapsed');
             toggle.textContent = '▼详情';
         }
