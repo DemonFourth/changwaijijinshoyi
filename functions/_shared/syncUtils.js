@@ -3,9 +3,24 @@
  * 冲突检测、响应包装等通用函数
  */
 
+const TIMESTAMP_FIELDS = new Set([
+    'updatedAt', 'createdAt', 'deletedAt', 'lastSyncedAt',
+    'updateTime', 'createTime', 'deleteTime'
+]);
+
+function isDataChanged(local, cloud, entityType) {
+    const keys = new Set([...Object.keys(local), ...Object.keys(cloud)]);
+    for (const key of keys) {
+        if (TIMESTAMP_FIELDS.has(key)) continue;
+        if (key === 'syncId' || key === 'id') continue;
+        if (JSON.stringify(local[key]) !== JSON.stringify(cloud[key])) return true;
+    }
+    return false;
+}
+
 /**
  * 检测本地与云端数据的冲突
- * 规则：同一实体在 30 天内都被修改过，视为潜在冲突
+ * 规则：同一实体在 30 天内都被修改过，且实际业务数据有差异，才视为冲突
  *
  * @param {Array} local - 本地实体数组
  * @param {Array} cloud - 云端实体数组
@@ -15,7 +30,6 @@ export function detectConflicts(local, cloud) {
     const conflicts = [];
     const cloudMap = new Map(cloud.map(c => [c.syncId, c]));
 
-    // 30 天前的时间戳
     const baseTime = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
     for (const localEntity of local) {
@@ -26,6 +40,7 @@ export function detectConflicts(local, cloud) {
         const cloudTime = new Date(cloudEntity.updatedAt).getTime();
 
         if (localTime > baseTime && cloudTime > baseTime && localTime !== cloudTime) {
+            if (!isDataChanged(localEntity, cloudEntity)) continue;
             conflicts.push({
                 entityType: localEntity.fundId ? 'trade' : 'fund',
                 syncId: localEntity.syncId,

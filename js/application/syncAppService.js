@@ -352,6 +352,16 @@ const SyncAppService = {
         };
     },
 
+    _isEntityDataChanged(local, cloud) {
+        const skipKeys = new Set(['updatedAt', 'createdAt', 'deletedAt', 'lastSyncedAt', 'updateTime', 'createTime', 'deleteTime', 'syncId', 'id']);
+        const keys = new Set([...Object.keys(local), ...Object.keys(cloud)]);
+        for (const key of keys) {
+            if (skipKeys.has(key)) continue;
+            if (JSON.stringify(local[key]) !== JSON.stringify(cloud[key])) return true;
+        }
+        return false;
+    },
+
     _mergeEntities(localEntities, cloudEntities, entityType, conflicts) {
         const localMap = new Map(localEntities.map(e => [e.syncId, e]));
         const cloudMap = new Map(cloudEntities.map(e => [e.syncId, e]));
@@ -370,12 +380,14 @@ const SyncAppService = {
             const baseTime = localEntity.lastSyncedAt || 0;
 
             if (localEntity.updatedAt > baseTime && cloudEntity.updatedAt > baseTime) {
-                conflicts.push({
-                    entityType,
-                    syncId,
-                    local: localEntity,
-                    cloud: cloudEntity
-                });
+                if (this._isEntityDataChanged(localEntity, cloudEntity)) {
+                    conflicts.push({
+                        entityType,
+                        syncId,
+                        local: localEntity,
+                        cloud: cloudEntity
+                    });
+                }
                 result.push(localEntity);
                 hasChanges = true;
             } else if (cloudEntity.updatedAt > baseTime) {
