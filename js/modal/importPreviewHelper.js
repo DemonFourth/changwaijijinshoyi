@@ -154,14 +154,15 @@ const ImportPreviewHelper = {
         const typeMap = { buy: '买入', sell: '卖出', dividend: '分红' };
 
         return items.map(trade => {
+            const isNew = trade.isNew !== false;
             return `
-                <tr class="ip-trade-row ${isDuplicate ? 'ip-trade-row--muted' : ''}">
+                <tr class="ip-trade-row ${isNew ? '' : 'ip-trade-row--muted'}">
                     <td>${trade.date}</td>
                     <td>${typeMap[trade.type] || trade.type}</td>
                     <td>${trade.netValue}</td>
                     <td>${trade.shares}</td>
                     <td>${trade.amount || '-'}</td>
-                    <td><span class="ip-trade-status ${isDuplicate ? 'ip-trade-status--duplicate' : 'ip-trade-status--new'}">${isDuplicate ? '重复' : '新增'}</span></td>
+                    <td><span class="ip-trade-status ${isNew ? 'ip-trade-status--new' : 'ip-trade-status--duplicate'}">${isNew ? '新增' : '重复'}</span></td>
                 </tr>
             `;
         }).join('');
