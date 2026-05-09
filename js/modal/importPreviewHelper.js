@@ -35,6 +35,7 @@ const ImportPreviewHelper = {
         }
         
         footer.innerHTML = '';
+        footer.style.display = 'none';
 
         container.classList.remove('hidden');
         container.classList.add('modal-import-preview');
