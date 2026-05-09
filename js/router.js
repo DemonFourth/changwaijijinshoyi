@@ -61,17 +61,10 @@ const Router = {
         // 更新hash（支持file://协议）
         window.location.hash = hash;
 
-        // 更新当前路由
         this.currentRoute = {
             name: routeName,
             params
         };
-
-        // 触发页面切换事件
-        EventBus.emit(EventType.PAGE_CHANGED, {
-            route: routeName,
-            params
-        });
     },
 
     /**
