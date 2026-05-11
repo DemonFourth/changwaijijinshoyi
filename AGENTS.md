@@ -210,6 +210,10 @@ js/
 ├── storage/       # schema、migration、adapter、sync
 ├── modal/         # modal相关helper
 ├── detail/        # detail页相关helper
+│   ├── accrualHelper.js      # 计提计算UI辅助
+│   ├── detailHoldingHelper.js
+│   ├── detailTradeActionHelper.js
+│   └── ...
 └── *.js           # 核心模块
 ```
 
