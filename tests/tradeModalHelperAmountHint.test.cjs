@@ -27,6 +27,6 @@ test('TradeModalHelper builds amount hint html with import button', () => {
     const html = context.window.TradeModalHelper.buildAmountHintHtml(101.5, '买入');
 
     assert.match(html, /自动计算：净值×份额\+手续费 = 101.50/);
-    assert.match(html, /btn-import-amount/);
+    assert.match(html, /hint-amount-inline/);
     assert.match(html, /导入金额/);
 });

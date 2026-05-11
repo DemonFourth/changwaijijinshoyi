@@ -308,8 +308,16 @@ const Detail = {
             value.innerHTML = Utils.formatMoneySmart(currentHolding.value || 0);
         }
 
+        // 获取交易记录，用于计算浮动盈亏
+        const trades = TradeManager.getTradesByFund(fund.id);
+
+        // 使用专用方法计算浮动盈亏（基于最新净值）和预估浮动盈亏（基于估算净值）
+        const floatingData = CalculatorV2.calculateFloatingProfit(trades, fund);
+        const estimatedData = CalculatorV2.calculateEstimatedFloatingProfit(trades, fund);
+
+        // 显示浮动盈亏（使用最新净值）
         if (profit) {
-            const displayProfit = isCleared ? 0 : (currentHolding.floatingProfit || 0);
+            const displayProfit = isCleared ? 0 : (floatingData.floatingProfit || 0);
             profit.innerHTML = Utils.formatMoneySmart(displayProfit);
             profit.className = `value ${Utils.getValueColor(displayProfit)}`;
         }
@@ -319,32 +327,21 @@ const Detail = {
                 rate.textContent = '-';
                 rate.className = 'value';
             } else {
-                const holdingRate = currentHolding.cost > 0
-                    ? (currentHolding.floatingProfit / currentHolding.cost * 100)
-                    : 0;
-                rate.textContent = Utils.formatPercent(holdingRate);
-                rate.className = `value ${Utils.getValueColor(holdingRate)}`;
+                rate.textContent = Utils.formatPercent(floatingData.profitRate);
+                rate.className = `value ${Utils.getValueColor(floatingData.profitRate)}`;
             }
         }
 
         // 显示预估收益（使用估算净值）
         if (profitEstimated || rateEstimated) {
-            const estimatedNetValue = parseFloat(fund.estimatedValue) || 0;
-            const holdingShares = currentHolding.shares || 0;
-            const holdingCost = currentHolding.cost || 0;
-
-            if (estimatedNetValue > 0 && holdingShares > 0 && holdingCost > 0) {
-                const estimatedValue = holdingShares * estimatedNetValue;
-                const estimatedProfit = estimatedValue - holdingCost;
-                const estimatedProfitRate = (estimatedProfit / holdingCost * 100);
-
+            if (estimatedData.shares > 0 && estimatedData.cost > 0) {
                 if (profitEstimated) {
-                    profitEstimated.innerHTML = Utils.formatMoneySmart(estimatedProfit);
-                    profitEstimated.className = `value ${Utils.getValueColor(estimatedProfit)}`;
+                    profitEstimated.innerHTML = Utils.formatMoneySmart(estimatedData.floatingProfit);
+                    profitEstimated.className = `value ${Utils.getValueColor(estimatedData.floatingProfit)}`;
                 }
                 if (rateEstimated) {
-                    rateEstimated.textContent = Utils.formatPercent(estimatedProfitRate);
-                    rateEstimated.className = `value ${Utils.getValueColor(estimatedProfitRate)}`;
+                    rateEstimated.textContent = Utils.formatPercent(estimatedData.profitRate);
+                    rateEstimated.className = `value ${Utils.getValueColor(estimatedData.profitRate)}`;
                 }
             } else {
                 if (profitEstimated) {

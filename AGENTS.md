@@ -139,6 +139,20 @@ BigNumberFormatter, echarts, ConversionCalculator, ToolPage
 - 买入：持仓总成本 += 买入金额（含手续费）
 - 卖出：持仓总成本 -= 卖出份额 × 持仓成本价
 
+### 浮动盈亏计算方法
+```javascript
+// 浮动盈亏（使用最新净值）- 详情页"浮动盈亏"字段
+CalculatorV2.calculateFloatingProfit(trades, fund)
+// 返回: { shares, cost, value, floatingProfit, profitRate }
+
+// 预估浮动盈亏（使用估算净值）- 详情页"预估浮动盈亏"字段
+CalculatorV2.calculateEstimatedFloatingProfit(trades, fund)
+// 返回: { shares, cost, value, floatingProfit, profitRate }
+```
+- **浮动盈亏**：用 `netValue`（最新净值）计算，反映当前实际盈亏
+- **预估浮动盈亏**：用 `estimatedValue`（估算净值）计算，反映盘后预估算盈亏
+- 两者公式相同：`floatingProfit = 持有份额 × 净值 - 持仓成本`，但使用的净值不同
+
 ### FIFO（`fifoCalculator.js` + `feeCalculator.js`）
 - 用途：计算卖出手续费（根据持有天数匹配费率）
 - 费率区间为左闭右开：`minDays <= 持有天数 < maxDays`

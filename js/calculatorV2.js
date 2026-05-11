@@ -560,6 +560,93 @@ const CalculatorV2 = {
                 rate: 0
             }
         };
+    },
+
+    /**
+     * 计算浮动盈亏（使用最新净值）
+     *
+     * @description 用于显示"浮动盈亏"字段，该字段应反映当前实际盈亏情况
+     *              使用最新净值（netValue）计算，适用于：
+     *              - 详情页的"浮动盈亏"显示
+     *              - 任何需要基于最新交易价格计算盈亏的场景
+     *
+     * @param {array} trades - 交易记录数组
+     * @param {object} fund - 基金对象（含 netValue 和 estimatedValue 属性）
+     * @returns {object} { shares, cost, value, floatingProfit, profitRate }
+     *
+     * @example
+     * const result = CalculatorV2.calculateFloatingProfit(trades, fund);
+     * console.log('浮动盈亏:', result.floatingProfit);
+     */
+    calculateFloatingProfit(trades, fund) {
+        if (!trades || trades.length === 0) {
+            return {
+                shares: 0,
+                cost: 0,
+                value: 0,
+                floatingProfit: 0,
+                profitRate: 0
+            };
+        }
+
+        // 始终使用最新净值（netValue）计算
+        const netValue = fund.netValue || 0;
+        const result = this.calculateFundProfit(trades, netValue);
+        const currentHolding = result.summary.currentHolding;
+
+        return {
+            shares: currentHolding.shares,
+            cost: currentHolding.cost,
+            value: currentHolding.value,
+            floatingProfit: currentHolding.floatingProfit,
+            profitRate: currentHolding.cost > 0
+                ? (currentHolding.floatingProfit / currentHolding.cost * 100)
+                : 0
+        };
+    },
+
+    /**
+     * 计算预估浮动盈亏（使用估算净值）
+     *
+     * @description 用于显示"预估浮动盈亏"字段，该字段应反映盘后预估算盈亏情况
+     *              估算净值通常在交易日盘中更新，比最新净值更实时
+     *              使用估算净值（estimatedValue）计算，适用于：
+     *              - 详情页的"预估浮动盈亏"显示
+     *              - 需要参考盘后估算值的场景
+     *
+     * @param {array} trades - 交易记录数组
+     * @param {object} fund - 基金对象（含 netValue 和 estimatedValue 属性）
+     * @returns {object} { shares, cost, value, floatingProfit, profitRate }
+     *
+     * @example
+     * const result = CalculatorV2.calculateEstimatedFloatingProfit(trades, fund);
+     * console.log('预估浮动盈亏:', result.floatingProfit);
+     */
+    calculateEstimatedFloatingProfit(trades, fund) {
+        if (!trades || trades.length === 0) {
+            return {
+                shares: 0,
+                cost: 0,
+                value: 0,
+                floatingProfit: 0,
+                profitRate: 0
+            };
+        }
+
+        // 优先使用估算净值，空时回退到最新净值
+        const netValue = fund.estimatedValue || fund.netValue || 0;
+        const result = this.calculateFundProfit(trades, netValue);
+        const currentHolding = result.summary.currentHolding;
+
+        return {
+            shares: currentHolding.shares,
+            cost: currentHolding.cost,
+            value: currentHolding.value,
+            floatingProfit: currentHolding.floatingProfit,
+            profitRate: currentHolding.cost > 0
+                ? (currentHolding.floatingProfit / currentHolding.cost * 100)
+                : 0
+        };
     }
 };
 
