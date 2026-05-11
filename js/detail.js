@@ -3,7 +3,7 @@
  * 显示单只基金的详细信息
  */
 
-/* global SyncStatusPresenter */
+/* global SyncStatusPresenter AccrualHelper */
 
 const Detail = {
     // 当前基金ID
@@ -387,6 +387,11 @@ const Detail = {
         // 显示周期列表
         if (cycleList) {
             this.renderCycleList(stats.cycles, summary);
+        }
+
+        // 更新计提计算器
+        if (typeof AccrualHelper !== 'undefined') {
+            AccrualHelper.refresh(fund, trades);
         }
 
         // 更新图表区域

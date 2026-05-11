@@ -6,6 +6,8 @@
  * - 持仓成本价 = 持仓总成本 / 持仓总份额
  */
 
+/* global FeeCalculator */
+
 const CalculatorV2 = {
     // 精度阈值，用于浮点数比较
     EPSILON: 0.0001,
@@ -646,6 +648,90 @@ const CalculatorV2 = {
             profitRate: currentHolding.cost > 0
                 ? (currentHolding.floatingProfit / currentHolding.cost * 100)
                 : 0
+        };
+    },
+
+    /**
+     * 计算计提所需份额
+     *
+     * @description 根据目标金额或百分比，计算需要卖出的份额
+     *              目标金额基于"当前进行中周期的估算市值 × 百分比"
+     *              手续费通过FIFO计算
+     *
+     * @param {array} trades - 交易记录数组
+     * @param {object} fund - 基金对象
+     * @param {number} percentage - 提取百分比（0-100）
+     * @returns {object} { shares, fee, actualAmount, targetAmount, estimatedValue, estimatedMarketValue, cycle }
+     */
+    calculateAccrualShares(trades, fund, percentage) {
+        const estimatedValue = fund.estimatedValue || fund.netValue || 0;
+
+        if (estimatedValue <= 0) {
+            return { error: '无有效估算净值' };
+        }
+
+        if (!trades || trades.length === 0) {
+            return { error: '无交易记录' };
+        }
+
+        // 获取当前进行中的周期
+        const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const cycles = this.identifyHoldingCycles(sortedTrades);
+        const activeCycle = cycles.find(c => c.status === 'active');
+
+        if (!activeCycle) {
+            return { error: '无进行中的持仓周期' };
+        }
+
+        // 计算当前周期的持仓信息（使用估算净值）
+        const result = this.calculateFundProfit(activeCycle.trades, estimatedValue);
+        const currentHolding = result.summary.currentHolding;
+
+        if (currentHolding.shares <= 0) {
+            return { error: '无持有份额' };
+        }
+
+        // 估算市值 = 持有份额 × 估算净值
+        const estimatedMarketValue = currentHolding.shares * estimatedValue;
+
+        // 累计买入成本 = 当前进行中周期内所有买入交易的总金额（不考虑卖出）
+        const totalBuyCost = activeCycle.trades
+            .filter(t => t.type === 'buy')
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        // 目标金额 = 累计买入成本 × 百分比（不是基于当前持仓成本或估算市值）
+        // 逻辑：每次提取金额基于累计买入成本计算，只要持仓周期不变、比例不变，每次提取金额相同
+        const targetAmount = totalBuyCost * (percentage / 100);
+
+        // 所需份额 = 目标金额 ÷ 估算净值
+        const shares = targetAmount / estimatedValue;
+
+        // 模拟卖出计算手续费（使用今天作为卖出日期）
+        const today = new Date().toISOString().split('T')[0];
+        const sellTrade = {
+            date: today,
+            shares: shares,
+            netValue: estimatedValue,
+            id: null
+        };
+
+        const feeResult = FeeCalculator.calculateSellFee(sellTrade, trades, fund.feeTiers?.sellTiers);
+
+        return {
+            shares: shares,
+            fee: feeResult.fee,
+            actualAmount: targetAmount - feeResult.fee,
+            targetAmount: targetAmount,
+            estimatedValue: estimatedValue,
+            estimatedMarketValue: estimatedMarketValue,
+            cycle: {
+                id: activeCycle.id,
+                shares: currentHolding.shares,
+                cost: currentHolding.cost,
+                costPerShare: currentHolding.shares > 0 ? currentHolding.cost / currentHolding.shares : 0
+            },
+            totalBuyCost: totalBuyCost,
+            feeDetails: feeResult.details
         };
     }
 };
