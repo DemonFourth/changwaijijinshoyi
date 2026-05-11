@@ -5,7 +5,7 @@ const ImportPreviewHelper = {
     show(analysis) {
         console.log('[ImportPreview] show() called', analysis);
         console.log('[ImportPreview] ImportPreviewHelper available:', typeof ImportPreviewHelper);
-        
+
         this._analysis = analysis;
         const container = document.getElementById('modal-container');
         const title = document.getElementById('modal-title');
@@ -23,17 +23,17 @@ const ImportPreviewHelper = {
 
         title.textContent = '导入预览';
         console.log('[ImportPreview] Rendering content...');
-        
+
         const rendered = this._renderContent();
         body.innerHTML = rendered.content;
-        
+
         const modalEl = container.querySelector('.modal');
         if (modalEl) {
             const existingActions = modalEl.querySelector('.ip-actions');
             if (existingActions) existingActions.remove();
             modalEl.insertAdjacentHTML('beforeend', rendered.actionsHtml);
         }
-        
+
         footer.innerHTML = '';
         footer.style.display = 'none';
 
@@ -99,7 +99,7 @@ const ImportPreviewHelper = {
         const { importFundsCount, importTradesCount, existingFundsCount2, existingTradesCount } = summary;
         const fundsDiff = importFundsCount - existingFundsCount2;
         const tradesDiff = importTradesCount - existingTradesCount;
-        
+
         html += '<div class="ip-warning-box">';
         html += '<svg class="ip-warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
         html += '<div class="ip-warning-content">';
@@ -157,7 +157,7 @@ const ImportPreviewHelper = {
         html += '<table class="ip-trade-table">';
         html += '<thead><tr><th>日期</th><th>类型</th><th>净值</th><th>份额</th><th>金额</th><th>状态</th></tr></thead>';
         html += '<tbody>';
-        
+
         // tradeItems has {trade, isNew}, trades is raw array
         const tradeData = item.tradeItems || item.trades;
         html += this._buildTradeRows(tradeData, isDuplicate);

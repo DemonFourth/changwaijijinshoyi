@@ -51,11 +51,8 @@ const TradeModalHelper = {
     },
 
     buildAmountHintHtml(amount, tradeTypeLabel) {
-        return tradeTypeLabel
-            ? tradeTypeLabel.replace(tradeTypeLabel, '自动计算：' + (tradeTypeLabel === '买入' ? '净值×份额+手续费' : tradeTypeLabel === '卖出' ? '净值×份额-手续费' : '净值×份额') + ' = ' + amount.toFixed(2)) +
-                ' <button type="button" class="btn btn-primary btn-xs btn-import-amount" data-amount="' + amount.toFixed(2) + '">导入金额</button>'
-            : '自动计算：净值×份额 = ' + amount.toFixed(2) +
-                ' <button type="button" class="btn btn-primary btn-xs btn-import-amount" data-amount="' + amount.toFixed(2) + '">导入金额</button>';
+        const label = tradeTypeLabel === '买入' ? '净值×份额+手续费' : tradeTypeLabel === '卖出' ? '净值×份额-手续费' : '净值×份额';
+        return '<span class="hint-amount-inline">自动计算：' + label + ' = ' + amount.toFixed(2) + ' <button type="button" class="btn btn-primary" data-amount="' + amount.toFixed(2) + '">导入金额</button></span>';
     },
 
     renderTradeFormSections(data) {
@@ -66,13 +63,14 @@ const TradeModalHelper = {
 
         let html = '';
 
-        html += '<div class="form-section">';
-        html += '<div class="form-section-title">基础信息</div>';
-        html += '<div class="form-group">';
+        html += '<div class="trade-form-compact">';
+
+        html += '<div class="trade-form-row trade-form-row-main">';
+        html += '<div class="trade-form-field">';
         html += '<label class="form-label">交易日期 *</label>';
         html += '<input type="date" id="input-trade-date" class="form-input" value="' + dateVal + '">';
         html += '</div>';
-        html += '<div class="form-group">';
+        html += '<div class="trade-form-field">';
         html += '<label class="form-label">交易类型 *</label>';
         html += '<select id="input-trade-type" class="form-select">';
         html += '<option value="buy"' + (trade.type === 'buy' ? ' selected' : '') + '>买入</option>';
@@ -80,7 +78,7 @@ const TradeModalHelper = {
         html += '<option value="dividend"' + (trade.type === 'dividend' ? ' selected' : '') + '>分红</option>';
         html += '</select>';
         html += '</div>';
-        html += '<div class="form-group" id="dividend-mode-group"' + (trade.type === 'dividend' ? '' : ' style="display:none;"') + '>';
+        html += '<div class="trade-form-field" id="dividend-mode-group"' + (trade.type === 'dividend' ? '' : ' style="display:none;"') + '>';
         html += '<label class="form-label">分红模式 *</label>';
         html += '<select id="input-dividend-mode" class="form-select">';
         const divMode = trade.dividendMode || settings.defaultDividendMode || 'cash';
@@ -90,35 +88,37 @@ const TradeModalHelper = {
         html += '</div>';
         html += '</div>';
 
-        html += '<div class="form-section">';
-        html += '<div class="form-section-title">交易详情</div>';
-        html += '<div class="form-group">';
+        html += '<div class="trade-form-row trade-form-row-main">';
+        html += '<div class="trade-form-field">';
         html += '<label class="form-label">净值 *</label>';
         html += '<input type="number" id="input-trade-net-value" class="form-input" value="' + (trade.netValue || '') + '" placeholder="请输入净值" step="0.0001" min="0">';
         html += '</div>';
-        html += '<div class="form-group">';
+        html += '<div class="trade-form-field">';
         html += '<label class="form-label">份额 *</label>';
         html += '<input type="number" id="input-trade-shares" class="form-input" value="' + (trade.shares || '') + '" placeholder="请输入份额" step="0.01" min="0">';
         html += '</div>';
-        html += '<div class="form-group">';
+        html += '<div class="trade-form-field">';
         html += '<label class="form-label">手续费 *</label>';
         const defaultFee = isEdit ? trade.fee : 0;
         html += '<input type="number" id="input-trade-fee" class="form-input" value="' + (trade.fee !== undefined && trade.fee !== '' ? trade.fee : defaultFee) + '" placeholder="请输入手续费" step="0.01" min="0">';
         html += '</div>';
+        html += '</div>';
+
         html += '<div id="fee-suggestion-panel" class="fee-suggestion-panel hidden"></div>';
-        html += '<div class="form-group">';
+
+        html += '<div class="trade-form-row">';
+        html += '<div class="trade-form-field trade-form-field-amount">';
         html += '<label class="form-label">金额</label>';
         html += '<input type="number" id="input-trade-amount" class="form-input" value="' + (trade.amount || '') + '" placeholder="自动计算，可手动修改" step="0.01" min="0">';
         html += '<div class="form-hint" id="hint-amount"></div>';
         html += '</div>';
         html += '</div>';
 
-        html += '<div class="form-section">';
-        html += '<div class="form-section-title">其他信息</div>';
-        html += '<div class="form-group">';
+        html += '<div class="trade-form-field trade-form-remark">';
         html += '<label class="form-label">备注</label>';
         html += '<input type="text" id="input-trade-remark" class="form-input" value="' + (trade.remark || '') + '" placeholder="备注信息（可选）" maxlength="50">';
         html += '</div>';
+
         html += '</div>';
 
         return html;

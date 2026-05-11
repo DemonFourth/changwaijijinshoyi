@@ -645,12 +645,6 @@ const Modal = {
         fee.addEventListener('input', calcAmount);
         tradeType.addEventListener('change', calcAmount);
 
-        amount.addEventListener('focus', () => {
-            if (autoCalcAmount !== null) {
-                amount.value = '';
-            }
-        });
-
         amount.addEventListener('input', checkMismatch);
 
         // 费率自动计算
@@ -689,13 +683,12 @@ const Modal = {
                     panel.classList.remove('hidden');
                     panel.innerHTML =
                         '<div class="fee-suggestion-content">' +
-                            '<div class="fee-suggestion-title">费率参考</div>' +
-                            '<div class="fee-suggestion-body">' +
-                                '金额 ' + Utils.formatMoney(amountVal) + '，匹配买入费率 <strong>' + result.rate + '%</strong>' +
+                            '<div class="fee-suggestion-row">' +
+                                '<span class="fee-suggestion-title">费率参考：</span>' +
                             '</div>' +
-                            '<div class="fee-suggestion-fee">' +
-                                '建议手续费：¥' + result.fee.toFixed(2) +
-                                ' <button type="button" class="btn btn-primary btn-xs btn-import-fee" data-fee="' + result.fee.toFixed(2) + '">导入</button>' +
+                            '<div class="fee-suggestion-row">' +
+                                '<span class="fee-suggestion-body">金额 ' + Utils.formatMoney(amountVal) + '，匹配买入费率 <strong>' + result.rate + '%</strong></span>' +
+                                '<span class="fee-suggestion-fee">手续费 ¥' + result.fee.toFixed(2) + ' <button type="button" class="btn btn-primary btn-import-fee" data-fee="' + result.fee.toFixed(2) + '">导入</button></span>' +
                             '</div>' +
                         '</div>';
 
@@ -727,17 +720,18 @@ const Modal = {
                 if (result.details.length > 0 && panel) {
                     let detailHtml = '';
                     result.details.forEach(d => {
-                        detailHtml += '<div>从' + d.fromDate + '买入的' + d.originalBuyShares.toFixed(2) + '份中卖出' + d.shares.toFixed(2) + '份，持有' + d.days + '天，费率' + d.rate + '%，手续费¥' + d.fee.toFixed(2) + '</div>';
+                        detailHtml += '从' + d.fromDate + '买入的' + d.originalBuyShares.toFixed(2) + '份卖出' + d.shares.toFixed(2) + '份，持有' + d.days + '天费率' + d.rate + '%手续费¥' + d.fee.toFixed(2) + '；';
                     });
 
                     panel.classList.remove('hidden');
                     panel.innerHTML =
                         '<div class="fee-suggestion-content">' +
-                            '<div class="fee-suggestion-title">费率参考（FIFO）</div>' +
-                            '<div class="fee-suggestion-body">' + detailHtml + '</div>' +
-                            '<div class="fee-suggestion-fee">' +
-                                '合计手续费：¥' + result.fee.toFixed(2) +
-                                ' <button type="button" class="btn btn-primary btn-xs btn-import-fee" data-fee="' + result.fee.toFixed(2) + '">导入</button>' +
+                            '<div class="fee-suggestion-row">' +
+                                '<span class="fee-suggestion-title">费率参考(FIFO)：</span>' +
+                            '</div>' +
+                            '<div class="fee-suggestion-row">' +
+                                '<span class="fee-suggestion-body">' + detailHtml + '</span>' +
+                                '<span class="fee-suggestion-fee">合计¥' + result.fee.toFixed(2) + ' <button type="button" class="btn btn-primary btn-import-fee" data-fee="' + result.fee.toFixed(2) + '">导入</button></span>' +
                             '</div>' +
                         '</div>';
 
@@ -873,7 +867,7 @@ const Modal = {
 
     bindImportEvents() {
         console.log('[Import] bindImportEvents called');
-        
+
         const btnConfirm = document.getElementById('btn-confirm-import');
         console.log('[Import] btnConfirm element:', btnConfirm);
 
@@ -884,7 +878,7 @@ const Modal = {
 
         btnConfirm.addEventListener('click', () => {
             console.log('[Import] Import button clicked');
-            
+
             const fileInput = document.getElementById('input-import-file');
             console.log('[Import] fileInput:', fileInput);
 
@@ -895,7 +889,7 @@ const Modal = {
 
             const file = fileInput.files[0];
             console.log('[Import] File selected:', file.name);
-            
+
             const reader = new FileReader();
 
             reader.onload = async (e) => {
@@ -903,7 +897,7 @@ const Modal = {
                 try {
                     const data = JSON.parse(e.target.result);
                     console.log('[Import] JSON parsed, data keys:', Object.keys(data));
-                    
+
                     // 先分析导入数据
                     console.log('[Import] Calling analyzeImportData...');
                     const analysis = window.ImportAppService.analyzeImportData(data);

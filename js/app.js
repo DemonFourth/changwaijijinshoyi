@@ -110,6 +110,14 @@ const App = {
             }
 
             window.Overview.refresh();
+
+            const funds = window.FundManager.getAllFunds();
+            if (funds.length > 0) {
+                window.FundManager.refreshAllFunds().then(() => {
+                    window.Overview.refresh();
+                });
+            }
+
             return syncResult;
         } catch (error) {
             console.error('Background sync failed:', error);

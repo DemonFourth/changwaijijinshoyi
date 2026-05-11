@@ -1353,6 +1353,55 @@ td.negative {
     flex: 1;
 }
 
+/* 交易表单紧凑布局 */
+.trade-form-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.trade-form-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.trade-form-row-main {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.trade-form-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.trade-form-field .form-label {
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+}
+
+.trade-form-field-amount {
+    grid-column: span 3;
+}
+
+.trade-form-remark {
+    grid-column: span 3;
+}
+
+#fee-suggestion-panel {
+    margin-top: -0.25rem;
+}
+
+@media (max-width: 600px) {
+    .trade-form-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .trade-form-row-main {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 .modal-footer {
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--color-border-primary);
@@ -3021,41 +3070,88 @@ td.negative {
 
 /* 费率提示面板 */
 .fee-suggestion-panel {
-    margin-top: 6px;
-    margin-bottom: var(--spacing-sm);
-    padding: var(--spacing-xs) var(--spacing-sm);
+    padding: 4px 8px;
     background: var(--color-bg-secondary);
     border-radius: var(--radius-sm);
     border-left: 3px solid var(--color-brand-primary);
+    font-size: var(--font-size-xs);
 }
 
 .fee-suggestion-content {
-    font-size: var(--font-size-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--font-size-xs);
+}
+
+.fee-suggestion-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.fee-suggestion-row + .fee-suggestion-row {
+    margin-top: 2px;
 }
 
 .fee-suggestion-title {
     font-weight: 600;
     color: var(--color-text-primary);
-    margin-bottom: var(--spacing-xs);
 }
 
 .fee-suggestion-body {
     color: var(--color-text-secondary);
-    margin-bottom: var(--spacing-xs);
 }
 
 .fee-suggestion-fee {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 6px;
     color: var(--color-text-primary);
     font-weight: 500;
 }
 
-.btn-xs {
+.fee-suggestion-fee .btn {
     padding: 2px 8px;
     font-size: 12px;
-    min-height: auto;
+}
+
+/* 金额提示样式 */
+.hint-amount-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-success);
+    font-size: var(--font-size-xs);
+    width: 100%;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.hint-amount-inline .btn {
+    padding: 2px 8px;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+/* form-hint inline display */
+.form-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0;
+    width: 100%;
+}
+
+/* 交易表单备注栏 - 占满整行 */
+.trade-form-remark .form-input {
+    width: 100%;
+    min-width: 100%;
 }
 
 /* 费率设置弹窗样式 */
