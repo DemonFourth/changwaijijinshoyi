@@ -207,6 +207,9 @@ CalculatorV2.calculateEstimatedFloatingProfit(trades, fund)
 | `getMonthlySummary()` | 月度汇总（最近6个月） | MonthlySummary[] |
 | `clearCache()` | 清除缓存 | void |
 
+#### 图表渲染
+- `ChartManager.buildMonthlyProfitChartOption(monthlyData)` - 生成月度收益柱状图配置
+
 #### 数据结构
 
 **持仓汇总 (Holding Summary)**
