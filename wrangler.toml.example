@@ -1,0 +1,13 @@
+# Cloudflare Pages Functions Configuration
+# 部署时请在 Cloudflare Dashboard 中设置环境变量，或参考下方配置
+
+# 公开 API 认证密钥（替换为你的实际密钥）
+# PUBLIC_API_KEY = "your-secret-key-here"
+
+# 注意：在 Cloudflare Dashboard 中配置环境变量的方式：
+# 1. 进入 Pages 项目 → Settings → Functions → Environment Variables
+# 2. 添加变量：Name = PUBLIC_API_KEY, Value = <your-secret-key>
+# 3. 保存后重新部署
+
+[vars]
+# PUBLIC_API_KEY = "change-me-in-dashboard"
