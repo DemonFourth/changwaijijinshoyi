@@ -1,10 +1,10 @@
 /**
  * Auth Middleware - API Key 鉴权中间件
- * 用于 Public API 的单一 API Key 认证
+ * 读取操作公开，写入操作需认证
  */
 
 /**
- * 检查 API Key 是否有效
+ * 检查 API Key 是否有效（用于写入操作）
  * @param {Object} env - Pages Functions 环境对象
  * @param {Request} request - 请求对象
  * @returns {boolean} 是否有效
@@ -26,6 +26,16 @@ export function checkApiKey(env, request) {
 }
 
 /**
+ * 检查是否为写入操作（POST/PUT/PATCH/DELETE）
+ * @param {Request} request - 请求对象
+ * @returns {boolean}
+ */
+export function isWriteMethod(request) {
+    const method = request.method.toUpperCase();
+    return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+}
+
+/**
  * 返回 401 未授权响应
  * @param {string} message - 错误消息
  * @returns {Response}
@@ -42,7 +52,30 @@ export function unauthorizedResponse(message = 'Invalid or missing API Key') {
         headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, X-API-Key'
+        }
+    });
+}
+
+/**
+ * 返回 400 错误请求响应
+ * @param {string} message - 错误消息
+ * @returns {Response}
+ */
+export function badRequestResponse(message = 'Bad request') {
+    return new Response(JSON.stringify({
+        success: false,
+        error: {
+            code: 'BAD_REQUEST',
+            message: message
+        }
+    }), {
+        status: 400,
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, X-API-Key'
         }
     });
@@ -65,7 +98,7 @@ export function notFoundResponse(message = 'Resource not found') {
         headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, X-API-Key'
         }
     });
@@ -88,7 +121,7 @@ export function internalErrorResponse(message = 'Internal server error') {
         headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, X-API-Key'
         }
     });
@@ -102,8 +135,24 @@ export function handleOptions() {
     return new Response(null, {
         headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, X-API-Key'
         }
     });
+}
+
+/**
+ * 生成 syncId
+ * @returns {string}
+ */
+export function generateSyncId(prefix = 'entity') {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * 获取当前 ISO 时间戳
+ * @returns {string}
+ */
+export function getNowIso() {
+    return new Date().toISOString();
 }

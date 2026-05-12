@@ -3,7 +3,7 @@
  * 获取指定基金的交易记录
  */
 
-import { checkApiKey, unauthorizedResponse, notFoundResponse, internalErrorResponse, handleOptions } from '../../../_shared/authMiddleware.js';
+import { notFoundResponse, internalErrorResponse, handleOptions, getNowIso } from '../../../_shared/authMiddleware.js';
 import { getSnapshot } from '../../../_shared/syncRepository.js';
 import { ensureTables } from '../../../_shared/d1Schema.js';
 
@@ -14,8 +14,14 @@ export const onRequest = async (context) => {
         return handleOptions();
     }
 
-    if (!checkApiKey(env, request)) {
-        return unauthorizedResponse();
+    if (request.method !== 'GET') {
+        return new Response(JSON.stringify({
+            success: false,
+            error: { code: 'BAD_REQUEST', message: 'Method not allowed' }
+        }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
     }
 
     const url = new URL(request.url);
@@ -53,7 +59,7 @@ export const onRequest = async (context) => {
                 updatedAt: t.updatedAt
             }));
 
-        const now = new Date().toISOString();
+        const now = getNowIso();
 
         return new Response(JSON.stringify({
             success: true,
