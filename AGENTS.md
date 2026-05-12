@@ -3,8 +3,8 @@
 ## 项目概述
 
 **名称**：场外基金收益计算器 (fund-return-calculator)
-**类型**：纯前端Web应用（无需后端服务）
-**技术栈**：原生HTML/CSS/JavaScript + ECharts + LocalStorage
+**类型**：本地优先的前端 Web 应用，支持可选 Cloudflare Pages Functions + D1 云同步与 Public API
+**技术栈**：原生HTML/CSS/JavaScript + ECharts + LocalStorage + Cloudflare Pages Functions + D1
 
 ---
 
@@ -84,7 +84,8 @@ Storage, DataService, FundAPI, Calculator, CalculatorV2, FundManager,
 TradeManager, Router, Modal, Overview, Detail, App, ThemeManager,
 ChartManager, CycleGroupRenderer, CycleTradeDisplay, Paginator,
 NameCache, NameValidator, FIFOCalculator, FIFOValidator,
-BigNumberFormatter, echarts, ConversionCalculator, ToolPage
+BigNumberFormatter, echarts, ConversionCalculator, ToolPage,
+StatisticsAppService
 ```
 
 ### 模块组织约定
@@ -92,6 +93,7 @@ BigNumberFormatter, echarts, ConversionCalculator, ToolPage
 - 业务写操作优先走application层：`js/application/*.js`
   - 基金相关：`FundAppService`
   - 交易相关：`TradeAppService`
+  - 统计汇总：`StatisticsAppService`
   - 设置/导入导出：`AppSettingsService`
 - 数据读取优先通过manager或repository
 - 持久化统一通过`LocalStorageAdapter`与`StorageSchema`
@@ -189,6 +191,85 @@ CalculatorV2.calculateEstimatedFloatingProfit(trades, fund)
 
 ---
 
+## 统计汇总服务
+
+### StatisticsAppService
+文件位置：`js/application/statisticsAppService.js`
+
+#### 核心方法
+
+| 方法 | 说明 | 返回值 |
+|------|------|--------|
+| `getAllSummary()` | 获取所有汇总数据 | `{ holding, closed, yearly, monthly }` |
+| `getHoldingSummary()` | 持仓汇总（份额 > 0） | HoldingSummary |
+| `getClosedSummary()` | 已清仓汇总（份额 == 0） | ClosedSummary |
+| `getYearlySummary()` | 年度汇总（当年） | YearlySummary |
+| `getMonthlySummary()` | 月度汇总（最近6个月） | MonthlySummary[] |
+| `clearCache()` | 清除缓存 | void |
+
+#### 数据结构
+
+**持仓汇总 (Holding Summary)**
+```javascript
+{
+  totalInvest: number,      // 累计买入成本
+  totalValue: number,       // 当前市值
+  totalProfit: number,      // 浮动盈亏
+  profitRate: number,       // 盈利率 (%)
+  fundCount: number         // 持仓基金数量
+}
+```
+
+**已清仓汇总 (Closed Summary)**
+```javascript
+{
+  totalInvest: number,      // 累计买入成本
+  totalSellAmount: number,  // 累计卖出金额
+  totalProfit: number,      // 已实现收益
+  profitRate: number,       // 收益率 (%)
+  fundCount: number         // 已清仓基金数量
+}
+```
+
+**年度汇总 (Yearly Summary)**
+```javascript
+{
+  year: number,             // 年份
+  totalProfit: number,      // 年度已实现收益
+  totalInvest: number,      // 年度累计买入
+  sellAmount: number,      // 年度卖出金额
+  fee: number,              // 年度手续费
+  cycleCount: number        // 年度交易次数
+}
+```
+
+**月度汇总 (Monthly Summary)**
+```javascript
+{
+  year: number,             // 年份
+  month: number,           // 月份 (1-12)
+  monthKey: string,        // 格式: "YYYY-MM"
+  totalProfit: number,     // 月度已实现收益
+  totalInvest: number,     // 月度累计买入
+  sellAmount: number,      // 月度卖出金额
+  fee: number,              // 月度手续费
+  cycleCount: number        // 月度交易次数
+}
+```
+
+#### 缓存机制
+- 使用 `_cache: Map` 存储计算结果
+- 缓存键：`'holdingSummary'`, `'closedSummary'`, `'yearlySummary'`, `'monthlySummary'`
+- 通过事件 `EventType.CALCULATION_UPDATED` 自动失效缓存
+
+#### 注意事项
+- 已实现收益 = 卖出金额 - 买入成本 - 手续费
+- 年度/月度汇总按**周期交易**聚合，非单笔交易
+- 汇总数据按运行时计算，不持久化
+- 数据全部本地计算，不上传云端
+
+---
+
 ## 开发规范
 
 ### 代码检查
@@ -215,12 +296,20 @@ js/
 │   ├── detailTradeActionHelper.js
 │   └── ...
 └── *.js           # 核心模块
+
+functions/
+├── api/runtime-config.js     # 运行时配置
+├── api/sync/                 # 内部同步 API（pull/push/resolve）
+├── api/public/               # 对外 Public API（funds/trades/help）
+└── _shared/                  # Pages Functions 共享模块
 ```
 
 ### 重要约束
 - 计算结果（持仓、收益、手续费建议、分组结果）保持运行时生成，不持久化
 - 云端同步范围仅限`funds`、`trades`、`syncMeta`
-- 修改数据模型、存储、application层、detail/modal/overview关键路径时，必须补或更新测试
+- Public API 当前仅开放 `funds`、`trades` 与 `help`；其中 GET 公开读取，POST `/api/public/trades` 需 `PUBLIC_API_KEY`
+- Public API 写入记录时，只允许追加单条 trade，不应绕过现有 snapshot / revision 更新逻辑
+- 修改数据模型、存储、application层、detail/modal/overview关键路径或 `functions/api/*` 时，必须补或更新测试
 
 ---
 

@@ -12,6 +12,7 @@
 - ✅ 交易记录：记录买入、卖出、分红等交易（支持备注）
 - ✅ 加权平均成本法：用于持仓成本、浮动盈亏、已实现收益统计
 - ✅ FIFO 手续费计算：用于按持有天数匹配卖出费率
+- ✅ 统计汇总：持仓/已清仓/年度/月度汇总，统一展示
 - ✅ 数据导入导出：JSON 格式备份与恢复
 - ✅ 本地优先：页面打开即可使用本地快照
 
@@ -34,6 +35,14 @@
 - ✅ 记录级冲突检测：用户逐项选择本地版或云端版
 - ✅ 同步状态跟踪：`pendingChanges`、`syncStatus`、`lastSyncAt`
 - ✅ 手动同步：工具箱支持立即同步、强制上传、强制下载
+
+### Public API 能力
+- ✅ `GET /api/public/funds`：公开读取全部基金
+- ✅ `GET /api/public/funds/:code`：公开读取单个基金（路径参数占位符）
+- ✅ `GET /api/public/trades`：公开读取全部交易，支持 `?fundCode=xxxxxx` 过滤
+- ✅ `GET /api/public/trades/:fundCode`：公开读取指定基金交易记录（路径参数占位符）
+- ✅ `POST /api/public/trades`：使用 `X-API-Key` 追加单条交易记录
+- ✅ `GET /api/public/help`：返回 Markdown 格式 API 使用文档，方便人和 AI 阅读
 
 ### 技术特性
 - 🎯 原生 HTML / CSS / JavaScript，无前端框架
@@ -62,13 +71,62 @@
 4. 在 Settings → Bindings 中添加 D1 绑定
 5. 绑定名填写：`DB`
 
-> 无需额外环境变量。运行时会检测 `env.DB` 是否存在：存在则启用云同步，不存在则自动降级为本地模式。
+> 运行时会检测 `env.DB` 是否存在：存在则启用云同步，不存在则自动降级为本地模式。
+>
+> 如果需要启用 Public API 写入能力，还需额外配置环境变量：
+> - `PUBLIC_API_KEY`：用于 `POST /api/public/trades` 的写入认证
 
 #### 3. 验证
 1. 打开 Pages URL
 2. 无 `/api/*` 时应提示"当前使用本地数据"
 3. 有 `/api/*` 且 D1 已绑定时应提示"当前使用混合存储（本地 + 云端同步）"
 4. 在工具箱点击"立即同步"验证云端同步链路
+5. 访问 `/api/public/help` 验证 Public API 文档已生效
+6. 用 `curl` 或其他 HTTP 客户端验证公开读取与写入认证
+
+### Public API 使用说明
+
+#### 1. 公开读取（无需 API Key）
+
+```bash
+curl https://your-domain.com/api/public/funds
+curl https://your-domain.com/api/public/funds/005827
+curl https://your-domain.com/api/public/trades
+curl https://your-domain.com/api/public/trades?fundCode=005827
+curl https://your-domain.com/api/public/trades/005827
+curl https://your-domain.com/api/public/help
+```
+
+说明：
+- `/api/public/funds/:code` 中的 `:code` 是路径占位符，实际调用时替换为真实基金代码
+- `/api/public/trades/:fundCode` 中的 `:fundCode` 是路径占位符，实际调用时替换为真实基金代码
+- 如果希望 AI 或其他系统快速理解接口，优先读取 `/api/public/help`
+
+#### 2. 写入单条交易（需要 API Key）
+
+```bash
+curl -X POST https://your-domain.com/api/public/trades \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-key" \
+  -d '{"fundCode":"005827","date":"2024-01-15","type":"buy","netValue":1.2345,"shares":1000,"amount":1234.50,"fee":1.23,"remark":"定投"}'
+```
+
+写入约束：
+- 当前只支持追加 **单条** trade 记录
+- 必须先存在对应基金代码，否则返回 404
+- 不应直接改写快照结构，统一通过 `functions/api/public/trades.js` 的追加逻辑和 `updateSnapshot()` 更新 revision
+
+#### 3. 维护说明
+
+- Public API 文档入口：`functions/api/public/help.js`
+- Public API 共享鉴权与响应工具：`functions/_shared/authMiddleware.js`
+- Public API 数据来源：`functions/_shared/syncRepository.js`
+- 若新增/调整 Public API 字段或行为，必须同步更新：
+  1. `functions/api/public/help.js`
+  2. `docs/public-api-plan.md`
+  3. `README.md`
+  4. `AGENTS.md`（若涉及开发约束或维护约束变化）
+- 若调整写入行为，必须确保仍遵循“单条追加 + revision 递增 + 不绕过 snapshot 更新链路”原则
 
 ## 项目结构
 
@@ -116,6 +174,7 @@ jijinshouyi/
 │   │   ├── tradeAppService.js
 │   │   ├── importAppService.js
 │   │   ├── appSettingsService.js
+│   │   ├── statisticsAppService.js
 │   │   └── syncAppService.js
 │   ├── repositories/       # 仓储层
 │   │   ├── fundRepository.js
@@ -140,11 +199,18 @@ jijinshouyi/
 ├── functions/              # Cloudflare Pages Functions
 │   ├── api/
 │   │   ├── runtime-config.js
-│   │   └── sync/
-│   │       ├── pull.js
-│   │       ├── push.js
-│   │       └── resolve.js
+│   │   ├── sync/
+│   │   │   ├── pull.js
+│   │   │   ├── push.js
+│   │   │   └── resolve.js
+│   │   └── public/
+│   │       ├── funds.js
+│   │       ├── funds/[code].js
+│   │       ├── trades.js
+│   │       ├── trades/[fundCode].js
+│   │       └── help.js
 │   └── _shared/
+│       ├── authMiddleware.js
 │       ├── d1Schema.js
 │       ├── syncRepository.js
 │       └── syncUtils.js
@@ -175,6 +241,7 @@ jijinshouyi/
 `js/application/*.js` 负责业务写操作与用例编排：
 - `FundAppService`：基金新增、编辑、删除
 - `TradeAppService`：交易新增、编辑、删除
+- `StatisticsAppService`：统计汇总（持仓/已清仓/年度/月度）
 - `ImportAppService`：导入/清空业务数据
 - `AppSettingsService`：设置、导入导出入口
 - `SyncAppService`：同步状态、push / pull / resolve、补偿链路
@@ -329,6 +396,15 @@ jijinshouyi/
 - 同步统一通过 `LocalStorageAdapter.getCurrentSyncAdapter()` 与 `SyncAdapterRegistry`
 - 新增 provider 必须实现 adapter 接口
 - 禁止把云端请求直接散落到页面层、manager 层
+
+## Public API 维护约束
+
+- `GET /api/public/*` 为公开读取接口，变更响应字段时需考虑兼容性
+- `POST /api/public/trades` 仅允许追加单条交易记录，不应扩展为覆盖式写入当前快照
+- Public API 写入必须继续复用 `getSnapshot()` + `updateSnapshot()`，保证 revision 正常递增
+- `functions/api/public/help.js` 应与真实接口行为保持同步，作为对人和 AI 的一手说明文档
+- 若新增 Public API 端点，需同步更新：`README.md`、`AGENTS.md`、`docs/public-api-plan.md`、`/api/public/help`
+- 若调整认证策略，需同步检查 Cloudflare 环境变量说明是否仍准确
 
 ## 开发与验证
 
