@@ -100,6 +100,40 @@
                     </div>
                 </div>
 
+                <!-- Top5盈亏榜单 -->
+                <div class="top5-container"></div>
+
+                <!-- 基金列表 -->
+                <div class="fund-list-container">
+                    <div class="list-header">
+                        <h2>我的基金</h2>
+                        <div class="list-controls">
+                            <div class="view-toggle">
+                                <button class="btn-view active" data-view="card" data-tooltip="卡片视图" type="button">▦</button>
+                                <button class="btn-view" data-view="list" data-tooltip="列表视图" type="button">☰</button>
+                            </div>
+                            <select class="sort-select" id="sort-field">
+                                <option value="profitRate">按收益率</option>
+                                <option value="profitAmount">按收益额</option>
+                                <option value="marketValue">按市值</option>
+                                <option value="name">按名称</option>
+                            </select>
+                            <button class="btn-sort-order" id="sort-order" data-tooltip="降序" type="button">↓</button>
+                            <button id="btn-add-fund" class="btn btn-primary" type="button">+ 添加基金</button>
+                        </div>
+                    </div>
+                    <div id="fund-list" class="fund-list">
+                        <!-- 基金卡片将动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="chart-container">
+                    <h3 class="chart-section-title">收益趋势</h3>
+                    <div id="chart-profit-trend" class="chart"></div>
+                </div>
+
+                <!-- 汇总统计区域 -->
                 <section id="summary-section" class="summary-section">
                     <h3 class="section-title">汇总统计</h3>
                     
@@ -235,39 +269,6 @@
                         </div>
                     </div>
                 </section>
-
-                <!-- Top5盈亏榜单 -->
-                <div class="top5-container"></div>
-
-                <!-- 基金列表 -->
-                <div class="fund-list-container">
-                    <div class="list-header">
-                        <h2>我的基金</h2>
-                        <div class="list-controls">
-                            <div class="view-toggle">
-                                <button class="btn-view active" data-view="card" data-tooltip="卡片视图" type="button">▦</button>
-                                <button class="btn-view" data-view="list" data-tooltip="列表视图" type="button">☰</button>
-                            </div>
-                            <select class="sort-select" id="sort-field">
-                                <option value="profitRate">按收益率</option>
-                                <option value="profitAmount">按收益额</option>
-                                <option value="marketValue">按市值</option>
-                                <option value="name">按名称</option>
-                            </select>
-                            <button class="btn-sort-order" id="sort-order" data-tooltip="降序" type="button">↓</button>
-                            <button id="btn-add-fund" class="btn btn-primary" type="button">+ 添加基金</button>
-                        </div>
-                    </div>
-                    <div id="fund-list" class="fund-list">
-                        <!-- 基金卡片将动态生成 -->
-                    </div>
-                </div>
-
-                <!-- 图表区域 -->
-                <div class="chart-container">
-                    <h3 class="chart-section-title">收益趋势</h3>
-                    <div id="chart-profit-trend" class="chart"></div>
-                </div>
             </div>
 
             <!-- 详情页 -->
