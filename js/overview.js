@@ -113,7 +113,7 @@ const Overview = {
         }
 
         // 汇总卡片Tab切换
-        document.querySelectorAll('.summary-card').forEach(card => {
+        document.querySelectorAll('.stat-card').forEach(card => {
             const tabs = card.querySelectorAll('.summary-tab');
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
@@ -658,6 +658,12 @@ const Overview = {
         this._updateProfitValue('yearly-profit', yearly.totalProfit);
 
         this.renderMonthlyList(summary.monthly);
+
+        // 如果当前显示的是图表tab，则渲染图表
+        const monthlyChartContent = document.querySelector('#summary-monthly .summary-tab-content[data-view="chart"]');
+        if (monthlyChartContent && monthlyChartContent.classList.contains('active')) {
+            this.renderSummaryCharts();
+        }
     },
 
     renderSummaryCharts() {
