@@ -2001,6 +2001,153 @@ td.negative {
     color: var(--color-danger);
 }
 
+.toast-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+}
+
+.toast-message {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    margin-top: 0.25rem;
+}
+
+@keyframes toastSlideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Summary Section */
+.summary-section {
+    margin-top: 2rem;
+    padding: 0 1rem;
+}
+
+.summary-section .section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.summary-section .stat-card {
+    background: var(--card-bg);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.summary-section .stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.summary-section .stat-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.summary-section .stat-badge {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--badge-bg);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.summary-section .stat-card-body {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.summary-section .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
+}
+
+.summary-section .stat-card.closed {
+    border-left: 3px solid #FF9800;
+}
+
+.summary-section .stat-card.yearly {
+    border-left: 3px solid #4CAF50;
+}
+
+.summary-section .stat-card.monthly {
+    border-left: 3px solid #9C27B0;
+}
+
+.monthly-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.monthly-item {
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+.monthly-item-header {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.monthly-item-stats {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.toast-container.hidden {
+    display: none;
+}
+
+.toast-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+}
+
+.toast-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.toast-container.success .toast-icon {
+    color: var(--color-success);
+}
+
+.toast-container.error .toast-icon {
+    color: var(--color-danger);
+}
+
 .toast-container.info .toast-icon {
     color: var(--color-info);
 }
