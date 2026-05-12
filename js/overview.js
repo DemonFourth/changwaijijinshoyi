@@ -659,11 +659,22 @@ const Overview = {
 
         this.renderMonthlyList(summary.monthly);
 
-        // 如果当前显示的是图表tab，则渲染图表
-        const monthlyChartContent = document.querySelector('#summary-monthly .summary-tab-content[data-view="chart"]');
-        if (monthlyChartContent && monthlyChartContent.classList.contains('active')) {
-            this.renderSummaryCharts();
+        // 渲染月度图表（默认显示）
+        this.renderMonthlyChart();
+    },
+
+    renderMonthlyChart() {
+        const monthlyEl = document.getElementById('monthly-profit-chart');
+        if (!monthlyEl) return;
+
+        const summary = StatisticsAppService.getAllSummary();
+        if (!summary.monthly || summary.monthly.length === 0) {
+            monthlyEl.innerHTML = '<p style="text-align: center; padding: 40px 0; color: var(--text-secondary);">暂无月度收益数据</p>';
+            return;
         }
+
+        const option = ChartManager.buildMonthlyProfitChartOption(summary.monthly);
+        ChartManager.createChart('monthly-profit-chart', option);
     },
 
     renderSummaryCharts() {

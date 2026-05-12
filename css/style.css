@@ -2043,7 +2043,24 @@ td.negative {
     padding: 1rem;
     margin-bottom: 1rem;
     border: 1px solid var(--border-color);
+    position: relative;
+    padding-top: 0.5rem;
 }
+
+.summary-section .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 0.75rem 0.75rem 0 0;
+}
+
+#summary-holding::after { background: var(--color-primary); }
+#summary-closed::after { background: #FF9800; }
+#summary-yearly::after { background: #4CAF50; }
+#summary-monthly::after { background: #9C27B0; }
 
 .summary-section .stat-card-header {
     display: flex;
