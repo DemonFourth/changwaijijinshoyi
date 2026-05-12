@@ -111,6 +111,26 @@ const Overview = {
             Overview._syncRefreshBound = true;
             EventBus.on(EventType.SYNC_DATA_APPLIED, () => Overview.refresh());
         }
+
+        // 汇总卡片Tab切换
+        document.querySelectorAll('.summary-card').forEach(card => {
+            const tabs = card.querySelectorAll('.summary-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const view = tab.dataset.view;
+                    const content = card.querySelector(`.summary-tab-content[data-view="${view}"]`);
+                    tabs.forEach(t => t.classList.remove('active'));
+                    card.querySelectorAll('.summary-tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    if (content) content.classList.add('active');
+
+                    // 触发图表渲染
+                    if (view === 'chart') {
+                        Overview.renderSummaryCharts();
+                    }
+                });
+            });
+        });
     },
 
     /**
@@ -638,7 +658,34 @@ const Overview = {
         this._updateProfitValue('yearly-profit', yearly.totalProfit);
 
         this.renderMonthlyList(summary.monthly);
-        this.renderMonthlyProfitChart(summary.monthly);
+    },
+
+    renderSummaryCharts() {
+        const summary = StatisticsAppService.getAllSummary();
+
+        // 持仓饼图
+        const holdingPieEl = document.getElementById('holding-pie-chart');
+        if (holdingPieEl && summary.holding.totalInvest > 0) {
+            ChartManager.createChart('holding-pie-chart', ChartManager.buildHoldingPieChartOption(summary.holding));
+        }
+
+        // 已清仓饼图
+        const closedPieEl = document.getElementById('closed-pie-chart');
+        if (closedPieEl && summary.closed.totalInvest > 0) {
+            ChartManager.createChart('closed-pie-chart', ChartManager.buildClosedPieChartOption(summary.closed));
+        }
+
+        // 年度柱状图
+        const yearlyBarEl = document.getElementById('yearly-bar-chart');
+        if (yearlyBarEl) {
+            ChartManager.createChart('yearly-bar-chart', ChartManager.buildYearlyBarChartOption(summary.yearly));
+        }
+
+        // 月度柱状图
+        const monthlyEl = document.getElementById('monthly-profit-chart');
+        if (monthlyEl && summary.monthly.length > 0) {
+            ChartManager.createChart('monthly-profit-chart', ChartManager.buildMonthlyProfitChartOption(summary.monthly));
+        }
     },
 
     _updateProfitValue(elementId, value) {
@@ -699,20 +746,6 @@ const Overview = {
                 </div>
             `;
         }).join('');
-    },
-
-    renderMonthlyProfitChart(monthlyData) {
-        const chartContainer = document.getElementById('monthly-profit-chart');
-        if (!chartContainer) return;
-
-        const hasData = monthlyData && monthlyData.some(m => m.totalProfit !== 0);
-        if (!hasData) {
-            chartContainer.innerHTML = '<p style="text-align: center; padding: 40px 0; color: var(--text-secondary);">暂无月度收益数据</p>';
-            return;
-        }
-
-        const option = ChartManager.buildMonthlyProfitChartOption(monthlyData);
-        ChartManager.createChart('monthly-profit-chart', option);
     }
 };
 

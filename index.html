@@ -109,22 +109,33 @@
                             <span class="stat-title">持仓汇总</span>
                             <span class="stat-badge" id="holding-fund-count">0只基金</span>
                         </div>
-                        <div class="stat-card-body">
-                            <div class="stat-row">
-                                <span class="stat-label">累计买入成本</span>
-                                <span class="stat-value" id="holding-invest">¥0.00</span>
+                        <div class="summary-tabs">
+                            <button class="summary-tab active" data-view="data">数据</button>
+                            <button class="summary-tab" data-view="chart">图表</button>
+                        </div>
+                        <div class="summary-tab-content active" data-view="data">
+                            <div class="stat-card-body">
+                                <div class="stat-row">
+                                    <span class="stat-label">累计买入成本</span>
+                                    <span class="stat-value" id="holding-invest">¥0.00</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">当前市值</span>
+                                    <span class="stat-value" id="holding-value">¥0.00</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">浮动盈亏</span>
+                                    <span class="stat-value" id="holding-profit">¥0.00</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">收益率</span>
+                                    <span class="stat-value" id="holding-rate">0.00%</span>
+                                </div>
                             </div>
-                            <div class="stat-row">
-                                <span class="stat-label">当前市值</span>
-                                <span class="stat-value" id="holding-value">¥0.00</span>
-                            </div>
-                            <div class="stat-row">
-                                <span class="stat-label">浮动盈亏</span>
-                                <span class="stat-value" id="holding-profit">¥0.00</span>
-                            </div>
-                            <div class="stat-row">
-                                <span class="stat-label">收益率</span>
-                                <span class="stat-value" id="holding-rate">0.00%</span>
+                        </div>
+                        <div class="summary-tab-content" data-view="chart">
+                            <div class="summary-chart-container">
+                                <div id="holding-pie-chart" class="summary-chart"></div>
                             </div>
                         </div>
                     </div>
@@ -135,22 +146,33 @@
                             <span class="stat-title">已清仓汇总</span>
                             <span class="stat-badge" id="closed-fund-count">0只基金</span>
                         </div>
-                        <div class="stat-card-body">
-                            <div class="stat-row">
-                                <span class="stat-label">累计买入成本</span>
-                                <span class="stat-value" id="closed-invest">¥0.00</span>
+                        <div class="summary-tabs">
+                            <button class="summary-tab active" data-view="data">数据</button>
+                            <button class="summary-tab" data-view="chart">图表</button>
+                        </div>
+                        <div class="summary-tab-content active" data-view="data">
+                            <div class="stat-card-body">
+                                <div class="stat-row">
+                                    <span class="stat-label">累计买入成本</span>
+                                    <span class="stat-value" id="closed-invest">¥0.00</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">累计卖出金额</span>
+                                    <span class="stat-value" id="closed-sell-amount">¥0.00</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">已实现收益</span>
+                                    <span class="stat-value" id="closed-profit">¥0.00</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">收益率</span>
+                                    <span class="stat-value" id="closed-rate">0.00%</span>
+                                </div>
                             </div>
-                            <div class="stat-row">
-                                <span class="stat-label">累计卖出金额</span>
-                                <span class="stat-value" id="closed-sell-amount">¥0.00</span>
-                            </div>
-                            <div class="stat-row">
-                                <span class="stat-label">已实现收益</span>
-                                <span class="stat-value" id="closed-profit">¥0.00</span>
-                            </div>
-                            <div class="stat-row">
-                                <span class="stat-label">收益率</span>
-                                <span class="stat-value" id="closed-rate">0.00%</span>
+                        </div>
+                        <div class="summary-tab-content" data-view="chart">
+                            <div class="summary-chart-container">
+                                <div id="closed-pie-chart" class="summary-chart"></div>
                             </div>
                         </div>
                     </div>
@@ -161,22 +183,33 @@
                             <span class="stat-title" id="yearly-title">年度汇总</span>
                             <span class="stat-badge" id="yearly-cycle-count">0次交易</span>
                         </div>
-                        <div class="stat-card-body">
-                            <div class="stat-row">
-                                <span class="stat-label">累计买入</span>
-                                <span class="stat-value" id="yearly-invest">¥0.00</span>
+                        <div class="summary-tabs">
+                            <button class="summary-tab active" data-view="data">数据</button>
+                            <button class="summary-tab" data-view="chart">图表</button>
+                        </div>
+                        <div class="summary-tab-content active" data-view="data">
+                            <div class="stat-card-body">
+                                <div class="stat-row">
+                                    <span class="stat-label">累计买入</span>
+                                    <span class="stat-value" id="yearly-invest">¥0.00</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">卖出金额</span>
+                                    <span class="stat-value" id="yearly-sell-amount">¥0.00</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">手续费</span>
+                                    <span class="stat-value" id="yearly-fee">¥0.00</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">已实现收益</span>
+                                    <span class="stat-value" id="yearly-profit">¥0.00</span>
+                                </div>
                             </div>
-                            <div class="stat-row">
-                                <span class="stat-label">卖出金额</span>
-                                <span class="stat-value" id="yearly-sell-amount">¥0.00</span>
-                            </div>
-                            <div class="stat-row">
-                                <span class="stat-label">手续费</span>
-                                <span class="stat-value" id="yearly-fee">¥0.00</span>
-                            </div>
-                            <div class="stat-row">
-                                <span class="stat-label">已实现收益</span>
-                                <span class="stat-value" id="yearly-profit">¥0.00</span>
+                        </div>
+                        <div class="summary-tab-content" data-view="chart">
+                            <div class="summary-chart-container">
+                                <div id="yearly-bar-chart" class="summary-chart"></div>
                             </div>
                         </div>
                     </div>
@@ -186,11 +219,19 @@
                         <div class="stat-card-header">
                             <span class="stat-title">月度汇总</span>
                         </div>
-                        <div class="monthly-chart-container">
-                            <div id="monthly-profit-chart" class="monthly-chart"></div>
+                        <div class="summary-tabs">
+                            <button class="summary-tab" data-view="list">列表</button>
+                            <button class="summary-tab active" data-view="chart">图表</button>
                         </div>
-                        <div class="monthly-list" id="monthly-list">
-                            <!-- 动态生成 -->
+                        <div class="summary-tab-content" data-view="list">
+                            <div class="monthly-list" id="monthly-list">
+                                <!-- 动态生成 -->
+                            </div>
+                        </div>
+                        <div class="summary-tab-content active" data-view="chart">
+                            <div class="monthly-chart-container">
+                                <div id="monthly-profit-chart" class="summary-chart"></div>
+                            </div>
                         </div>
                     </div>
                 </section>

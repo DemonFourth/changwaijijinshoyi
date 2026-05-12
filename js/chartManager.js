@@ -419,6 +419,214 @@ const ChartManager = {
     },
 
     /**
+     * 生成持仓汇总饼图配置（成本 vs 市值 vs 浮动盈亏）
+     * @param {Object} holdingSummary - 持仓汇总数据
+     * @returns {Object} ECharts option
+     */
+    buildHoldingPieChartOption(holdingSummary) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!holdingSummary || holdingSummary.totalInvest === 0) {
+            return ChartManager.buildEmptyOption('暂无持仓数据');
+        }
+
+        const data = [
+            { name: '累计买入成本', value: holdingSummary.totalInvest },
+            { name: '当前市值', value: holdingSummary.totalValue },
+            { name: '浮动盈亏', value: holdingSummary.totalProfit }
+        ];
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: {
+                trigger: 'item',
+                formatter: function(params) {
+                    return `${params.name}<br/>¥${params.value.toFixed(2)}`;
+                }
+            },
+            legend: {
+                orient: 'vertical',
+                right: '5%',
+                top: 'center',
+                textStyle: { color: themeConfig.textColor },
+                fontSize: 10
+            },
+            series: [{
+                type: 'pie',
+                radius: ['35%', '55%'],
+                center: ['35%', '50%'],
+                avoidLabelOverlap: false,
+                itemStyle: {
+                    borderRadius: 4,
+                    borderColor: themeConfig.backgroundColor,
+                    borderWidth: 2
+                },
+                label: {
+                    show: false
+                },
+                emphasis: {
+                    label: {
+                        show: true,
+                        fontSize: 12,
+                        fontWeight: 'bold'
+                    }
+                },
+                data: data.map((item, index) => ({
+                    ...item,
+                    itemStyle: { color: themeConfig.itemColor[index] }
+                }))
+            }]
+        };
+    },
+
+    /**
+     * 生成已清仓汇总饼图配置（成本 vs 卖出金额 vs 已实现收益）
+     * @param {Object} closedSummary - 已清仓汇总数据
+     * @returns {Object} ECharts option
+     */
+    buildClosedPieChartOption(closedSummary) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!closedSummary || closedSummary.totalInvest === 0) {
+            return ChartManager.buildEmptyOption('暂无已清仓数据');
+        }
+
+        const data = [
+            { name: '累计买入成本', value: closedSummary.totalInvest },
+            { name: '累计卖出金额', value: closedSummary.totalSellAmount },
+            { name: '已实现收益', value: closedSummary.totalProfit }
+        ];
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: {
+                trigger: 'item',
+                formatter: function(params) {
+                    return `${params.name}<br/>¥${params.value.toFixed(2)}`;
+                }
+            },
+            legend: {
+                orient: 'vertical',
+                right: '5%',
+                top: 'center',
+                textStyle: { color: themeConfig.textColor },
+                fontSize: 10
+            },
+            series: [{
+                type: 'pie',
+                radius: ['35%', '55%'],
+                center: ['35%', '50%'],
+                avoidLabelOverlap: false,
+                itemStyle: {
+                    borderRadius: 4,
+                    borderColor: themeConfig.backgroundColor,
+                    borderWidth: 2
+                },
+                label: {
+                    show: false
+                },
+                emphasis: {
+                    label: {
+                        show: true,
+                        fontSize: 12,
+                        fontWeight: 'bold'
+                    }
+                },
+                data: data.map((item, index) => ({
+                    ...item,
+                    itemStyle: { color: themeConfig.itemColor[index] }
+                }))
+            }]
+        };
+    },
+
+    /**
+     * 生成年度汇总柱状图配置
+     * @param {Object} yearlySummary - 年度汇总数据
+     * @returns {Object} ECharts option
+     */
+    buildYearlyBarChartOption(yearlySummary) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!yearlySummary) {
+            return ChartManager.buildEmptyOption('暂无年度数据');
+        }
+
+        const data = [
+            { name: '累计买入', value: yearlySummary.totalInvest },
+            { name: '卖出金额', value: yearlySummary.sellAmount },
+            { name: '手续费', value: yearlySummary.fee },
+            { name: '已实现收益', value: yearlySummary.totalProfit }
+        ];
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    let result = params[0].name + '<br/>';
+                    params.forEach(p => {
+                        const color = p.value >= 0 ? themeConfig.profitColor : themeConfig.lossColor;
+                        result += `${p.marker} ${p.seriesName}: <span style="color:${color}">¥${p.value.toFixed(2)}</span><br/>`;
+                    });
+                    return result;
+                }
+            },
+            legend: {
+                data: ['累计买入', '卖出金额', '手续费', '已实现收益'],
+                textStyle: { color: themeConfig.textColor, fontSize: 10 },
+                top: 0
+            },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '30%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: [yearlySummary.year + '年'],
+                axisLabel: { color: themeConfig.textColor },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    color: themeConfig.textColor,
+                    formatter: val => (val >= 10000 || val <= -10000) ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
+                },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+            },
+            series: [
+                {
+                    name: '累计买入',
+                    type: 'bar',
+                    data: [data[0].value],
+                    itemStyle: { color: themeConfig.itemColor[0] },
+                    barMaxWidth: 40
+                },
+                {
+                    name: '卖出金额',
+                    type: 'bar',
+                    data: [data[1].value],
+                    itemStyle: { color: themeConfig.itemColor[1] },
+                    barMaxWidth: 40
+                },
+                {
+                    name: '手续费',
+                    type: 'bar',
+                    data: [data[2].value],
+                    itemStyle: { color: themeConfig.itemColor[2] },
+                    barMaxWidth: 40
+                },
+                {
+                    name: '已实现收益',
+                    type: 'bar',
+                    data: [data[3].value],
+                    itemStyle: { color: data[3].value >= 0 ? themeConfig.profitColor : themeConfig.lossColor },
+                    barMaxWidth: 40
+                }
+            ]
+        };
+    },
+
+    /**
      * 生成单基金收益趋势折线图配置
      * @param {Object} fund - 基金数据
      * @param {Object} stats - 计算结果
