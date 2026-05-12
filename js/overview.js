@@ -638,6 +638,7 @@ const Overview = {
         this._updateProfitValue('yearly-profit', yearly.totalProfit);
 
         this.renderMonthlyList(summary.monthly);
+        this.renderMonthlyProfitChart(summary.monthly);
     },
 
     _updateProfitValue(elementId, value) {
@@ -698,6 +699,20 @@ const Overview = {
                 </div>
             `;
         }).join('');
+    },
+
+    renderMonthlyProfitChart(monthlyData) {
+        const chartContainer = document.getElementById('monthly-profit-chart');
+        if (!chartContainer) return;
+
+        const hasData = monthlyData && monthlyData.some(m => m.totalProfit !== 0);
+        if (!hasData) {
+            chartContainer.innerHTML = '<p style="text-align: center; padding: 40px 0; color: var(--text-secondary);">暂无月度收益数据</p>';
+            return;
+        }
+
+        const option = ChartManager.buildMonthlyProfitChartOption(monthlyData);
+        ChartManager.createChart('monthly-profit-chart', option);
     }
 };
 

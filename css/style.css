@@ -2116,6 +2116,15 @@ td.negative {
     gap: 0.25rem;
 }
 
+.monthly-chart-container {
+    margin-bottom: 1rem;
+}
+
+.monthly-chart {
+    width: 100%;
+    height: 200px;
+}
+
 .toast-container.hidden {
     display: none;
 }

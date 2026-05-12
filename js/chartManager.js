@@ -344,6 +344,81 @@ const ChartManager = {
     },
 
     /**
+     * 生成月度收益柱状图配置（汇总页）
+     * @param {Array} monthlyData - 月度汇总数据数组
+     * @returns {Object} ECharts option
+     */
+    buildMonthlyProfitChartOption(monthlyData) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!monthlyData || monthlyData.length === 0) {
+            return ChartManager.buildEmptyOption('暂无月度收益数据');
+        }
+
+        const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+        // 数据按时间倒序，需要反转显示（最旧的月在左，最新的月在右）
+        const sortedData = [...monthlyData].reverse();
+        const xAxisData = sortedData.map(m => `${m.year}年${monthNames[m.month - 1]}`);
+        const profitData = sortedData.map(m => m.totalProfit || 0);
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    const p = params[0];
+                    const val = p.value;
+                    const color = val >= 0 ? themeConfig.profitColor : themeConfig.lossColor;
+                    return `${p.name}<br/>已实现收益: <span style="color:${color}">¥${val.toFixed(2)}</span>`;
+                }
+            },
+            grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: xAxisData,
+                axisLabel: {
+                    color: themeConfig.textColor,
+                    fontSize: 10,
+                    rotate: 30
+                },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    color: themeConfig.textColor,
+                    formatter: val => (val >= 10000 || val <= -10000) ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
+                },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+            },
+            series: [{
+                type: 'bar',
+                data: profitData.map(p => ({
+                    value: p,
+                    itemStyle: {
+                        color: p >= 0 ? themeConfig.profitColor : themeConfig.lossColor
+                    }
+                })),
+                barMaxWidth: 30,
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: p => {
+                        if (Math.abs(p.value) >= 10000) {
+                            return (p.value / 10000).toFixed(1) + '万';
+                        }
+                        return p.value.toFixed(0);
+                    },
+                    fontSize: 9,
+                    color: themeConfig.textColor
+                }
+            }]
+        };
+    },
+
+    /**
      * 生成单基金收益趋势折线图配置
      * @param {Object} fund - 基金数据
      * @param {Object} stats - 计算结果
