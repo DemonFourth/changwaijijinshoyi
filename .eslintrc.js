@@ -93,6 +93,7 @@ module.exports = {
     'BigNumberFormatter': 'readonly',
     'echarts': 'readonly',
     'ConversionCalculator': 'readonly',
-    'ToolPage': 'readonly'
+    'ToolPage': 'readonly',
+    'StatisticsAppService': 'readonly'
   }
 };

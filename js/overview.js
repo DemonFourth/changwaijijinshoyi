@@ -121,6 +121,7 @@ const Overview = {
         this.updateFundList();
         this.updateTop5();
         Overview.updateChart();
+        this.renderSummary();
     },
 
     renderSyncStatusBanner() {
@@ -609,6 +610,94 @@ const Overview = {
                 container.innerHTML = `<p style="text-align: center; padding: 20px; color: var(--color-text-secondary);">总收益: ${Utils.formatMoneySmart(totalProfit)}</p>`;
             }
         }
+    },
+
+    renderSummary() {
+        const summary = StatisticsAppService.getAllSummary();
+
+        const holding = summary.holding;
+        document.getElementById('holding-fund-count').textContent = holding.fundCount + '只基金';
+        document.getElementById('holding-invest').textContent = Utils.formatMoney(holding.totalInvest);
+        document.getElementById('holding-value').textContent = Utils.formatMoney(holding.totalValue);
+        this._updateProfitValue('holding-profit', holding.totalProfit);
+        this._updateRateValue('holding-rate', holding.profitRate);
+
+        const closed = summary.closed;
+        document.getElementById('closed-fund-count').textContent = closed.fundCount + '只基金';
+        document.getElementById('closed-invest').textContent = Utils.formatMoney(closed.totalInvest);
+        document.getElementById('closed-sell-amount').textContent = Utils.formatMoney(closed.totalSellAmount);
+        this._updateProfitValue('closed-profit', closed.totalProfit);
+        this._updateRateValue('closed-rate', closed.profitRate);
+
+        const yearly = summary.yearly;
+        document.getElementById('yearly-title').textContent = yearly.year + '年汇总';
+        document.getElementById('yearly-cycle-count').textContent = yearly.cycleCount + '次交易';
+        document.getElementById('yearly-invest').textContent = Utils.formatMoney(yearly.totalInvest);
+        document.getElementById('yearly-sell-amount').textContent = Utils.formatMoney(yearly.sellAmount);
+        document.getElementById('yearly-fee').textContent = Utils.formatMoney(yearly.fee);
+        this._updateProfitValue('yearly-profit', yearly.totalProfit);
+
+        this.renderMonthlyList(summary.monthly);
+    },
+
+    _updateProfitValue(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        element.textContent = Utils.formatMoney(value);
+        element.classList.remove('positive', 'negative');
+        if (value > 0) {
+            element.classList.add('positive');
+        } else if (value < 0) {
+            element.classList.add('negative');
+        }
+    },
+
+    _updateRateValue(elementId, rate) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        element.textContent = Utils.formatNumber(rate, 2) + '%';
+        element.classList.remove('positive', 'negative');
+        if (rate > 0) {
+            element.classList.add('positive');
+        } else if (rate < 0) {
+            element.classList.add('negative');
+        }
+    },
+
+    renderMonthlyList(monthlyData) {
+        const container = document.getElementById('monthly-list');
+        if (!container) return;
+
+        const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+        container.innerHTML = monthlyData.map(m => {
+            const label = monthNames[m.month - 1] + '月';
+            return `
+                <div class="monthly-item">
+                    <div class="monthly-item-header">${m.year}年${label}</div>
+                    <div class="monthly-item-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">已实现收益</span>
+                            <span class="stat-value ${m.totalProfit >= 0 ? 'positive' : 'negative'}">${Utils.formatMoney(m.totalProfit)}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">买入</span>
+                            <span class="stat-value">${Utils.formatMoney(m.totalInvest)}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">卖出</span>
+                            <span class="stat-value">${Utils.formatMoney(m.sellAmount)}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">手续费</span>
+                            <span class="stat-value">${Utils.formatMoney(m.fee)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 };
 
