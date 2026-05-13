@@ -683,13 +683,11 @@ const Modal = {
                     panel.classList.remove('hidden');
                     panel.innerHTML =
                         '<div class="fee-suggestion-content">' +
-                            '<div class="fee-suggestion-row">' +
+                            '<div class="fee-suggestion-row fee-suggestion-header">' +
                                 '<span class="fee-suggestion-title">费率参考：</span>' +
-                            '</div>' +
-                            '<div class="fee-suggestion-row">' +
-                                '<span class="fee-suggestion-body">金额 ' + Utils.formatMoney(amountVal) + '，匹配买入费率 <strong>' + result.rate + '%</strong></span>' +
                                 '<span class="fee-suggestion-fee">手续费 ¥' + result.fee.toFixed(2) + ' <button type="button" class="btn btn-primary btn-import-fee" data-fee="' + result.fee.toFixed(2) + '">导入</button></span>' +
                             '</div>' +
+                            '<div class="fee-suggestion-detail">金额 ' + Utils.formatMoney(amountVal) + '，匹配买入费率 <strong>' + result.rate + '%</strong></div>' +
                         '</div>';
 
                     const importBtn = panel.querySelector('.btn-import-fee');
@@ -720,19 +718,17 @@ const Modal = {
                 if (result.details.length > 0 && panel) {
                     let detailHtml = '';
                     result.details.forEach(d => {
-                        detailHtml += '从' + d.fromDate + '买入的' + d.originalBuyShares.toFixed(2) + '份卖出' + d.shares.toFixed(2) + '份，持有' + d.days + '天费率' + d.rate + '%手续费¥' + d.fee.toFixed(2) + '；';
+                        detailHtml += '<div class="fee-suggestion-detail">从' + d.fromDate + '买入的' + d.originalBuyShares.toFixed(2) + '份卖出' + d.shares.toFixed(2) + '份，持有' + d.days + '天费率' + d.rate + '%手续费¥' + d.fee.toFixed(2) + '。</div>';
                     });
 
                     panel.classList.remove('hidden');
                     panel.innerHTML =
                         '<div class="fee-suggestion-content">' +
-                            '<div class="fee-suggestion-row">' +
+                            '<div class="fee-suggestion-row fee-suggestion-header">' +
                                 '<span class="fee-suggestion-title">费率参考(FIFO)：</span>' +
-                            '</div>' +
-                            '<div class="fee-suggestion-row">' +
-                                '<span class="fee-suggestion-body">' + detailHtml + '</span>' +
                                 '<span class="fee-suggestion-fee">合计¥' + result.fee.toFixed(2) + ' <button type="button" class="btn btn-primary btn-import-fee" data-fee="' + result.fee.toFixed(2) + '">导入</button></span>' +
                             '</div>' +
+                            detailHtml +
                         '</div>';
 
                     const importBtn = panel.querySelector('.btn-import-fee');

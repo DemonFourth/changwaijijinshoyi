@@ -52,7 +52,7 @@ const TradeModalHelper = {
 
     buildAmountHintHtml(amount, tradeTypeLabel) {
         const label = tradeTypeLabel === '买入' ? '净值×份额+手续费' : tradeTypeLabel === '卖出' ? '净值×份额-手续费' : '净值×份额';
-        return '<span class="hint-amount-inline">自动计算：' + label + ' = ' + amount.toFixed(2) + ' <button type="button" class="btn btn-primary" data-amount="' + amount.toFixed(2) + '">导入金额</button></span>';
+        return '<span class="hint-amount-inline">自动计算：' + label + ' = ' + amount.toFixed(2) + ' <button type="button" class="btn btn-primary btn-import-amount" data-amount="' + amount.toFixed(2) + '">导入金额</button></span>';
     },
 
     renderTradeFormSections(data) {

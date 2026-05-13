@@ -2151,23 +2151,27 @@ td.negative {
 
 .summary-tab {
     padding: 0.375rem 0.75rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.375rem;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
     font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
 }
 
 .summary-tab:hover {
-    background: var(--bg-hover);
+    background: var(--color-bg-hover);
+    border-color: var(--color-primary);
+    color: var(--color-text-primary);
 }
 
 .summary-tab.active {
     background: var(--color-primary);
-    color: white;
+    color: #ffffff;
     border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .summary-tab-content {
@@ -3323,6 +3327,15 @@ td.negative {
     color: var(--color-text-secondary);
 }
 
+.fee-suggestion-header {
+    justify-content: space-between;
+}
+
+.fee-suggestion-detail {
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
 .fee-suggestion-fee {
     display: flex;
     align-items: center;
@@ -3350,6 +3363,7 @@ td.negative {
     flex-wrap: nowrap;
     white-space: nowrap;
     overflow: hidden;
+    margin-top: 0.5rem;
 }
 
 .hint-amount-inline .btn {
