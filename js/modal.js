@@ -674,7 +674,7 @@ const Modal = {
             const hasSellTiers = effectiveFeeTiers.sellTiers && effectiveFeeTiers.sellTiers.length > 0;
 
             // 优先使用基金费率
-            if (type === 'buy' && nv > 0 && s > 0 && hasBuyTiers) {
+            if (type === 'buy' && Utils.isPositive(nv) && Utils.isPositive(s) && hasBuyTiers) {
                 const amountVal = nv * s;
                 const result = FeeCalculator.calculateBuyFee(amountVal, effectiveFeeTiers.buyTiers);
 
@@ -706,10 +706,10 @@ const Modal = {
                         checkMismatch();
                     }
                 }
-            } else if (type === 'buy' && nv > 0 && s > 0 && !hasBuyTiers) {
+            } else if (type === 'buy' && Utils.isPositive(nv) && Utils.isPositive(s) && !hasBuyTiers) {
                 const panel = document.getElementById('fee-suggestion-panel');
                 if (panel) panel.classList.add('hidden');
-            } else if (type === 'sell' && nv > 0 && s > 0 && dateVal && hasSellTiers) {
+            } else if (type === 'sell' && Utils.isPositive(nv) && Utils.isPositive(s) && dateVal && hasSellTiers) {
                 const allTrades = TradeManager.getTradesByFund(fundId);
                 const sellTrade = { date: dateVal, shares: s, netValue: nv, id: data.trade ? data.trade.id : null };
                 const result = FeeCalculator.calculateSellFee(sellTrade, allTrades, effectiveFeeTiers.sellTiers);
@@ -747,7 +747,7 @@ const Modal = {
                         checkMismatch();
                     }
                 }
-            } else if (type === 'sell' && nv > 0 && s > 0 && dateVal && !hasSellTiers) {
+            } else if (type === 'sell' && Utils.isPositive(nv) && Utils.isPositive(s) && dateVal && !hasSellTiers) {
                 const panel = document.getElementById('fee-suggestion-panel');
                 if (panel) panel.classList.add('hidden');
             } else {

@@ -1438,7 +1438,7 @@ const ChartManager = {
         trades.forEach(trade => {
             const amount = parseFloat(trade.amount) || 0;
             const shares = parseFloat(trade.shares) || 0;
-            if (shares > 0) {
+            if (Utils.isPositive(shares)) {
                 const costPrice = amount / shares;
                 if (trade.type === 'buy' || (trade.type === 'dividend' && trade.dividendMode === 'reinvest')) {
                     costData.push({ costPrice: costPrice, shares: shares });

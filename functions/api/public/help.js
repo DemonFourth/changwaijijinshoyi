@@ -94,6 +94,9 @@ function buildHelpDocument() {
 #### GET /api/public/funds/:code
 获取单个基金信息
 
+说明：\`:code\` 是路径占位符，实际调用时要替换为真实基金代码。
+例如：\`/api/public/funds/005827\`
+
 **参数**:
 - \`code\` (路径参数): 基金代码，如 \`005827\`
 

@@ -13,7 +13,7 @@ const AccrualHelper = {
         const currentHolding = summary.currentHolding;
         const estimatedValue = fund.estimatedValue || fund.netValue || 0;
 
-        if (currentHolding.shares <= 0 || estimatedValue <= 0) {
+        if (Utils.isNonPositive(currentHolding.shares) || Utils.isNonPositive(estimatedValue)) {
             container.innerHTML = '';
             return;
         }

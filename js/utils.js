@@ -5,6 +5,105 @@
 
 const Utils = {
     /**
+     * 浮点数比较容差
+     * 用于避免浮点数精度问题导致的比较错误
+     */
+    EPSILON: 0.0001,
+
+    /**
+     * 判断数值是否为正（大于容差）
+     * @param {number} v - 数值
+     * @returns {boolean}
+     */
+    isPositive(v) {
+        return v > Utils.EPSILON;
+    },
+
+    /**
+     * 判断数值是否为负（小于容差）
+     * @param {number} v - 数值
+     * @returns {boolean}
+     */
+    isNegative(v) {
+        return v < -Utils.EPSILON;
+    },
+
+    /**
+     * 判断数值是否为零（在容差范围内）
+     * @param {number} v - 数值
+     * @returns {boolean}
+     */
+    isZero(v) {
+        return Math.abs(v) <= Utils.EPSILON;
+    },
+
+    /**
+     * 判断数值是否非负（大于等于容差）
+     * @param {number} v - 数值
+     * @returns {boolean}
+     */
+    isNonNegative(v) {
+        return v >= -Utils.EPSILON;
+    },
+
+    /**
+     * 判断数值是否非正（小于等于容差）
+     * @param {number} v - 数值
+     * @returns {boolean}
+     */
+    isNonPositive(v) {
+        return v <= Utils.EPSILON;
+    },
+
+    /**
+     * 严格大于：a > b（带容差）
+     * @param {number} a
+     * @param {number} b
+     * @returns {boolean}
+     */
+    gt(a, b) {
+        return a - b > Utils.EPSILON;
+    },
+
+    /**
+     * 严格小于：a < b（带容差）
+     * @param {number} a
+     * @param {number} b
+     * @returns {boolean}
+     */
+    lt(a, b) {
+        return b - a > Utils.EPSILON;
+    },
+
+    /**
+     * 大于等于：a >= b
+     * @param {number} a
+     * @param {number} b
+     * @returns {boolean}
+     */
+    gte(a, b) {
+        return a - b >= -Utils.EPSILON;
+    },
+
+    /**
+     * 小于等于：a <= b
+     * @param {number} a
+     * @param {number} b
+     * @returns {boolean}
+     */
+    lte(a, b) {
+        return b - a >= -Utils.EPSILON;
+    },
+
+    /**
+     * 判断数值是否有效（正数且有效）
+     * @param {number} v - 数值
+     * @returns {boolean}
+     */
+    isValidPositive(v) {
+        return Utils.isPositive(v) && Utils.isValidNumber(v);
+    },
+    /**
      * 日期格式化
      * @param {Date|string|number} date - 日期对象、字符串或时间戳
      * @param {string} format - 格式字符串，默认 'YYYY-MM-DD'
@@ -73,7 +172,7 @@ const Utils = {
         const number = Number(amount);
         const fixed = number.toFixed(decimals);
         const parts = fixed.split('.');
-        const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        const intPart = parts[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, ',');
         const decPart = parts[1] ? '.' + parts[1] : '';
 
         return `¥${intPart}${decPart}`;

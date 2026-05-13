@@ -38,14 +38,14 @@
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/api/public/funds` | 获取全部基金列表 |
-| GET | `/api/public/funds/:code` | 获取单个基金信息 |
+| GET | `/api/public/funds/:code` | 获取单个基金信息（`:code` 为基金代码占位符） |
 
 ### 交易记录
 
 | 方法 | 路径 | 说明 | 认证 |
 |------|------|------|------|
 | GET | `/api/public/trades` | 获取全部交易记录（可按 fundCode 过滤） | ❌ |
-| GET | `/api/public/trades/:fundCode` | 获取指定基金的交易记录 | ❌ |
+| GET | `/api/public/trades/:fundCode` | 获取指定基金的交易记录（`:fundCode` 为基金代码占位符） | ❌ |
 | POST | `/api/public/trades` | 添加交易记录 | ✅ |
 
 ### 帮助
@@ -279,11 +279,13 @@ curl https://your-domain.com/api/public/funds
 ```
 
 ### 读取特定基金
+说明：`/api/public/funds/:code` 中的 `:code` 是占位符，实际调用时替换为真实基金代码。
 ```bash
 curl https://your-domain.com/api/public/funds/005827
 ```
 
 ### 读取基金交易记录
+说明：`/api/public/trades/:fundCode` 中的 `:fundCode` 是占位符，实际调用时替换为真实基金代码。
 ```bash
 curl https://your-domain.com/api/public/trades/005827
 ```

@@ -3,8 +3,9 @@
  * 使用先进先出法计算基金收益，用于验证移动加权平均法的计算结果
  */
 
+/* global Utils */
+
 const FIFOCalculator = {
-    EPSILON: 0.0001,
 
     calculate(trades, currentNetValue) {
         const result = this.calculateWithDetails(trades, currentNetValue);
@@ -89,7 +90,7 @@ const FIFOCalculator = {
             const amount = parseFloat(trade.amount) || 0;
 
             if (trade.type === 'buy') {
-                const costPerShare = shares > 0 ? amount / shares : 0;
+                const costPerShare = Utils.isPositive(shares) ? amount / shares : 0;
                 holdingQueue.push({
                     shares: shares,
                     cost: amount,
@@ -108,7 +109,7 @@ const FIFOCalculator = {
                 const dividendMode = trade.dividendMode || 'cash';
                 if (dividendMode === 'reinvest' && trade.reinvestShares) {
                     const reinvestShares = parseFloat(trade.reinvestShares) || 0;
-                    const costPerShare = reinvestShares > 0 ? amount / reinvestShares : 0;
+                    const costPerShare = Utils.isPositive(reinvestShares) ? amount / reinvestShares : 0;
                     holdingQueue.push({
                         shares: reinvestShares,
                         cost: amount,
@@ -136,9 +137,9 @@ const FIFOCalculator = {
         let totalCost = 0;
         let remaining = sellShares;
 
-        while (remaining > FIFOCalculator.EPSILON && queue.length > 0) {
+        while (remaining > Utils.EPSILON && queue.length > 0) {
             const head = queue[0];
-            if (head.shares <= remaining + FIFOCalculator.EPSILON) {
+            if (head.shares <= remaining + Utils.EPSILON) {
                 totalCost += head.cost;
                 remaining -= head.shares;
                 queue.shift();
@@ -182,7 +183,7 @@ const FIFOCalculator = {
             };
 
             if (trade.type === 'buy') {
-                const costPerShare = shares > 0 ? amount / shares : 0;
+                const costPerShare = Utils.isPositive(shares) ? amount / shares : 0;
                 holdingQueue.push({
                     shares: shares,
                     cost: amount,
@@ -209,7 +210,7 @@ const FIFOCalculator = {
                 const dividendMode = trade.dividendMode || 'cash';
                 if (dividendMode === 'reinvest' && trade.reinvestShares) {
                     const reinvestShares = parseFloat(trade.reinvestShares) || 0;
-                    const costPerShare = reinvestShares > 0 ? amount / reinvestShares : 0;
+                    const costPerShare = Utils.isPositive(reinvestShares) ? amount / reinvestShares : 0;
                     holdingQueue.push({
                         shares: reinvestShares,
                         cost: amount,

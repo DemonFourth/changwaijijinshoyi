@@ -6,11 +6,9 @@
  * - 持仓成本价 = 持仓总成本 / 持仓总份额
  */
 
-/* global FeeCalculator */
+/* global FeeCalculator, Utils */
 
 const CalculatorV2 = {
-    // 精度阈值，用于浮点数比较
-    EPSILON: 0.0001,
 
     /**
      * 计算基金的收益情况（支持多轮持仓）
@@ -86,7 +84,7 @@ const CalculatorV2 = {
 
         for (const trade of trades) {
             if (trade.type === 'buy') {
-                if (holdingShares <= CalculatorV2.EPSILON) {
+                if (holdingShares <= Utils.EPSILON) {
                     currentCycle = {
                         id: cycleId++,
                         startDate: trade.date,
@@ -106,7 +104,7 @@ const CalculatorV2 = {
                     currentCycle.trades.push(trade);
                 }
 
-                if (holdingShares <= CalculatorV2.EPSILON) {
+                if (holdingShares <= Utils.EPSILON) {
                     if (currentCycle) {
                         currentCycle.endDate = trade.date;
                         currentCycle.status = 'closed';
@@ -255,7 +253,7 @@ const CalculatorV2 = {
         let floatingProfit = holdingValue - holdingCost;
 
         // 确保已清仓周期的持仓信息正确归零
-        if (holdingShares <= CalculatorV2.EPSILON) {
+        if (holdingShares <= Utils.EPSILON) {
             holdingShares = 0;
             holdingCost = 0;
             holdingValue = 0;
@@ -387,7 +385,7 @@ const CalculatorV2 = {
         const holdingValue = holdingShares * currentNetValue;
         const floatingProfit = holdingValue - holdingCost;
         holdingCost = Math.max(0, holdingCost);
-        holdingShares = holdingShares <= CalculatorV2.EPSILON ? 0 : holdingShares;
+        holdingShares = holdingShares <= Utils.EPSILON ? 0 : holdingShares;
 
         return {
             ...cycle,
@@ -465,7 +463,7 @@ const CalculatorV2 = {
         const totalFee = totalBuyFee + totalSellFee;
 
         // 最终校验：确保持仓数据合法
-        if (currentHolding.shares <= CalculatorV2.EPSILON) {
+        if (currentHolding.shares <= Utils.EPSILON) {
             currentHolding.shares = 0;
             currentHolding.cost = 0;
             currentHolding.value = 0;
@@ -502,7 +500,7 @@ const CalculatorV2 = {
             holding: {
                 shares: currentHolding.shares,
                 cost: currentHolding.cost,
-                costPerShare: currentHolding.shares > 0 ? currentHolding.cost / currentHolding.shares : 0,
+                costPerShare: Utils.isPositive(currentHolding.shares) ? currentHolding.cost / currentHolding.shares : 0,
                 value: currentHolding.value,
                 profit: currentHolding.floatingProfit,
                 profitRate: currentHolding.cost > 0 ? (currentHolding.floatingProfit / currentHolding.cost * 100) : 0
@@ -687,7 +685,7 @@ const CalculatorV2 = {
         const result = this.calculateFundProfit(activeCycle.trades, estimatedValue);
         const currentHolding = result.summary.currentHolding;
 
-        if (currentHolding.shares <= 0) {
+        if (!Utils.isPositive(currentHolding.shares)) {
             return { error: '无持有份额' };
         }
 

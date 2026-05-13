@@ -141,7 +141,6 @@ const Overview = {
         this.updateFundList();
         this.updateTop5();
         Overview.updateChart();
-        this.renderSummary();
     },
 
     renderSyncStatusBanner() {
@@ -460,14 +459,13 @@ const Overview = {
     },
 
     groupFundsByStatus(funds) {
-        const EPSILON = 0.0001;
         const holding = [];
         const cleared = [];
 
         funds.forEach(fund => {
             const stats = FundManager.getFundStats(fund.id);
             const shares = stats ? (stats.summary.currentHolding.shares || 0) : 0;
-            if (shares > EPSILON) {
+            if (Utils.isPositive(shares)) {
                 holding.push(fund);
             } else {
                 cleared.push(fund);
@@ -680,28 +678,40 @@ const Overview = {
     renderSummaryCharts() {
         const summary = StatisticsAppService.getAllSummary();
 
-        // 持仓饼图
-        const holdingPieEl = document.getElementById('holding-pie-chart');
-        if (holdingPieEl && summary.holding.totalInvest > 0) {
-            ChartManager.createChart('holding-pie-chart', ChartManager.buildHoldingPieChartOption(summary.holding));
+        // 持仓饼图（仅当图表tab可见时）
+        const holdingCard = document.getElementById('summary-holding');
+        if (holdingCard && holdingCard.querySelector('.summary-tab-content[data-view="chart"]').classList.contains('active')) {
+            const holdingPieEl = document.getElementById('holding-pie-chart');
+            if (holdingPieEl && summary.holding.totalInvest > 0) {
+                ChartManager.createChartLazy('holding-pie-chart', ChartManager.buildHoldingPieChartOption(summary.holding));
+            }
         }
 
-        // 已清仓饼图
-        const closedPieEl = document.getElementById('closed-pie-chart');
-        if (closedPieEl && summary.closed.totalInvest > 0) {
-            ChartManager.createChart('closed-pie-chart', ChartManager.buildClosedPieChartOption(summary.closed));
+        // 已清仓饼图（仅当图表tab可见时）
+        const closedCard = document.getElementById('summary-closed');
+        if (closedCard && closedCard.querySelector('.summary-tab-content[data-view="chart"]').classList.contains('active')) {
+            const closedPieEl = document.getElementById('closed-pie-chart');
+            if (closedPieEl && summary.closed.totalInvest > 0) {
+                ChartManager.createChartLazy('closed-pie-chart', ChartManager.buildClosedPieChartOption(summary.closed));
+            }
         }
 
-        // 年度柱状图
-        const yearlyBarEl = document.getElementById('yearly-bar-chart');
-        if (yearlyBarEl) {
-            ChartManager.createChart('yearly-bar-chart', ChartManager.buildYearlyBarChartOption(summary.yearly));
+        // 年度柱状图（仅当图表tab可见时）
+        const yearlyCard = document.getElementById('summary-yearly');
+        if (yearlyCard && yearlyCard.querySelector('.summary-tab-content[data-view="chart"]').classList.contains('active')) {
+            const yearlyBarEl = document.getElementById('yearly-bar-chart');
+            if (yearlyBarEl) {
+                ChartManager.createChartLazy('yearly-bar-chart', ChartManager.buildYearlyBarChartOption(summary.yearly));
+            }
         }
 
-        // 月度柱状图
-        const monthlyEl = document.getElementById('monthly-profit-chart');
-        if (monthlyEl && summary.monthly.length > 0) {
-            ChartManager.createChart('monthly-profit-chart', ChartManager.buildMonthlyProfitChartOption(summary.monthly));
+        // 月度柱状图（仅当图表tab可见时）
+        const monthlyCard = document.getElementById('summary-monthly');
+        if (monthlyCard && monthlyCard.querySelector('.summary-tab-content[data-view="chart"]').classList.contains('active')) {
+            const monthlyEl = document.getElementById('monthly-profit-chart');
+            if (monthlyEl && summary.monthly.length > 0) {
+                ChartManager.createChartLazy('monthly-profit-chart', ChartManager.buildMonthlyProfitChartOption(summary.monthly));
+            }
         }
     },
 

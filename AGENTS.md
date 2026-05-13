@@ -354,3 +354,61 @@ Method: function() {
 ### Utils 工具函数注意事项
 - `Utils.formatMoney(amount)` 返回值已包含 `¥` 符号，UI 显示时不应再额外添加
 - `Utils.formatNumber(num, decimals)` 返回格式化数字，不包含货币符号
+
+---
+
+## 浮点数比较规范
+
+### 问题背景
+JavaScript 浮点数运算存在精度误差，例如 `15947.70 - 15947.70` 结果可能不是精确的 0，而是 `-0.0000001`。因此所有与 0 的直接比较都必须使用容差处理。
+
+### EPSILON 常量
+```javascript
+Utils.EPSILON = 0.0001
+```
+
+### 比较函数
+
+| 函数 | 含义 | 等价于 |
+|------|------|--------|
+| `Utils.isPositive(v)` | 是否为正数 | `v > 0.0001` |
+| `Utils.isNegative(v)` | 是否为负数 | `v < -0.0001` |
+| `Utils.isZero(v)` | 是否为零 | `|v| <= 0.0001` |
+| `Utils.isNonNegative(v)` | 是否非负 | `v >= -0.0001` |
+| `Utils.isNonPositive(v)` | 是否非正 | `v <= 0.0001` |
+| `Utils.gt(a, b)` | a > b（带容差） | `a - b > 0.0001` |
+| `Utils.lt(a, b)` | a < b（带容差） | `b - a > 0.0001` |
+| `Utils.gte(a, b)` | a >= b | `a - b >= -0.0001` |
+| `Utils.lte(a, b)` | a <= b | `b - a >= -0.0001` |
+| `Utils.isValidPositive(v)` | 有效正数 | `isPositive(v) && isValidNumber(v)` |
+
+### 代码规范
+
+**禁止**：
+```javascript
+if (shares < 0) { ... }
+if (shares <= 0) { ... }
+if (shares > 0) { ... }
+if (shares >= 0) { ... }
+if (currentShares < -CalculatorV2.EPSILON) { ... }
+```
+
+**必须使用**：
+```javascript
+if (Utils.isNegative(shares)) { ... }
+if (Utils.isNonPositive(shares)) { ... }
+if (Utils.isPositive(shares)) { ... }
+if (Utils.isNonNegative(shares)) { ... }
+if (Utils.isNegative(currentShares)) { ... }
+```
+
+### 已废弃的本地 EPSILON 定义
+以下模块曾定义自己的 EPSILON，现已统一使用 `Utils.EPSILON`：
+- `CalculatorV2.EPSILON` → 使用 `Utils.EPSILON`
+- `FIFOCalculator.EPSILON` → 使用 `Utils.EPSILON`
+- `FeeCalculator.EPSILON` → 使用 `Utils.EPSILON`
+- `ConversionCalculator.EPSILON` → 使用 `Utils.EPSILON`
+- 局部 `const EPSILON = 0.0001` → 使用 `Utils.isPositive()` 等
+
+### ESLint 检测
+项目使用 `eslint-plugin-regexp`，启用了 `regexp/no-unused-capturing-group` 规则检测未使用的捕获组。

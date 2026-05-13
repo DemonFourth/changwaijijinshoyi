@@ -174,6 +174,9 @@ async function handlePost(env, request) {
 function validateTradeRequest(body) {
     const errors = [];
 
+    const EPSILON = 0.0001;
+    const isPositive = (v) => v > EPSILON;
+
     if (!body.fundCode) {
         errors.push('fundCode is required');
     }
@@ -189,17 +192,17 @@ function validateTradeRequest(body) {
     }
     if (body.netValue === undefined || body.netValue === null) {
         errors.push('netValue is required');
-    } else if (typeof body.netValue !== 'number' || body.netValue <= 0) {
+    } else if (typeof body.netValue !== 'number' || !isPositive(body.netValue)) {
         errors.push('netValue must be a positive number');
     }
     if (body.shares === undefined || body.shares === null) {
         errors.push('shares is required');
-    } else if (typeof body.shares !== 'number' || body.shares <= 0) {
+    } else if (typeof body.shares !== 'number' || !isPositive(body.shares)) {
         errors.push('shares must be a positive number');
     }
     if (body.amount === undefined || body.amount === null) {
         errors.push('amount is required');
-    } else if (typeof body.amount !== 'number' || body.amount <= 0) {
+    } else if (typeof body.amount !== 'number' || !isPositive(body.amount)) {
         errors.push('amount must be a positive number');
     }
 

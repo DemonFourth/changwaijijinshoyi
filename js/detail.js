@@ -301,8 +301,8 @@ const Detail = {
             cost.innerHTML = Utils.formatMoneySmart(currentHolding.cost || 0);
         }
         if (costPerShare) {
-            const costPrice = isCleared ? 0 : (currentHolding.shares > 0 ? currentHolding.cost / currentHolding.shares : 0);
-            costPerShare.textContent = costPrice > 0 ? `¥${Utils.formatNumber(costPrice, 4)}` : '¥0.0000';
+            const costPrice = isCleared ? 0 : (Utils.isPositive(currentHolding.shares) ? currentHolding.cost / currentHolding.shares : 0);
+            costPerShare.textContent = Utils.isPositive(costPrice) ? `¥${Utils.formatNumber(costPrice, 4)}` : '¥0.0000';
         }
         if (value) {
             value.innerHTML = Utils.formatMoneySmart(currentHolding.value || 0);
@@ -334,7 +334,7 @@ const Detail = {
 
         // 显示预估收益（使用估算净值）
         if (profitEstimated || rateEstimated) {
-            if (estimatedData.shares > 0 && estimatedData.cost > 0) {
+            if (Utils.isPositive(estimatedData.shares) && Utils.isPositive(estimatedData.cost)) {
                 if (profitEstimated) {
                     profitEstimated.innerHTML = Utils.formatMoneySmart(estimatedData.floatingProfit);
                     profitEstimated.className = `value ${Utils.getValueColor(estimatedData.floatingProfit)}`;

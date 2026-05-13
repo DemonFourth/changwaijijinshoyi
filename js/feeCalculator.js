@@ -3,8 +3,9 @@
  * 支持买入金额费率和卖出持有天数费率（FIFO逻辑）
  */
 
+/* global Utils */
+
 const FeeCalculator = {
-    EPSILON: 0.0001,
 
     /**
      * 计算买入手续费
@@ -23,8 +24,8 @@ const FeeCalculator = {
         for (const tier of buyTiers) {
             const min = parseFloat(tier.minAmount) || 0;
             const max = tier.maxAmount !== null ? parseFloat(tier.maxAmount) : null;
-            const meetsMin = amt > min - FeeCalculator.EPSILON;
-            const meetsMax = max === null || amt < max + FeeCalculator.EPSILON;
+            const meetsMin = amt > min - Utils.EPSILON;
+            const meetsMax = max === null || amt < max + Utils.EPSILON;
             if (meetsMin && meetsMax) {
                 matchedTier = tier;
                 break;
@@ -51,8 +52,8 @@ const FeeCalculator = {
             const min = parseFloat(tier.minAmount) || 0;
             const max = tier.maxAmount !== null ? parseFloat(tier.maxAmount) : null;
             const rate = parseFloat(tier.rate) || 0;
-            const meetsMin = amt > min - FeeCalculator.EPSILON;
-            const meetsMax = max === null || amt < max + FeeCalculator.EPSILON;
+            const meetsMin = amt > min - Utils.EPSILON;
+            const meetsMax = max === null || amt < max + Utils.EPSILON;
             if (meetsMin && meetsMax) {
                 return rate;
             }
@@ -98,7 +99,7 @@ const FeeCalculator = {
         }
 
         const sellShares = parseFloat(sellTrade.shares) || 0;
-        if (sellShares <= FeeCalculator.EPSILON) {
+        if (sellShares <= Utils.EPSILON) {
             return { fee: 0, details: [] };
         }
 
@@ -116,7 +117,7 @@ const FeeCalculator = {
 
             if (trade.type === 'buy') {
                 const shares = parseFloat(trade.shares) || 0;
-                if (shares > FeeCalculator.EPSILON) {
+                if (shares > Utils.EPSILON) {
                     holdingQueue.push({
                         shares: shares,
                         originalShares: shares,
@@ -126,9 +127,9 @@ const FeeCalculator = {
             } else if (trade.type === 'sell') {
                 const tradeShares = parseFloat(trade.shares) || 0;
                 let remainingSell = tradeShares;
-                while (remainingSell > FeeCalculator.EPSILON && holdingQueue.length > 0) {
+                while (remainingSell > Utils.EPSILON && holdingQueue.length > 0) {
                     const head = holdingQueue[0];
-                    if (head.shares <= remainingSell + FeeCalculator.EPSILON) {
+                    if (head.shares <= remainingSell + Utils.EPSILON) {
                         remainingSell -= head.shares;
                         holdingQueue.shift();
                     } else {
@@ -146,7 +147,7 @@ const FeeCalculator = {
         let totalFee = 0;
         const sellNetValue = parseFloat(sellTrade.netValue) || 0;
 
-        while (remainingSell > FeeCalculator.EPSILON && tempQueue.length > 0) {
+        while (remainingSell > Utils.EPSILON && tempQueue.length > 0) {
             const head = tempQueue[0];
             const portionShares = Math.min(head.shares, remainingSell);
             const buyDate = new Date(head.date);
@@ -168,7 +169,7 @@ const FeeCalculator = {
 
             totalFee += portionFee;
 
-            if (head.shares <= remainingSell + FeeCalculator.EPSILON) {
+            if (head.shares <= remainingSell + Utils.EPSILON) {
                 remainingSell -= head.shares;
                 tempQueue.shift();
             } else {

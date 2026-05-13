@@ -26,7 +26,7 @@ const TradeModalHelper = {
     },
 
     calculateAutoAmount(netValue, shares, fee, type) {
-        if (!(netValue > 0) || !(shares > 0)) {
+        if (!Utils.isPositive(netValue) || !Utils.isPositive(shares)) {
             return {
                 amount: null,
                 hintText: ''

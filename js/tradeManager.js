@@ -163,7 +163,7 @@ const TradeManager = {
             errors.push('交易类型不正确');
         }
 
-        if (!Utils.isValidNumber(tradeData.shares) || parseFloat(tradeData.shares) <= 0) {
+        if (!Utils.isValidNumber(tradeData.shares) || !Utils.isPositive(parseFloat(tradeData.shares))) {
             errors.push('份额必须大于0');
         }
 
@@ -208,16 +208,19 @@ const TradeManager = {
             let currentShares = 0;
             for (const t of sortedTrades) {
                 if (t.type === 'buy') {
-                    currentShares += t.shares;
+                    currentShares += parseFloat(t.shares);
                 } else if (t.type === 'sell') {
-                    currentShares -= t.shares;
-                    if (currentShares < 0) {
+                    currentShares -= parseFloat(t.shares);
+                    if (Utils.isNegative(currentShares)) {
                         return {
                             valid: false,
-                            message: `卖出份额超过持有份额（当前持有：${Utils.formatNumber(currentShares + t.shares)}份）`
+                            message: `卖出份额超过持有份额（当前持有：${Utils.formatNumber(currentShares + parseFloat(t.shares))}份）`
                         };
                     }
                 }
+            }
+            if (Utils.isNonPositive(currentShares)) {
+                currentShares = 0;
             }
         }
 

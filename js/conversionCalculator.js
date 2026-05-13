@@ -4,8 +4,9 @@
  * 支持单费率和分段费率两种模式
  */
 
+/* global Utils */
+
 const ConversionCalculator = {
-    EPSILON: 0.0001,
 
     /**
      * 执行转换计算
@@ -153,7 +154,7 @@ const ConversionCalculator = {
                 sum + parseFloat(tier.shares || 0), 0);
 
             const sharesDiff = Math.abs(totalTierShares - aShares);
-            if (sharesDiff > ConversionCalculator.EPSILON) {
+            if (sharesDiff > Utils.EPSILON) {
                 return {
                     valid: false,
                     message: `费率段份额总和(${totalTierShares.toFixed(2)})与A基金总份额(${aShares.toFixed(2)})不一致`
