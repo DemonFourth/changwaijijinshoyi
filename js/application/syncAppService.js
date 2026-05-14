@@ -1,5 +1,7 @@
 const SyncAppService = {
     _syncInProgress: false,
+    _listenersPaused: false,
+    _pausedChanges: 0,
     _pendingChanges: [],
     _pushTimeout: null,
     _retryCount: 0,
@@ -93,6 +95,19 @@ const SyncAppService = {
         EventBus.on(EventType.TRADE_DELETED, () => SyncAppService._onDataChanged());
     },
 
+    pauseEventListeners() {
+        SyncAppService._listenersPaused = true;
+        SyncAppService._pausedChanges = 0;
+    },
+
+    resumeEventListeners() {
+        SyncAppService._listenersPaused = false;
+        if (SyncAppService._pausedChanges > 0) {
+            SyncAppService.notifyBusinessDataChanged('batch-resume');
+        }
+        SyncAppService._pausedChanges = 0;
+    },
+
     async notifyBusinessDataChanged(source = 'unknown') {
         const adapter = window.SyncAdapterRegistry.getCurrentAdapter();
         if (!adapter || typeof adapter.getStatus !== 'function') {
@@ -131,6 +146,10 @@ const SyncAppService = {
     },
 
     _onDataChanged() {
+        if (SyncAppService._listenersPaused) {
+            SyncAppService._pausedChanges++;
+            return;
+        }
         return SyncAppService.notifyBusinessDataChanged('event');
     },
 
@@ -139,6 +158,7 @@ const SyncAppService = {
             import: 0,
             clear: 0,
             'batch-delete': 1000,
+            'batch-resume': 0,
             event: 2000,
             unknown: 5000
         };

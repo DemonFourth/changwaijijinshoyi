@@ -137,11 +137,16 @@ const Overview = {
      * 刷新汇总页
      */
     refresh() {
-        this.updateStats();
-        this.updateFundList();
-        this.updateTop5();
-        Overview.updateChart();
-        Overview.renderYearlyCharts();
+        window.SyncAppService.pauseEventListeners();
+        try {
+            this.updateStats();
+            this.updateFundList();
+            this.updateTop5();
+            Overview.updateChart();
+            Overview.renderYearlyCharts();
+        } finally {
+            window.SyncAppService.resumeEventListeners();
+        }
     },
 
     renderSyncStatusBanner() {
