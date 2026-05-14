@@ -85,7 +85,8 @@ TradeManager, Router, Modal, Overview, Detail, App, ThemeManager,
 ChartManager, CycleGroupRenderer, CycleTradeDisplay, Paginator,
 NameCache, NameValidator, FIFOCalculator, FIFOValidator,
 BigNumberFormatter, echarts, ConversionCalculator, ToolPage,
-StatisticsAppService
+StatisticsAppService, SyncAppService, LocalStorageAdapter,
+CloudflareD1SyncAdapter, SyncAdapterRegistry
 ```
 
 ### 模块组织约定
@@ -270,6 +271,176 @@ CalculatorV2.calculateEstimatedFloatingProfit(trades, fund)
 - 年度/月度汇总按**周期交易**聚合，非单笔交易
 - 汇总数据按运行时计算，不持久化
 - 数据全部本地计算，不上传云端
+
+---
+
+## 同步机制
+
+### 概述
+
+本应用使用 Cloudflare Pages Functions + D1 实现云端同步，采用 **乐观并发控制** 模式，通过 `revision` 版本号协调多端数据一致性。
+
+### 核心组件
+
+| 组件 | 文件位置 | 职责 |
+|-----|---------|------|
+| `SyncAppService` | `js/application/syncAppService.js` | 客户端同步协调（Pull/Push/Resolve） |
+| `CloudflareD1SyncAdapter` | `js/storage/cloudflareD1SyncAdapter.js` | 云端适配器（HTTP 请求） |
+| `LocalStorageAdapter` | `js/storage/localStorageAdapter.js` | 本地存储适配器 |
+| `syncRepository` | `functions/_shared/syncRepository.js` | 服务端 D1 数据访问 |
+| `syncUtils` | `functions/_shared/syncUtils.js` | 服务端冲突检测 |
+| `pull.js` | `functions/api/sync/pull.js` | 拉取云端数据 |
+| `push.js` | `functions/api/sync/push.js` | 推送本地数据到云端 |
+| `resolve.js` | `functions/api/sync/resolve.js` | 解决同步冲突 |
+
+### 同步元数据（syncMeta）
+
+```javascript
+{
+  deviceId: string,           // 设备唯一标识
+  cloudRevision: number,      // 云端当前版本号
+  syncStatus: string,         // idle | pending | syncing | conflict | error
+  lastSyncAt: string,         // 上次同步时间（ISO）
+  lastPushedAt: string,       // 上次推送时间（ISO）
+  lastPulledAt: string,       // 上次拉取时间（ISO）
+  pendingChanges: number,     // 待推送变更数
+  lastError: string | null,   // 上次错误信息
+  provider: 'cloudflare' | 'local'
+}
+```
+
+### 同步流程
+
+#### Pull 流程（启动时/手动触发）
+
+```
+客户端                      服务端                     D1
+   |                          |                          |
+   |-- GET /api/sync/pull --->|                          |
+   |   ?deviceId=xxx          |                          |
+   |   &cloudRevision=xxx     |-- SELECT snapshot ------->|
+   |                          |<-- 返回 revision/funds/trades --|
+   |<-- {success, revision,   |                          |
+   |    funds, trades} ------|                          |
+   |                          |                          |
+   +--> 合并数据:                                     |
+        - 本地空 + 云端有 → 直接填充                    |
+        - 本地有 + 云端空(revision更新) → 清空本地       |
+        - 都有数据 → 差异检测与合并                      |
+            - 有冲突 → 返回冲突列表让用户选择             |
+            - 无冲突 → 保存合并结果                      |
+```
+
+#### Push 流程（数据变更时触发）
+
+```
+客户端                      服务端                     D1
+   |                          |                          |
+   |-- POST /api/sync/push --->|                          |
+   |   {deviceId,             |                          |
+   |    baseRevision,         |                          |
+   |    funds, trades}       |-- SELECT snapshot ------->|
+   |                          |  比较 baseRevision vs 当前|
+   |                          |                          |
+   |                          |  [revision相同] → 写入    |
+   |                          |-- UPDATE snapshot, ++revision -->|
+   |                          |<-- 返回新 revision ------|
+   |<-- {success, revision} ---|                          |
+   |                          |                          |
+   +--> 更新 localStorage: cloudRevision = result.revision |
+```
+
+### 冲突检测规则
+
+服务端和客户端使用**统一的冲突检测逻辑**（以 `lastSyncedAt` 为基准）：
+
+1. **首次同步**（`lastSyncedAt` 为 0 或空）：双方在 30 天内都有修改且数据不同 → 冲突
+2. **非首次同步**：双方自上次同步后都有修改且数据不同 → 冲突
+
+```javascript
+// 伪代码描述
+const lastSyncedTime = localEntity.lastSyncedAt ? new Date(localEntity.lastSyncedAt).getTime() : 0;
+const localModifiedAfterSync = lastSyncedTime === 0 || localTime > lastSyncedTime;
+const cloudModifiedAfterSync = lastSyncedTime === 0 || cloudTime > lastSyncedTime;
+
+if (localModifiedAfterSync && cloudModifiedAfterSync) {
+    if (数据有实质变化) conflicts.push(...);
+}
+```
+
+### 关键实现细节
+
+#### 同步锁
+使用 `_syncInProgress` 标志防止 Pull/Push 并发执行：
+```javascript
+async _executePull() {
+    if (SyncAppService._syncInProgress) {
+        return { success: true, reason: 'sync_in_progress' };
+    }
+    SyncAppService._syncInProgress = true;
+    // ... 执行 pull
+    SyncAppService._syncInProgress = false;
+}
+```
+
+#### 冲突解决后更新 revision
+`resolveConflicts()` 成功后必须更新 `cloudRevision`：
+```javascript
+const result = await adapter.resolve(conflicts, resolutions);
+if (result && result.success) {
+    if (result.revision) {
+        window.LocalStorageAdapter.updateSyncMeta({
+            cloudRevision: result.revision,
+            syncStatus: 'idle'
+        });
+    }
+}
+```
+
+#### 重试失败清理状态
+推送失败重试达到上限后，必须清理状态：
+```javascript
+_scheduleRetry(reason) {
+    if (SyncAppService._retryCount >= SyncAppService._maxRetryCount) {
+        SyncAppService._syncInProgress = false;
+        SyncAppService._retryCount = 0;
+        window.LocalStorageAdapter.updateSyncMeta({
+            syncStatus: 'error',
+            lastError: reason || 'push_failed'
+        });
+        return;
+    }
+    // ...
+}
+```
+
+### Public API
+
+| 接口 | 方法 | 说明 |
+|-----|------|------|
+| `/api/runtime-config` | GET | 获取运行时配置（sync.enabled 等） |
+| `/api/sync/pull` | GET | 拉取云端快照 |
+| `/api/sync/push` | POST | 推送本地数据到云端 |
+| `/api/sync/resolve` | POST | 解决同步冲突 |
+
+### 调试方法
+
+```javascript
+// 查看同步状态
+window.LocalStorageAdapter.getSyncMeta()
+
+// 查看适配器状态
+window.SyncAdapterRegistry.getCurrentAdapter().getStatus()
+
+// 手动触发同步
+await SyncAppService.manualSync()
+
+// 强制推送本地数据（覆盖云端）
+await SyncAppService.forcePushLocal()
+
+// 强制拉取云端数据（覆盖本地）
+await SyncAppService.forcePullCloud()
+```
 
 ---
 

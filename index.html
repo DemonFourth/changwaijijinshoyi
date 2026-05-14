@@ -133,6 +133,58 @@
                     <div id="chart-profit-trend" class="chart"></div>
                 </div>
 
+                <!-- 年度持仓统计 -->
+                <div class="chart-container" id="yearly-stats-section">
+                    <h3 class="chart-section-title">年度持仓统计</h3>
+                    <div class="yearly-chart-grid">
+                        <div class="chart-item">
+                            <h4>多年持仓对比</h4>
+                            <div id="chart-multi-year" class="chart"></div>
+                            <div id="chart-multi-year-text" class="chart-text-summary"></div>
+                            <div class="chart-explain">
+                                <b>如何理解：</b>按买入年份分组，展示每年开始的持仓数据对比。<br/>
+                                <b>持仓成本：</b>当年买入时的成本累计<br/>
+                                <b>当前市值：</b>当年买入的份额，按当前净值计算<br/>
+                                <b>总收益：</b>已实现收益 + 浮动盈亏
+                            </div>
+                        </div>
+                        <div class="chart-item">
+                            <h4>今年详细汇总</h4>
+                            <div id="chart-yearly-detail" class="chart"></div>
+                            <div id="chart-yearly-detail-text" class="chart-text-summary"></div>
+                            <div class="chart-explain">
+                                <b>如何理解：</b>展示今年开始的持仓周期的汇总数据。<br/>
+                                <b>累计买入：</b>今年买入的总金额（含手续费）<br/>
+                                <b>累计卖出：</b>今年卖出的到手金额<br/>
+                                <b>手续费：</b>买卖手续费合计<br/>
+                                <b>已实现收益：</b>卖出部分的实际收益
+                            </div>
+                        </div>
+                        <div class="chart-item">
+                            <h4>持仓分布（按买入年份）</h4>
+                            <div id="chart-yearly-trend" class="chart"></div>
+                            <div id="chart-yearly-trend-text" class="chart-text-summary"></div>
+                            <div class="chart-explain">
+                                <b>如何理解：</b>展示每一年买入的份额，现在还剩多少。<br/>
+                                <b>持仓成本：</b>剩余份额的持仓成本（买入时增加，卖出时减少）<br/>
+                                <b>当前市值：</b>剩余份额 × 当前净值<br/>
+                                <b>说明：</b>已全部卖出的周期不显示
+                            </div>
+                        </div>
+                        <div class="chart-item">
+                            <h4>年度投入与收益对比</h4>
+                            <div id="chart-yearly-invest-profit" class="chart"></div>
+                            <div id="chart-yearly-invest-profit-text" class="chart-text-summary"></div>
+                            <div class="chart-explain">
+                                <b>如何理解：</b>展示每年投入金额与收益的对比。<br/>
+                                <b>投入金额：</b>每年买入的总金额（含手续费）<br/>
+                                <b>总收益：</b>已实现收益 + 浮动盈亏<br/>
+                                <b>说明：</b>进行中周期的收益计入开始年份
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
 
             </div>
 

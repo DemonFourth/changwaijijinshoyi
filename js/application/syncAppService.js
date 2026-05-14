@@ -155,6 +155,8 @@ const SyncAppService = {
 
     _scheduleRetry(reason) {
         if (SyncAppService._retryCount >= SyncAppService._maxRetryCount) {
+            SyncAppService._syncInProgress = false;
+            SyncAppService._retryCount = 0;
             window.LocalStorageAdapter.updateSyncMeta({
                 syncStatus: 'error',
                 lastError: reason || 'push_failed'
@@ -188,6 +190,11 @@ const SyncAppService = {
     },
 
     async _executePull() {
+        if (SyncAppService._syncInProgress) {
+            console.log('[同步调试] pull 跳过：已有同步进行中');
+            return { success: true, reason: 'sync_in_progress' };
+        }
+
         const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
         if (!adapter || typeof adapter.getStatus !== 'function') {
             console.log('[同步调试] pull 跳过：未找到可用同步适配器');
@@ -201,6 +208,8 @@ const SyncAppService = {
             return { success: true, reason: 'not_configured' };
         }
 
+        SyncAppService._syncInProgress = true;
+
         SyncAppService._toLogText('[同步调试] 开始执行 pull', {
             provider: status.provider || 'unknown',
             cloudRevision: window.LocalStorageAdapter.getSyncMeta().cloudRevision || 0
@@ -210,6 +219,7 @@ const SyncAppService = {
         const result = await adapter.pull();
 
         if (!result.success) {
+            SyncAppService._syncInProgress = false;
             SyncAppService._toLogText('[同步调试] pull 失败', result);
             if (window.Utils && typeof window.Utils.showToast === 'function') {
                 window.Utils.showToast('自动同步失败：' + (result.reason || 'pull_failed'), 'error');
@@ -244,6 +254,7 @@ const SyncAppService = {
             };
             window.LocalStorageAdapter.saveSnapshot(newSnapshot);
             SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
+            SyncAppService._syncInProgress = false;
             return { success: true, reason: 'filled_from_cloud' };
         }
 
@@ -260,6 +271,7 @@ const SyncAppService = {
             };
             window.LocalStorageAdapter.saveSnapshot(newSnapshot);
             SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
+            SyncAppService._syncInProgress = false;
             return { success: true, reason: 'cleared_by_cloud' };
         }
 
@@ -267,6 +279,7 @@ const SyncAppService = {
         const mergeResult = this._mergeData(localSnapshot, result);
 
         if (mergeResult.hasConflicts) {
+            SyncAppService._syncInProgress = false;
             return {
                 success: true,
                 hasConflicts: true,
@@ -281,6 +294,7 @@ const SyncAppService = {
 
         adapter.markSyncComplete();
 
+        SyncAppService._syncInProgress = false;
         return { success: true };
     },
 
@@ -454,6 +468,12 @@ const SyncAppService = {
 
         const result = await adapter.resolve(conflicts, resolutions);
         if (result && result.success) {
+            if (result.revision) {
+                window.LocalStorageAdapter.updateSyncMeta({
+                    cloudRevision: result.revision,
+                    syncStatus: 'idle'
+                });
+            }
             SyncAppService._emitSyncApplied({ mode: 'resolve', hasChanges: true });
         }
         return result;

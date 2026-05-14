@@ -141,6 +141,7 @@ const Overview = {
         this.updateFundList();
         this.updateTop5();
         Overview.updateChart();
+        Overview.renderYearlyCharts();
     },
 
     renderSyncStatusBanner() {
@@ -628,6 +629,178 @@ const Overview = {
                 container.innerHTML = `<p style="text-align: center; padding: 20px; color: var(--color-text-secondary);">总收益: ${Utils.formatMoneySmart(totalProfit)}</p>`;
             }
         }
+    },
+
+    /**
+     * 渲染年度持仓统计图表
+     */
+    renderYearlyCharts() {
+        if (!ChartManager.isEChartsAvailable()) {
+            return;
+        }
+
+        const multiYearData = StatisticsAppService.getMultiYearSummary();
+        const yearlySummary = StatisticsAppService.getYearlySummary();
+        const yearlyTrendData = StatisticsAppService.getYearlyTrend();
+
+        // 多年持仓对比
+        const multiYearEl = document.getElementById('chart-multi-year');
+        if (multiYearEl) {
+            ChartManager.createChartLazy('chart-multi-year', ChartManager.buildMultiYearBarChartOption(multiYearData));
+        }
+
+        // 今年详细汇总
+        const yearlyDetailEl = document.getElementById('chart-yearly-detail');
+        if (yearlyDetailEl) {
+            ChartManager.createChartLazy('chart-yearly-detail', ChartManager.buildYearlyDetailBarChartOption(yearlySummary));
+        }
+
+        // 市值变化趋势
+        const yearlyTrendEl = document.getElementById('chart-yearly-trend');
+        if (yearlyTrendEl) {
+            ChartManager.createChartLazy('chart-yearly-trend', ChartManager.buildYearlyTrendLineChartOption(yearlyTrendData));
+        }
+
+        // 年度投入与收益对比
+        const yearlyInvestProfitEl = document.getElementById('chart-yearly-invest-profit');
+        if (yearlyInvestProfitEl) {
+            ChartManager.createChartLazy('chart-yearly-invest-profit', ChartManager.buildYearlyInvestProfitChartOption(multiYearData));
+        }
+
+        // 渲染文字汇总
+        this.renderMultiYearTextSummary(multiYearData);
+        this.renderYearlyDetailTextSummary(yearlySummary);
+        this.renderYearlyTrendTextSummary(yearlyTrendData);
+        this.renderYearlyInvestProfitTextSummary(multiYearData);
+    },
+
+    /**
+     * 渲染多年持仓对比文字汇总
+     */
+    renderMultiYearTextSummary(multiYearData) {
+        const el = document.getElementById('chart-multi-year-text');
+        if (!el) return;
+
+        if (!multiYearData || multiYearData.length === 0) {
+            el.innerHTML = '<p>暂无数据</p>';
+            return;
+        }
+
+        let html = '';
+        multiYearData.forEach(data => {
+            html += `<div class="summary-row">
+                <span class="summary-label">${data.year}年</span>
+                <span class="summary-value">投入:${Utils.formatMoneySmart(data.totalInvest)} | 市值:${Utils.formatMoneySmart(data.totalValue)} | 收益:${Utils.formatMoneySmart(data.totalProfit)}</span>
+            </div>`;
+        });
+        el.innerHTML = html;
+    },
+
+    /**
+     * 渲染今年详细汇总文字
+     */
+    renderYearlyDetailTextSummary(yearlySummary) {
+        const el = document.getElementById('chart-yearly-detail-text');
+        if (!el) return;
+
+        if (!yearlySummary) {
+            el.innerHTML = '<p>暂无数据</p>';
+            return;
+        }
+
+        el.innerHTML = `
+            <div class="summary-row">
+                <span class="summary-label">${yearlySummary.year}年</span>
+                <span class="summary-value"></span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">累计买入</span>
+                <span class="summary-value">${Utils.formatMoneySmart(yearlySummary.totalInvest)}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">累计卖出</span>
+                <span class="summary-value">${Utils.formatMoneySmart(yearlySummary.sellAmount)}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">手续费</span>
+                <span class="summary-value">${Utils.formatMoneySmart(yearlySummary.fee)}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">已实现收益</span>
+                <span class="summary-value">${Utils.formatMoneySmart(yearlySummary.totalProfit)}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">交易次数</span>
+                <span class="summary-value">${yearlySummary.cycleCount || 0}次</span>
+            </div>
+        `;
+    },
+
+    /**
+     * 渲染持仓分布文字（按买入年份）
+     */
+    renderYearlyTrendTextSummary(yearlyTrendData) {
+        const el = document.getElementById('chart-yearly-trend-text');
+        if (!el) return;
+
+        if (!yearlyTrendData || yearlyTrendData.length === 0) {
+            el.innerHTML = '<p>暂无数据</p>';
+            return;
+        }
+
+        let html = `
+            <div class="summary-row" style="font-weight: bold; border-bottom: 1px solid var(--color-border-primary);">
+                <span class="summary-label">年份</span>
+                <span class="summary-value">持仓成本 | 当前市值</span>
+            </div>
+        `;
+        yearlyTrendData.forEach(data => {
+            const costStr = data.holdingCost >= 10000
+                ? (data.holdingCost / 10000).toFixed(2) + '万'
+                : data.holdingCost.toFixed(2) + '元';
+            const valueStr = data.marketValue >= 10000
+                ? (data.marketValue / 10000).toFixed(2) + '万'
+                : data.marketValue.toFixed(2) + '元';
+            html += `<div class="summary-row">
+                <span class="summary-label">${data.year}年</span>
+                <span class="summary-value">${costStr} | ${valueStr}</span>
+            </div>`;
+        });
+        el.innerHTML = html;
+    },
+
+    /**
+     * 渲染年度投入与收益对比文字
+     */
+    renderYearlyInvestProfitTextSummary(multiYearData) {
+        const el = document.getElementById('chart-yearly-invest-profit-text');
+        if (!el) return;
+
+        if (!multiYearData || multiYearData.length === 0) {
+            el.innerHTML = '<p>暂无数据</p>';
+            return;
+        }
+
+        let html = `
+            <div class="summary-row" style="font-weight: bold; border-bottom: 1px solid var(--color-border-primary);">
+                <span class="summary-label">年份</span>
+                <span class="summary-value">投入金额 | 收益</span>
+            </div>
+        `;
+        multiYearData.forEach(data => {
+            const investStr = data.totalInvest >= 10000
+                ? (data.totalInvest / 10000).toFixed(2) + '万'
+                : data.totalInvest.toFixed(2) + '元';
+            const profitStr = data.totalProfit >= 10000
+                ? (data.totalProfit / 10000).toFixed(2) + '万'
+                : data.totalProfit.toFixed(2) + '元';
+            const profitClass = data.totalProfit >= 0 ? 'positive' : 'negative';
+            html += `<div class="summary-row">
+                <span class="summary-label">${data.year}年</span>
+                <span class="summary-value">${investStr} | <span class="${profitClass}">${profitStr}</span></span>
+            </div>`;
+        });
+        el.innerHTML = html;
     },
 
     renderSummary() {

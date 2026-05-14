@@ -1455,7 +1455,7 @@ const ChartManager = {
         const minPrice = Math.floor(Math.min(...prices) * 10) / 10;
         const maxPrice = Math.ceil(Math.max(...prices) * 10) / 10;
         const step = 0.1;
-        
+
         // 创建区间
         const ranges = [];
         let current = minPrice;
@@ -1465,7 +1465,7 @@ const ChartManager = {
             ranges.push({ min: current, max: rangeMax, label: current.toFixed(2) + '元', shares: 0 });
             current = next;
         }
-        
+
         // 统计各区间的份额
         costData.forEach(data => {
             for (const range of ranges) {
@@ -1484,7 +1484,7 @@ const ChartManager = {
 
         return {
             textStyle: { color: themeConfig.textColor },
-            tooltip: { 
+            tooltip: {
                 trigger: 'item',
                 formatter: function(params) {
                     const percent = (params.value / total * 100).toFixed(1);
@@ -1509,6 +1509,361 @@ const ChartManager = {
                     formatter: '{b}'
                 }
             }]
+        };
+    },
+
+    /**
+     * 生成多年持仓对比柱状图配置
+     * @param {Array} multiYearData - 近5年汇总数据 [{year, totalInvest, totalValue, totalProfit}]
+     * @returns {Object} ECharts option
+     */
+    buildMultiYearBarChartOption(multiYearData) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!multiYearData || multiYearData.length === 0) {
+            return ChartManager.buildEmptyOption('暂无年度数据');
+        }
+
+        const years = multiYearData.map(d => d.year + '年');
+        const investData = multiYearData.map(d => d.totalInvest);
+        const valueData = multiYearData.map(d => d.totalValue);
+        const profitData = multiYearData.map(d => d.totalProfit);
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    let result = params[0].name + '<br/>';
+                    params.forEach(p => {
+                        const color = p.value >= 0 ? themeConfig.profitColor : themeConfig.lossColor;
+                        const valueStr = Math.abs(p.value) >= 10000
+                            ? (p.value / 10000).toFixed(2) + '万'
+                            : p.value.toFixed(2);
+                        result += `${p.marker} ${p.seriesName}: <span style="color:${color}">¥${valueStr}</span><br/>`;
+                    });
+                    return result;
+                }
+            },
+            legend: {
+                data: ['累计投入', '当前市值', '总收益'],
+                textStyle: { color: themeConfig.textColor },
+                top: 0
+            },
+            grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: years,
+                axisLabel: { color: themeConfig.textColor, fontSize: 11 },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    color: themeConfig.textColor,
+                    formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
+                },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+            },
+            series: [
+                {
+                    name: '累计投入',
+                    type: 'bar',
+                    data: investData,
+                    itemStyle: { color: themeConfig.itemColor[0] },
+                    barMaxWidth: 40
+                },
+                {
+                    name: '当前市值',
+                    type: 'bar',
+                    data: valueData,
+                    itemStyle: { color: themeConfig.itemColor[1] },
+                    barMaxWidth: 40
+                },
+                {
+                    name: '总收益',
+                    type: 'bar',
+                    data: profitData.map(v => ({
+                        value: v,
+                        itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor }
+                    })),
+                    barMaxWidth: 40
+                }
+            ]
+        };
+    },
+
+    /**
+     * 生成当年详细汇总柱状图配置
+     * @param {Object} yearlySummary - 年度汇总数据
+     * @returns {Object} ECharts option
+     */
+    buildYearlyDetailBarChartOption(yearlySummary) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!yearlySummary) {
+            return ChartManager.buildEmptyOption('暂无年度数据');
+        }
+
+        const data = [
+            { name: '累计买入', value: yearlySummary.totalInvest || 0 },
+            { name: '累计卖出', value: yearlySummary.sellAmount || 0 },
+            { name: '手续费', value: yearlySummary.fee || 0 },
+            { name: '已实现收益', value: yearlySummary.totalProfit || 0 }
+        ];
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    let result = params[0].name + '<br/>';
+                    params.forEach(p => {
+                        const valueStr = Math.abs(p.value) >= 10000
+                            ? (p.value / 10000).toFixed(2) + '万'
+                            : p.value.toFixed(2);
+                        result += `${p.marker} ${p.seriesName}: ¥${valueStr}<br/>`;
+                    });
+                    return result;
+                }
+            },
+            legend: {
+                data: ['累计买入', '累计卖出', '手续费', '已实现收益'],
+                textStyle: { color: themeConfig.textColor, fontSize: 10 },
+                top: 0
+            },
+            grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: [yearlySummary.year + '年'],
+                axisLabel: { color: themeConfig.textColor },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    color: themeConfig.textColor,
+                    formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
+                },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+            },
+            series: [
+                {
+                    name: '累计买入',
+                    type: 'bar',
+                    data: [data[0].value],
+                    itemStyle: { color: themeConfig.itemColor[0] },
+                    barMaxWidth: 50
+                },
+                {
+                    name: '累计卖出',
+                    type: 'bar',
+                    data: [data[1].value],
+                    itemStyle: { color: themeConfig.itemColor[1] },
+                    barMaxWidth: 50
+                },
+                {
+                    name: '手续费',
+                    type: 'bar',
+                    data: [data[2].value],
+                    itemStyle: { color: themeConfig.itemColor[2] },
+                    barMaxWidth: 50
+                },
+                {
+                    name: '已实现收益',
+                    type: 'bar',
+                    data: [{
+                        value: data[3].value,
+                        itemStyle: { color: data[3].value >= 0 ? themeConfig.profitColor : themeConfig.lossColor }
+                    }],
+                    barMaxWidth: 50
+                }
+            ]
+        };
+    },
+
+    /**
+     * 生成持仓分布折线图（按买入年份）
+     * @param {Array} yearlyTrendData - 年度持仓分布数据 [{year, holdingCost, marketValue}]
+     * @returns {Object} ECharts option
+     */
+    buildYearlyTrendLineChartOption(yearlyTrendData) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!yearlyTrendData || yearlyTrendData.length === 0) {
+            return ChartManager.buildEmptyOption('暂无持仓数据');
+        }
+
+        const years = yearlyTrendData.map(d => d.year + '年');
+        const costData = yearlyTrendData.map(d => d.holdingCost);
+        const valueData = yearlyTrendData.map(d => d.marketValue);
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    let result = params[0].name + '<br/>';
+                    params.forEach(p => {
+                        const valueStr = Math.abs(p.value) >= 10000
+                            ? (p.value / 10000).toFixed(2) + '万'
+                            : p.value.toFixed(2);
+                        result += `${p.marker} ${p.seriesName}: <span style="color:${p.color}">¥${valueStr}</span><br/>`;
+                    });
+                    return result;
+                }
+            },
+            legend: {
+                data: ['持仓成本', '当前市值'],
+                textStyle: { color: themeConfig.textColor },
+                top: 0
+            },
+            grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: years,
+                axisLabel: { color: themeConfig.textColor, fontSize: 11 },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    color: themeConfig.textColor,
+                    formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
+                },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+            },
+            series: [
+                {
+                    name: '持仓成本',
+                    type: 'line',
+                    data: costData,
+                    lineStyle: { color: themeConfig.itemColor[0], width: 2 },
+                    itemStyle: { color: themeConfig.itemColor[0] },
+                    smooth: true,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: p => Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(1) + '万' : p.value.toFixed(0),
+                        fontSize: 9,
+                        color: themeConfig.textColor
+                    }
+                },
+                {
+                    name: '当前市值',
+                    type: 'line',
+                    data: valueData,
+                    lineStyle: { color: themeConfig.itemColor[3], width: 2 },
+                    itemStyle: { color: themeConfig.itemColor[3] },
+                    smooth: true,
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: themeConfig.itemColor[3] + '40' },
+                            { offset: 1, color: themeConfig.itemColor[3] + '10' }
+                        ])
+                    },
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: p => Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(1) + '万' : p.value.toFixed(0),
+                        fontSize: 9,
+                        color: themeConfig.textColor
+                    }
+                }
+            ]
+        };
+    },
+
+    /**
+     * 生成年度投入与收益对比折线图
+     * @param {Array} multiYearData - 多年数据 [{year, totalInvest, totalProfit}]
+     * @returns {Object} ECharts option
+     */
+    buildYearlyInvestProfitChartOption(multiYearData) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        if (!multiYearData || multiYearData.length === 0) {
+            return ChartManager.buildEmptyOption('暂无年度数据');
+        }
+
+        const years = multiYearData.map(d => d.year + '年');
+        const investData = multiYearData.map(d => d.totalInvest);
+        const profitData = multiYearData.map(d => d.totalProfit);
+
+        return {
+            textStyle: { color: themeConfig.textColor },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    let result = params[0].name + '<br/>';
+                    params.forEach(p => {
+                        const valueStr = Math.abs(p.value) >= 10000
+                            ? (p.value / 10000).toFixed(2) + '万'
+                            : p.value.toFixed(2);
+                        const color = p.seriesName === '收益' ? (p.value >= 0 ? themeConfig.profitColor : themeConfig.lossColor) : p.color;
+                        result += `${p.marker} ${p.seriesName}: <span style="color:${color}">¥${valueStr}</span><br/>`;
+                    });
+                    return result;
+                }
+            },
+            legend: {
+                data: ['投入金额', '收益'],
+                textStyle: { color: themeConfig.textColor },
+                top: 0
+            },
+            grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: years,
+                axisLabel: { color: themeConfig.textColor, fontSize: 11 },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    color: themeConfig.textColor,
+                    formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
+                },
+                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+            },
+            series: [
+                {
+                    name: '投入金额',
+                    type: 'line',
+                    data: investData,
+                    lineStyle: { color: themeConfig.itemColor[0], width: 2 },
+                    itemStyle: { color: themeConfig.itemColor[0] },
+                    smooth: true,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: p => Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(1) + '万' : p.value.toFixed(0),
+                        fontSize: 9,
+                        color: themeConfig.textColor
+                    }
+                },
+                {
+                    name: '收益',
+                    type: 'line',
+                    data: profitData.map(v => ({
+                        value: v,
+                        itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor }
+                    })),
+                    lineStyle: { color: themeConfig.profitColor, width: 2 },
+                    smooth: true,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: p => Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(1) + '万' : p.value.toFixed(0),
+                        fontSize: 9,
+                        color: themeConfig.textColor
+                    }
+                }
+            ]
         };
     }
 };

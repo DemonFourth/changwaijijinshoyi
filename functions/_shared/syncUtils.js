@@ -29,8 +29,7 @@ function isDataChanged(local, cloud, entityType) {
 export function detectConflicts(local, cloud) {
     const conflicts = [];
     const cloudMap = new Map(cloud.map(c => [c.syncId, c]));
-
-    const baseTime = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
     for (const localEntity of local) {
         const cloudEntity = cloudMap.get(localEntity.syncId);
@@ -38,8 +37,20 @@ export function detectConflicts(local, cloud) {
 
         const localTime = new Date(localEntity.updatedAt).getTime();
         const cloudTime = new Date(cloudEntity.updatedAt).getTime();
+        const lastSyncedTime = localEntity.lastSyncedAt ? new Date(localEntity.lastSyncedAt).getTime() : 0;
 
-        if (localTime > baseTime && cloudTime > baseTime && localTime !== cloudTime) {
+        const localModifiedAfterSync = lastSyncedTime === 0 || localTime > lastSyncedTime;
+        const cloudModifiedAfterSync = lastSyncedTime === 0 || cloudTime > lastSyncedTime;
+
+        if (localModifiedAfterSync && cloudModifiedAfterSync) {
+            if (!isDataChanged(localEntity, cloudEntity)) continue;
+            conflicts.push({
+                entityType: localEntity.fundId ? 'trade' : 'fund',
+                syncId: localEntity.syncId,
+                local: localEntity,
+                cloud: cloudEntity
+            });
+        } else if (localTime > thirtyDaysAgo && cloudTime > thirtyDaysAgo && localTime !== cloudTime) {
             if (!isDataChanged(localEntity, cloudEntity)) continue;
             conflicts.push({
                 entityType: localEntity.fundId ? 'trade' : 'fund',

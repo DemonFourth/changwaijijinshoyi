@@ -510,6 +510,82 @@ td.negative {
     }
 }
 
+/* 年度持仓统计图表网格 */
+.yearly-chart-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+}
+
+.yearly-chart-grid .chart-item {
+    background: var(--color-bg-card);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.yearly-chart-grid .chart-item h4 {
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+}
+
+.yearly-chart-grid .chart {
+    height: 250px;
+}
+
+.chart-text-summary {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-bg-hover);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.chart-text-summary .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+}
+
+.chart-text-summary .summary-label {
+    color: var(--color-text-tertiary);
+}
+
+.chart-text-summary .summary-value {
+    font-family: var(--font-family-mono);
+    color: var(--color-text-primary);
+}
+
+.chart-explain {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-bg-hover);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    line-height: 1.5;
+}
+
+.chart-explain b {
+    color: var(--color-text-secondary);
+}
+
+@media (width >= 768px) {
+    .yearly-chart-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (width >= 1200px) {
+    .yearly-chart-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* 详情页 */
 .detail-actions {
     display: flex;

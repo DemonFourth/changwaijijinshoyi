@@ -144,19 +144,16 @@ const StatisticsAppService = {
 
             const cycles = stats.cycles || [];
             for (const cycle of cycles) {
-                if (cycle.status === 'closed' || cycle.trades?.some(t => {
-                    const tradeYear = new Date(t.date).getFullYear();
-                    return tradeYear === currentYear && t.type === 'sell';
-                })) {
-                    const cycleYear = new Date(cycle.startDate).getFullYear();
-                    if (cycleYear === currentYear) {
-                        totalInvest += cycle.totalInvest || 0;
-                        sellAmount += cycle.totalSellAmount || 0;
-                        fee += (cycle.totalBuyFee || 0) + (cycle.totalSellFee || 0);
-                        totalProfit += cycle.totalProfit || 0;
-                        cycleCount++;
-                    }
+                const cycleYear = new Date(cycle.startDate).getFullYear();
+                if (cycleYear !== currentYear) {
+                    continue;
                 }
+
+                totalInvest += cycle.totalInvest || 0;
+                sellAmount += cycle.totalSellAmount || 0;
+                fee += (cycle.totalBuyFee || 0) + (cycle.totalSellFee || 0);
+                totalProfit += cycle.totalProfit || 0;
+                cycleCount++;
             }
         }
 
@@ -230,6 +227,118 @@ const StatisticsAppService = {
                 sellAmount,
                 fee,
                 cycleCount
+            });
+        }
+
+        this._cache.set(cacheKey, result);
+        return result;
+    },
+
+    /**
+     * 获取近5年的年度汇总数据
+     * @returns {Array} [{year, totalInvest, totalValue, totalProfit, cycleCount}]
+     */
+    getMultiYearSummary() {
+        const cacheKey = 'multiYearSummary';
+        if (this._cache.has(cacheKey)) {
+            return this._cache.get(cacheKey);
+        }
+
+        const currentYear = new Date().getFullYear();
+        const years = [];
+        for (let i = 4; i >= 0; i--) {
+            years.push(currentYear - i);
+        }
+
+        const result = [];
+
+        for (const year of years) {
+            let totalInvest = 0;
+            let totalValue = 0;
+            let totalProfit = 0;
+            let cycleCount = 0;
+
+            const fundIds = window.FundManager.getAllFunds().map(f => f.id);
+
+            for (const fundId of fundIds) {
+                const stats = window.FundManager.getFundStats(fundId);
+                if (!stats) {
+                    continue;
+                }
+
+                const cycles = stats.cycles || [];
+                for (const cycle of cycles) {
+                    const cycleYear = new Date(cycle.startDate).getFullYear();
+                    if (cycleYear !== year) {
+                        continue;
+                    }
+
+                    totalInvest += cycle.totalInvest || 0;
+                    totalValue += cycle.holdingValue || 0;
+                    totalProfit += cycle.totalProfit || 0;
+                    cycleCount++;
+                }
+            }
+
+            result.push({
+                year,
+                totalInvest,
+                totalValue,
+                totalProfit,
+                cycleCount
+            });
+        }
+
+        this._cache.set(cacheKey, result);
+        return result;
+    },
+
+    /**
+     * 获取持仓分布（按买入年份）
+     * @returns {Array} [{year, holdingCost, marketValue}]
+     */
+    getYearlyTrend() {
+        const cacheKey = 'yearlyTrend';
+        if (this._cache.has(cacheKey)) {
+            return this._cache.get(cacheKey);
+        }
+
+        const currentYear = new Date().getFullYear();
+        const years = [];
+        for (let i = 4; i >= 0; i--) {
+            years.push(currentYear - i);
+        }
+
+        const result = [];
+
+        for (const year of years) {
+            let holdingCost = 0;
+            let marketValue = 0;
+
+            const fundIds = window.FundManager.getAllFunds().map(f => f.id);
+
+            for (const fundId of fundIds) {
+                const stats = window.FundManager.getFundStats(fundId);
+                if (!stats) {
+                    continue;
+                }
+
+                const cycles = stats.cycles || [];
+                for (const cycle of cycles) {
+                    const cycleYear = new Date(cycle.startDate).getFullYear();
+                    if (cycleYear !== year) {
+                        continue;
+                    }
+
+                    holdingCost += cycle.holdingCost || 0;
+                    marketValue += cycle.holdingValue || 0;
+                }
+            }
+
+            result.push({
+                year,
+                holdingCost,
+                marketValue
             });
         }
 
