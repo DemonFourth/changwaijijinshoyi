@@ -405,14 +405,6 @@ const Detail = {
      */
     updateChart(fund, stats) {
         if (ChartManager.isEChartsAvailable()) {
-            const summary = stats.summary;
-
-            if (summary.totalCycles === 0) {
-                const container = document.getElementById('chart-detail-trend');
-                if (container) container.innerHTML = '<p style="text-align: center; color: var(--color-text-tertiary); padding: 40px;">暂无交易记录</p>';
-                return;
-            }
-
             // 持仓成本趋势图
             const costTrendContainer = document.getElementById('chart-cost-trend');
             if (costTrendContainer) {
@@ -442,24 +434,12 @@ const Detail = {
 
 
         } else {
-            // Fallback: 简单统计
-            const container = document.getElementById('chart-detail-trend');
-            if (container) {
-                const summary = stats.summary;
-                let html = '<div style="padding: 20px;">';
-                html += '<h4 style="margin-bottom: 15px;">收益情况</h4>';
-                html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">';
-                html += '<div style="padding: 10px; background: var(--color-bg-tertiary); border-radius: 4px;">';
-                html += '<div style="color: var(--color-text-secondary); font-size: 12px;">已实现收益</div>';
-                html += `<div style="font-weight: bold;">${Utils.formatMoneySmart(summary.totalRealizedProfit || 0)}</div>`;
-                html += '</div>';
-                html += '<div style="padding: 10px; background: var(--color-bg-tertiary); border-radius: 4px;">';
-                html += '<div style="color: var(--color-text-secondary); font-size: 12px;">浮动收益</div>';
-                html += `<div style="font-weight: bold;">${Utils.formatMoneySmart(summary.totalFloatingProfit || 0)}</div>`;
-                html += '</div>';
-                html += '</div></div>';
-                container.innerHTML = html;
-            }
+            // Fallback: ECharts不可用时显示空状态提示
+            const chartIds = ['chart-cost-trend', 'chart-share-change', 'chart-fund-flow', 'chart-cycle-compare'];
+            chartIds.forEach(function(id) {
+                const container = document.getElementById(id);
+                if (container) container.innerHTML = '<p style="text-align: center; color: var(--color-text-tertiary); padding: 40px;">ECharts未加载</p>';
+            });
         }
     },
 
