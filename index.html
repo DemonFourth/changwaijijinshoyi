@@ -444,138 +444,159 @@
                 </div>
 
                 <div id="tool-conversion" class="tool-detail hidden">
-                    <div class="tool-section">
-                        <h3>转出基金（A基金）</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">净值</label>
-                                <input type="number" id="conv-a-net-value" class="form-input" step="0.0001" min="0" placeholder="0.0000">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">份额</label>
-                                <input type="number" id="conv-a-shares" class="form-input" step="0.01" min="0" placeholder="0.00">
-                            </div>
-                        </div>
+                    <div class="conv-header">
+                        <h3 class="conv-title">🔄 基金转换计算</h3>
+                        <span class="conv-badge">工具箱</span>
+                    </div>
 
-                        <div class="form-group" style="margin-top: 12px;">
-                            <label class="form-label">费率模式</label>
-                            <div class="fee-mode-toggle">
-                                <label class="radio-label">
-                                    <input type="radio" name="fee-mode" value="single" checked>
-                                    单费率
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="fee-mode" value="tiered">
-                                    分段费率
-                                </label>
+                    <div class="conv-funds-row">
+                        <div class="conv-fund-card conv-fund-out">
+                            <div class="conv-fund-header">
+                                <span class="conv-fund-icon">📤</span>
+                                <span class="conv-fund-name">转出基金</span>
+                                <span class="conv-fund-label">A基金</span>
                             </div>
-                        </div>
-
-                        <div id="single-fee-section">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">卖出费率(%)</label>
-                                    <input type="number" id="conv-a-sell-rate" class="form-input" step="0.01" min="0" placeholder="0.00">
+                            <div class="conv-input-group">
+                                <label class="conv-input-label">净值</label>
+                                <input type="number" id="conv-a-net-value" class="conv-input" step="0.0001" min="0" placeholder="0.0000">
+                            </div>
+                            <div class="conv-input-group">
+                                <label class="conv-input-label">份额</label>
+                                <input type="number" id="conv-a-shares" class="conv-input" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="conv-input-group">
+                                <label class="conv-input-label">费率模式</label>
+                                <div class="fee-mode-toggle">
+                                    <label class="radio-label">
+                                        <input type="radio" name="fee-mode" value="single" checked>
+                                        单费率
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="fee-mode" value="tiered">
+                                        分段费率
+                                    </label>
                                 </div>
                             </div>
+                            <div id="single-fee-section">
+                                <div class="conv-input-group">
+                                    <label class="conv-input-label">卖出费率 (%)</label>
+                                    <input type="number" id="conv-a-sell-rate" class="conv-input" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div id="tiered-fee-section" class="hidden">
+                                <div id="tiered-fee-container"></div>
+                                <button type="button" id="btn-add-tier" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
+                                    + 添加费率段
+                                </button>
+                                <div id="tiered-shares-validation" class="validation-message"></div>
+                            </div>
                         </div>
 
-                        <div id="tiered-fee-section" class="hidden">
-                            <div id="tiered-fee-container"></div>
-                            <button type="button" id="btn-add-tier" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
-                                + 添加费率段
-                            </button>
-                            <div id="tiered-shares-validation" class="validation-message"></div>
+                        <div class="conv-fund-card conv-fund-in">
+                            <div class="conv-fund-header">
+                                <span class="conv-fund-icon">📥</span>
+                                <span class="conv-fund-name">转入基金</span>
+                                <span class="conv-fund-label">B基金</span>
+                            </div>
+                            <div class="conv-input-group">
+                                <label class="conv-input-label">净值</label>
+                                <input type="number" id="conv-b-net-value" class="conv-input" step="0.0001" min="0" placeholder="0.0000">
+                            </div>
+                            <div class="conv-input-group">
+                                <label class="conv-input-label">份额</label>
+                                <input type="number" id="conv-b-shares" class="conv-input" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="conv-input-group">
+                                <label class="conv-input-label">买入费率 (%)</label>
+                                <input type="number" id="conv-b-buy-rate" class="conv-input" step="0.01" min="0" placeholder="0.00">
+                            </div>
                         </div>
                     </div>
 
-                    <div class="tool-section">
-                        <h3>转入基金（B基金）</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">净值</label>
-                                <input type="number" id="conv-b-net-value" class="form-input" step="0.0001" min="0" placeholder="0.0000">
+                    <div class="conv-transaction-section">
+                        <div class="conv-transaction-title">📋 交易信息</div>
+                        <div class="conv-transaction-row">
+                            <div class="conv-input-group">
+                                <label class="conv-input-label">交易日期</label>
+                                <input type="date" id="conv-date" class="conv-input">
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">份额</label>
-                                <input type="number" id="conv-b-shares" class="form-input" step="0.01" min="0" placeholder="0.00">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">买入费率(%)</label>
-                                <input type="number" id="conv-b-buy-rate" class="form-input" step="0.01" min="0" placeholder="0.00">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tool-section">
-                        <h3>交易信息</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">交易日期</label>
-                                <input type="date" id="conv-date" class="form-input">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">转入基金</label>
-                                <select id="conv-target-fund" class="form-select">
+                            <div class="conv-input-group">
+                                <label class="conv-input-label">转入基金</label>
+                                <select id="conv-target-fund" class="conv-input">
                                     <option value="">不生成记录，仅计算</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">备注</label>
-                            <input type="text" id="conv-remark" class="form-input" placeholder="备注信息（可选）" maxlength="50">
+                        <div class="conv-input-group" style="margin-top: 10px;">
+                            <label class="conv-input-label">备注</label>
+                            <input type="text" id="conv-remark" class="conv-input" placeholder="可选备注信息" maxlength="50">
                         </div>
                     </div>
 
-                    <button id="btn-calc-conversion" class="btn btn-primary btn-block" type="button">计算</button>
+                    <button id="btn-calc-conversion" class="btn btn-primary btn-block" type="button">计算转换</button>
 
-                    <div id="conv-result" class="tool-result hidden">
-                        <div class="result-grid">
-                            <div class="result-item">
-                                <span class="result-label">转出金额</span>
-                                <span class="result-value" id="conv-result-transfer">-</span>
+                    <div id="conv-result" class="conv-result-section hidden">
+                        <div class="conv-result-header">
+                            <span class="conv-result-title">💰 转换结果</span>
+                            <span class="conv-result-badge" id="conv-result-fee-badge">手续费 ¥0.00</span>
+                        </div>
+
+                        <div class="conv-result-grid">
+                            <div class="conv-result-column">
+                                <div class="conv-result-card">
+                                    <div class="conv-result-label">📤 转出金额</div>
+                                    <div class="conv-result-value" id="conv-result-transfer">-</div>
+                                </div>
+                                <div class="conv-result-card">
+                                    <div class="conv-result-label">卖出手续费</div>
+                                    <div class="conv-result-value" id="conv-result-sell-fee">-</div>
+                                </div>
+                                <div class="conv-result-card conv-result-highlight">
+                                    <div class="conv-result-label">实际到手</div>
+                                    <div class="conv-result-value" id="conv-result-received">-</div>
+                                </div>
                             </div>
-                            <div class="result-item">
-                                <span class="result-label">A基金卖出手续费</span>
-                                <span class="result-value" id="conv-result-sell-fee">-</span>
-                            </div>
-                            <div class="result-item highlight">
-                                <span class="result-label">实际到手</span>
-                                <span class="result-value" id="conv-result-received">-</span>
-                            </div>
-                            <div class="result-item">
-                                <span class="result-label">B基金基础金额</span>
-                                <span class="result-value" id="conv-result-base">-</span>
-                            </div>
-                            <div class="result-item">
-                                <span class="result-label">B基金买入手续费</span>
-                                <span class="result-value" id="conv-result-buy-fee">-</span>
-                            </div>
-                            <div class="result-item highlight">
-                                <span class="result-label">实际支付</span>
-                                <span class="result-value" id="conv-result-paid">-</span>
+
+                            <div class="conv-result-column">
+                                <div class="conv-result-card">
+                                    <div class="conv-result-label">📥 B基金基础金额</div>
+                                    <div class="conv-result-value" id="conv-result-base">-</div>
+                                </div>
+                                <div class="conv-result-card">
+                                    <div class="conv-result-label">买入手续费</div>
+                                    <div class="conv-result-value" id="conv-result-buy-fee">-</div>
+                                </div>
+                                <div class="conv-result-card conv-result-highlight">
+                                    <div class="conv-result-label">实际支付</div>
+                                    <div class="conv-result-value" id="conv-result-paid">-</div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="result-summary">
-                            <div class="summary-item">
-                                <span>退还/补交金额：</span>
-                                <span id="conv-result-balance" class="summary-value">-</span>
+                        <div class="conv-result-summary">
+                            <div class="conv-summary-item">
+                                <div class="conv-summary-label">💵 退还/补交</div>
+                                <div class="conv-summary-value" id="conv-result-balance">-</div>
                             </div>
-                            <div class="summary-item">
-                                <span>总手续费：</span>
-                                <span id="conv-result-total-fee" class="summary-value">-</span>
+                            <div class="conv-summary-item">
+                                <div class="conv-summary-label">📊 资金差额</div>
+                                <div class="conv-summary-value" id="conv-result-diff">-</div>
+                            </div>
+                            <div class="conv-summary-item">
+                                <div class="conv-summary-label">💸 总手续费</div>
+                                <div class="conv-summary-value" id="conv-result-total-fee">-</div>
                             </div>
                         </div>
 
-                        <div id="sell-fee-details" class="tool-result-section hidden">
-                            <h4>卖出手续费明细</h4>
+                        <div id="sell-fee-details" class="conv-fee-details hidden">
+                            <div class="conv-fee-details-title">📋 卖出手续费明细</div>
                             <div id="sell-fee-details-list"></div>
                         </div>
 
-                        <button id="btn-save-conversion" class="btn btn-primary btn-block hidden" type="button">
-                            保存到交易记录
-                        </button>
+                        <div class="conv-result-actions">
+                            <button id="btn-save-conversion" class="btn btn-primary hidden" type="button">💾 保存到交易记录</button>
+                            <button id="btn-reset-conversion" class="btn btn-secondary" type="button">🔄 重新计算</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -664,6 +685,8 @@
     <script src="js/application/appSettingsService.js"></script>
     <script src="js/application/statisticsAppService.js"></script>
     <script src="js/dataService.js"></script>
+    <script src="js/fundProviderRegistry.js"></script>
+    <script src="js/providers/tiantianProvider.js"></script>
     <script src="js/fundAPI.js"></script>
     <script src="js/calculatorV2.js"></script>
     <script src="js/fifoCalculator.js"></script>

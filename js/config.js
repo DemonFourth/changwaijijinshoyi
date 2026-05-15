@@ -90,6 +90,14 @@ const Config = {
         bigNumberWanThreshold: 100000000
     },
 
+    // 基金数据提供者配置
+    fundProvider: {
+        // 当前激活的提供者
+        active: 'tiantian',
+        // 可用提供者列表
+        available: ['tiantian']
+    },
+
     // ECharts配置
     echarts: {
         // 是否启用ECharts图表

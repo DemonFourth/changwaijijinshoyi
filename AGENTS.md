@@ -86,7 +86,8 @@ ChartManager, CycleGroupRenderer, CycleTradeDisplay, Paginator,
 NameCache, NameValidator, FIFOCalculator, FIFOValidator,
 BigNumberFormatter, echarts, ConversionCalculator, ToolPage,
 StatisticsAppService, SyncAppService, LocalStorageAdapter,
-CloudflareD1SyncAdapter, SyncAdapterRegistry
+CloudflareD1SyncAdapter, SyncAdapterRegistry, FundProviderRegistry,
+TiantianFundProvider
 ```
 
 ### 模块组织约定
@@ -444,6 +445,106 @@ await SyncAppService.forcePullCloud()
 
 ---
 
+## 基金数据提供者
+
+### 概述
+
+本应用采用**适配器模式**管理基金数据API，通过 `FundProviderRegistry` 实现数据源的可替换性。默认使用天天基金API（`TiantianFundProvider`），后续可无缝切换至其他数据源。
+
+### 核心组件
+
+| 组件 | 文件位置 | 职责 |
+|-----|---------|------|
+| `FundProviderRegistry` | `js/fundProviderRegistry.js` | 提供者注册表（注册/切换/获取） |
+| `TiantianFundProvider` | `js/providers/tiantianProvider.js` | 天天基金API提供者（JSONP协议） |
+| `FundAPI` | `js/fundAPI.js` | 向后兼容层，委托给当前激活的提供者 |
+
+### 架构设计
+
+```
+调用方（FundManager / detail.js / modal.js）
+          ↓
+      FundAPI（兼容层）
+          ↓
+FundProviderRegistry.getCurrentProvider()
+          ↓
+  TiantianFundProvider（或其他提供者）
+```
+
+### 提供者接口规范
+
+所有基金数据提供者必须实现以下方法：
+
+| 方法 | 参数 | 返回值 | 说明 |
+|------|------|--------|------|
+| `getFundData(fundCode, useCache)` | `string, boolean` | `Promise<FundData>` | 获取单只基金数据 |
+| `batchGetFundData(codes, concurrency)` | `string[], number` | `Promise<FundData[]>` | 批量获取基金数据 |
+| `fetchNameOnly(fundCode)` | `string` | `Promise<string>` | 仅获取基金名称 |
+| `refreshFundData(fundCode)` | `string` | `Promise<FundData>` | 强制刷新（不使用缓存） |
+| `clearCache()` | 无 | `void` | 清空全部缓存 |
+| `clearCacheForFund(fundCode)` | `string` | `void` | 清空指定基金缓存 |
+| `isConfigured()` | 无 | `boolean` | 是否已配置可用 |
+
+### FundData 数据结构
+
+```javascript
+{
+  code: string,           // 基金代码
+  name: string,           // 基金名称
+  netValue: number,       // 最新净值（单位净值）
+  netValueDate: string,   // 净值日期（YYYY-MM-DD）
+  estimatedValue: number, // 估算净值
+  estimatedDate: string,  // 估算时间戳
+  estimatedGrowth: number,// 估算涨跌幅（%）
+  updateTime: string      // 更新时间（ISO）
+}
+```
+
+### 配置项
+
+```javascript
+// Config.fundProvider
+{
+  active: 'tiantian',           // 当前激活的提供者
+  available: ['tiantian']       // 可用提供者列表
+}
+```
+
+### 添加新提供者步骤
+
+1. 在 `js/providers/` 下创建新文件，如 `newApiProvider.js`
+2. 实现上述接口规范的所有方法
+3. 注册到模块系统：`ModuleRegistry.register('NewApiProvider', NewApiProvider)`
+4. 注册到注册表：`FundProviderRegistry.registerProvider('newApi', NewApiProvider)`
+5. 在 `index.html` 中加载新脚本（放在 `fundProviderRegistry.js` 之后、`fundAPI.js` 之前）
+6. 切换提供者：
+   ```javascript
+   // 方式一：代码切换
+   FundProviderRegistry.setCurrentProvider('newApi');
+
+   // 方式二：配置切换
+   Config.set('fundProvider.active', 'newApi');
+   ```
+
+### 调试方法
+
+```javascript
+// 查看当前提供者
+FundProviderRegistry.getProviderName()
+
+// 查看已注册的提供者列表
+FundProviderRegistry.listProviders()
+
+// 手动切换提供者
+FundProviderRegistry.setCurrentProvider('tiantian')
+
+// 清除缓存
+FundAPI.clearCache()
+FundAPI.clearCacheForFund('005827')
+```
+
+---
+
 ## 开发规范
 
 ### 代码检查
@@ -463,6 +564,8 @@ js/
 ├── application/    # 用例编排（FundAppService等）
 ├── repositories/  # 仓储访问
 ├── storage/       # schema、migration、adapter、sync
+├── providers/     # 基金数据提供者（可替换API源）
+│   └── tiantianProvider.js   # 天天基金JSONP提供者
 ├── modal/         # modal相关helper
 ├── detail/        # detail页相关helper
 │   ├── accrualHelper.js      # 计提计算UI辅助
