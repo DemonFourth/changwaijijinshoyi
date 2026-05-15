@@ -67,6 +67,11 @@ const Modal = {
             title: '☁️ 云同步详情',
             render: () => window.SyncStatusPresenter.buildSyncToolsModalBody(window.SyncAppService.getSyncStatus()),
             bind: () => window.SyncStatusPresenter.bindSyncToolsModalEvents()
+        },
+        batchTradeImport: {
+            title: '批量导入交易记录',
+            render: () => window.BatchTradeImportHelper.renderContent(),
+            bind: () => window.BatchTradeImportHelper.bindEvents()
         }
     },
 
@@ -640,11 +645,12 @@ const Modal = {
             }
         };
 
-        // 日期输入：快捷输入框 + 日期选择器双向同步
+        // 日期输入：三段式输入 + 隐藏日期控件双向同步
         const dateYearInput = document.getElementById('input-trade-date-year');
         const dateMonthInput = document.getElementById('input-trade-date-month');
         const dateDayInput = document.getElementById('input-trade-date-day');
         const datePickerInput = document.getElementById('input-trade-date');
+        const btnDatePicker = document.getElementById('btn-date-picker');
 
         const getTradeDate = function() {
             return datePickerInput ? datePickerInput.value : '';
@@ -666,7 +672,10 @@ const Modal = {
             const m = dateMonthInput.value.padStart(2, '0');
             const d = dateDayInput.value.padStart(2, '0');
             if (y && m && d) {
-                datePickerInput.value = y + '-' + m + '-' + d;
+                const newDate = y + '-' + m + '-' + d;
+                if (datePickerInput.value !== newDate) {
+                    datePickerInput.value = newDate;
+                }
             }
         };
 
@@ -674,6 +683,17 @@ const Modal = {
         if (dateMonthInput) dateMonthInput.addEventListener('blur', syncToDatePicker);
         if (dateDayInput) dateDayInput.addEventListener('blur', syncToDatePicker);
         if (datePickerInput) datePickerInput.addEventListener('change', syncFromDatePicker);
+
+        if (btnDatePicker && datePickerInput) {
+            btnDatePicker.addEventListener('click', function() {
+                if (typeof datePickerInput.showPicker === 'function') {
+                    datePickerInput.showPicker();
+                } else {
+                    datePickerInput.focus();
+                    datePickerInput.click();
+                }
+            });
+        }
 
         netValue.addEventListener('blur', calcAmount);
         shares.addEventListener('blur', calcAmount);
