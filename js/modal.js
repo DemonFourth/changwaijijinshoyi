@@ -640,18 +640,40 @@ const Modal = {
             }
         };
 
-        // 日期输入：从三个独立输入框组装日期值
+        // 日期输入：快捷输入框 + 日期选择器双向同步
         const dateYearInput = document.getElementById('input-trade-date-year');
         const dateMonthInput = document.getElementById('input-trade-date-month');
         const dateDayInput = document.getElementById('input-trade-date-day');
+        const datePickerInput = document.getElementById('input-trade-date');
 
         const getTradeDate = function() {
-            const y = dateYearInput ? dateYearInput.value : '';
-            const m = dateMonthInput ? dateMonthInput.value.padStart(2, '0') : '';
-            const d = dateDayInput ? dateDayInput.value.padStart(2, '0') : '';
-            if (y && m && d) return y + '-' + m + '-' + d;
-            return y + '-' + m + '-' + d;
+            return datePickerInput ? datePickerInput.value : '';
         };
+
+        const syncFromDatePicker = function() {
+            if (!datePickerInput || !datePickerInput.value) return;
+            const parts = datePickerInput.value.split('-');
+            if (parts.length === 3 && dateYearInput && dateMonthInput && dateDayInput) {
+                dateYearInput.value = parts[0];
+                dateMonthInput.value = parts[1];
+                dateDayInput.value = parts[2];
+            }
+        };
+
+        const syncToDatePicker = function() {
+            if (!datePickerInput || !dateYearInput || !dateMonthInput || !dateDayInput) return;
+            const y = dateYearInput.value;
+            const m = dateMonthInput.value.padStart(2, '0');
+            const d = dateDayInput.value.padStart(2, '0');
+            if (y && m && d) {
+                datePickerInput.value = y + '-' + m + '-' + d;
+            }
+        };
+
+        if (dateYearInput) dateYearInput.addEventListener('blur', syncToDatePicker);
+        if (dateMonthInput) dateMonthInput.addEventListener('blur', syncToDatePicker);
+        if (dateDayInput) dateDayInput.addEventListener('blur', syncToDatePicker);
+        if (datePickerInput) datePickerInput.addEventListener('change', syncFromDatePicker);
 
         netValue.addEventListener('blur', calcAmount);
         shares.addEventListener('blur', calcAmount);
@@ -788,9 +810,7 @@ const Modal = {
             calcAmount();
             checkMismatch();
         });
-        if (dateYearInput) dateYearInput.addEventListener('blur', autoCalcFee);
-        if (dateMonthInput) dateMonthInput.addEventListener('blur', autoCalcFee);
-        if (dateDayInput) dateDayInput.addEventListener('blur', autoCalcFee);
+        if (datePickerInput) datePickerInput.addEventListener('change', autoCalcFee);
 
         fee.addEventListener('input', () => {
             isFeeAutoCalculated = false;

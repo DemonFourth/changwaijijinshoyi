@@ -1459,6 +1459,7 @@ td.negative {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    margin-bottom: 0.35rem;
 }
 
 .date-input-part {
@@ -1480,6 +1481,13 @@ td.negative {
     color: var(--color-text-secondary);
     font-size: 0.9rem;
     user-select: none;
+}
+
+.date-picker-input {
+    width: 100%;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.5rem;
+    opacity: 0.85;
 }
 
 .trade-form-field .form-label {

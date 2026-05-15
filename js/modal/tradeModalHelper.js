@@ -79,6 +79,7 @@ const TradeModalHelper = {
         html += '<span class="date-separator">/</span>';
         html += '<input type="number" id="input-trade-date-day" class="form-input date-input-part date-input-day" value="' + dayVal + '" placeholder="日" min="1" max="31" step="1">';
         html += '</div>';
+        html += '<input type="date" id="input-trade-date" class="form-input date-picker-input" value="' + dateVal + '">';
         html += '</div>';
         html += '<div class="trade-form-field">';
         html += '<label class="form-label">交易类型 *</label>';
