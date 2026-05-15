@@ -941,6 +941,13 @@ td.negative {
 .records-header h3 {
     color: var(--color-text-primary);
     font-size: 1.125rem;
+    flex-shrink: 0;
+}
+
+.records-header-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
 }
 
 .trade-table {
