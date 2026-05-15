@@ -1469,9 +1469,9 @@ td.negative {
     background: transparent;
     text-align: center;
     padding: 0.5rem 0.25rem;
-    width: 100%;
     font-size: 0.95rem;
     outline: none;
+    flex-shrink: 0;
 }
 
 .date-part-input:focus {
@@ -1504,6 +1504,7 @@ td.negative {
     transition: background 0.15s;
     flex-shrink: 0;
     min-width: 2.5rem;
+    margin-left: 0.25rem;
 }
 
 .date-picker-trigger:hover {
