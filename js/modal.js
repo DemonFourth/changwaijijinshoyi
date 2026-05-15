@@ -640,6 +640,40 @@ const Modal = {
             }
         };
 
+        // 日期输入框Tab键优化：输入年份后按Tab跳转到月份，输入月份后按Tab跳转到日
+        const dateInput = document.getElementById('input-trade-date');
+        if (dateInput) {
+            dateInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    const value = dateInput.value;
+                    const parts = value.split('-');
+                    if (parts.length === 1 && parts[0].length === 4) {
+                        e.preventDefault();
+                        const year = parts[0];
+                        const month = String(new Date().getMonth() + 1).padStart(2, '0');
+                        const day = String(new Date().getDate()).padStart(2, '0');
+                        dateInput.value = year + '-' + month + '-' + day;
+                        dateInput.focus();
+                        const pos = 5;
+                        if (typeof dateInput.setSelectionRange === 'function') {
+                            dateInput.setSelectionRange(pos, pos + 2);
+                        }
+                    } else if (parts.length === 2 && parts[0].length === 4 && parts[1].length === 2) {
+                        e.preventDefault();
+                        const year = parts[0];
+                        const month = parts[1];
+                        const day = String(new Date().getDate()).padStart(2, '0');
+                        dateInput.value = year + '-' + month + '-' + day;
+                        dateInput.focus();
+                        const pos = 8;
+                        if (typeof dateInput.setSelectionRange === 'function') {
+                            dateInput.setSelectionRange(pos, pos + 2);
+                        }
+                    }
+                }
+            });
+        }
+
         netValue.addEventListener('input', calcAmount);
         shares.addEventListener('input', calcAmount);
         fee.addEventListener('input', calcAmount);
@@ -756,8 +790,16 @@ const Modal = {
             }
         };
 
-        netValue.addEventListener('input', autoCalcFee);
-        shares.addEventListener('input', autoCalcFee);
+        netValue.addEventListener('blur', function() {
+            if (Utils.isPositive(parseFloat(shares.value))) {
+                autoCalcFee();
+            }
+        });
+        shares.addEventListener('blur', function() {
+            if (Utils.isPositive(parseFloat(netValue.value))) {
+                autoCalcFee();
+            }
+        });
         tradeType.addEventListener('change', () => {
             isFeeAutoCalculated = false;
             fee.value = '0';
