@@ -59,6 +59,10 @@ const TradeModalHelper = {
         const isEdit = data && data.trade;
         const trade = isEdit ? data.trade : {};
         const dateVal = isEdit ? trade.date : Utils.formatDate(new Date());
+        const dateParts = dateVal.split('-');
+        const yearVal = dateParts[0] || '';
+        const monthVal = dateParts[1] || '';
+        const dayVal = dateParts[2] || '';
         const settings = window.AppSettingsService.loadSettings() || {};
 
         let html = '';
@@ -66,9 +70,15 @@ const TradeModalHelper = {
         html += '<div class="trade-form-compact">';
 
         html += '<div class="trade-form-row trade-form-row-main">';
-        html += '<div class="trade-form-field">';
+        html += '<div class="trade-form-field trade-form-field-date-group">';
         html += '<label class="form-label">交易日期 *</label>';
-        html += '<input type="date" id="input-trade-date" class="form-input" value="' + dateVal + '">';
+        html += '<div class="date-input-group">';
+        html += '<input type="number" id="input-trade-date-year" class="form-input date-input-part date-input-year" value="' + yearVal + '" placeholder="年" min="1900" max="2100" step="1">';
+        html += '<span class="date-separator">/</span>';
+        html += '<input type="number" id="input-trade-date-month" class="form-input date-input-part date-input-month" value="' + monthVal + '" placeholder="月" min="1" max="12" step="1">';
+        html += '<span class="date-separator">/</span>';
+        html += '<input type="number" id="input-trade-date-day" class="form-input date-input-part date-input-day" value="' + dayVal + '" placeholder="日" min="1" max="31" step="1">';
+        html += '</div>';
         html += '</div>';
         html += '<div class="trade-form-field">';
         html += '<label class="form-label">交易类型 *</label>';

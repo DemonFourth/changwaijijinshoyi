@@ -1451,6 +1451,37 @@ td.negative {
     flex-direction: column;
 }
 
+.trade-form-field-date-group {
+    grid-column: span 1;
+}
+
+.date-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.date-input-part {
+    width: 100%;
+    text-align: center;
+    padding: 0.4rem 0.25rem;
+}
+
+.date-input-year {
+    flex: 2;
+}
+
+.date-input-month,
+.date-input-day {
+    flex: 1;
+}
+
+.date-separator {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    user-select: none;
+}
+
 .trade-form-field .form-label {
     margin-bottom: 0.35rem;
     font-size: 0.85rem;
@@ -3069,6 +3100,311 @@ td.negative {
 
 .summary-value.loss {
     color: var(--color-fall);
+}
+
+/* 基金转换计算器 - 新UI */
+.conv-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border-primary);
+    margin-bottom: 20px;
+}
+
+.conv-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.conv-badge {
+    background: var(--color-primary);
+    color: white;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.conv-funds-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.conv-fund-card {
+    background: var(--color-bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.conv-fund-out {
+    border-left: 3px solid var(--color-fall);
+}
+
+.conv-fund-in {
+    border-left: 3px solid var(--color-success);
+}
+
+.conv-fund-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.conv-fund-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.conv-fund-out .conv-fund-icon {
+    background: var(--color-fall);
+    color: white;
+}
+
+.conv-fund-in .conv-fund-icon {
+    background: var(--color-success);
+    color: white;
+}
+
+.conv-fund-name {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.conv-fund-label {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    margin-left: auto;
+}
+
+.conv-input-group {
+    margin-bottom: 10px;
+}
+
+.conv-input-group:last-child {
+    margin-bottom: 0;
+}
+
+.conv-input-label {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-bottom: 4px;
+    font-weight: 500;
+    display: block;
+}
+
+.conv-input {
+    width: 100%;
+    height: 36px;
+    border: 1px solid var(--color-border-primary);
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: 14px;
+    background: var(--color-bg-card);
+    transition: border-color 0.2s;
+}
+
+.conv-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.conv-transaction-section {
+    background: var(--color-bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.conv-transaction-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 12px;
+}
+
+.conv-transaction-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* 转换结果区域 */
+.conv-result-section {
+    margin-top: 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 20px;
+    color: white;
+}
+
+.conv-result-section.hidden {
+    display: none;
+}
+
+.conv-result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.conv-result-title {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.conv-result-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.conv-result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.conv-result-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.conv-result-card {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.conv-result-highlight {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.conv-result-label {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+
+.conv-result-value {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.conv-result-summary {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.conv-summary-item {
+    text-align: center;
+}
+
+.conv-summary-label {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+
+.conv-summary-value {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.conv-summary-value.profit {
+    color: #34c759;
+}
+
+.conv-summary-value.loss {
+    color: #ff3b30;
+}
+
+.conv-fee-details {
+    margin-top: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.conv-fee-details.hidden {
+    display: none;
+}
+
+.conv-fee-details-title {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-bottom: 8px;
+}
+
+.fee-detail-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fee-detail-item:last-child {
+    border-bottom: none;
+}
+
+.fee-detail-fee {
+    font-weight: 600;
+}
+
+.conv-result-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+}
+
+.conv-result-actions .btn {
+    flex: 1;
+    height: 44px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-save-conv {
+    background: white;
+    color: #667eea;
+}
+
+.btn-reset-conv {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+@media (max-width: 600px) {
+    .conv-funds-row {
+        grid-template-columns: 1fr;
+    }
+
+    .conv-result-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .conv-transaction-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (width <= 768px) {

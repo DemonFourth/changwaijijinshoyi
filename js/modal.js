@@ -640,43 +640,22 @@ const Modal = {
             }
         };
 
-        // 日期输入框Tab键优化：输入年份后按Tab跳转到月份，输入月份后按Tab跳转到日
-        const dateInput = document.getElementById('input-trade-date');
-        if (dateInput) {
-            dateInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Tab') {
-                    const value = dateInput.value;
-                    const parts = value.split('-');
-                    if (parts.length === 1 && parts[0].length === 4) {
-                        e.preventDefault();
-                        const year = parts[0];
-                        const month = String(new Date().getMonth() + 1).padStart(2, '0');
-                        const day = String(new Date().getDate()).padStart(2, '0');
-                        dateInput.value = year + '-' + month + '-' + day;
-                        dateInput.focus();
-                        const pos = 5;
-                        if (typeof dateInput.setSelectionRange === 'function') {
-                            dateInput.setSelectionRange(pos, pos + 2);
-                        }
-                    } else if (parts.length === 2 && parts[0].length === 4 && parts[1].length === 2) {
-                        e.preventDefault();
-                        const year = parts[0];
-                        const month = parts[1];
-                        const day = String(new Date().getDate()).padStart(2, '0');
-                        dateInput.value = year + '-' + month + '-' + day;
-                        dateInput.focus();
-                        const pos = 8;
-                        if (typeof dateInput.setSelectionRange === 'function') {
-                            dateInput.setSelectionRange(pos, pos + 2);
-                        }
-                    }
-                }
-            });
-        }
+        // 日期输入：从三个独立输入框组装日期值
+        const dateYearInput = document.getElementById('input-trade-date-year');
+        const dateMonthInput = document.getElementById('input-trade-date-month');
+        const dateDayInput = document.getElementById('input-trade-date-day');
 
-        netValue.addEventListener('input', calcAmount);
-        shares.addEventListener('input', calcAmount);
-        fee.addEventListener('input', calcAmount);
+        const getTradeDate = function() {
+            const y = dateYearInput ? dateYearInput.value : '';
+            const m = dateMonthInput ? dateMonthInput.value.padStart(2, '0') : '';
+            const d = dateDayInput ? dateDayInput.value.padStart(2, '0') : '';
+            if (y && m && d) return y + '-' + m + '-' + d;
+            return y + '-' + m + '-' + d;
+        };
+
+        netValue.addEventListener('blur', calcAmount);
+        shares.addEventListener('blur', calcAmount);
+        fee.addEventListener('blur', calcAmount);
         tradeType.addEventListener('change', calcAmount);
 
         amount.addEventListener('input', checkMismatch);
@@ -702,7 +681,7 @@ const Modal = {
             const type = tradeType.value;
             const nv = parseFloat(netValue.value);
             const s = parseFloat(shares.value);
-            const dateVal = document.getElementById('input-trade-date').value;
+            const dateVal = getTradeDate();
 
             const hasBuyTiers = effectiveFeeTiers.buyTiers && effectiveFeeTiers.buyTiers.length > 0;
             const hasSellTiers = effectiveFeeTiers.sellTiers && effectiveFeeTiers.sellTiers.length > 0;
@@ -809,7 +788,9 @@ const Modal = {
             calcAmount();
             checkMismatch();
         });
-        document.getElementById('input-trade-date').addEventListener('change', autoCalcFee);
+        if (dateYearInput) dateYearInput.addEventListener('blur', autoCalcFee);
+        if (dateMonthInput) dateMonthInput.addEventListener('blur', autoCalcFee);
+        if (dateDayInput) dateDayInput.addEventListener('blur', autoCalcFee);
 
         fee.addEventListener('input', () => {
             isFeeAutoCalculated = false;
@@ -826,7 +807,7 @@ const Modal = {
 
         btnConfirm.addEventListener('click', () => {
             const tradeData = {
-                date: document.getElementById('input-trade-date').value,
+                date: getTradeDate(),
                 type: tradeType.value,
                 netValue: netValue.value,
                 shares: shares.value,
