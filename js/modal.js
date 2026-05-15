@@ -666,15 +666,38 @@ const Modal = {
             }
         };
 
+        const getDaysInMonth = function(y, m) {
+            return new Date(parseInt(y), parseInt(m), 0).getDate();
+        };
+
         const syncToDatePicker = function() {
             if (!datePickerInput || !dateYearInput || !dateMonthInput || !dateDayInput) return;
-            const y = dateYearInput.value;
-            const m = dateMonthInput.value.padStart(2, '0');
-            const d = dateDayInput.value.padStart(2, '0');
+
+            let y = dateYearInput.value.replace(/\D/g, '');
+            let m = dateMonthInput.value.replace(/\D/g, '');
+            let d = dateDayInput.value.replace(/\D/g, '');
+
+            if (y.length > 4) y = y.slice(-4);
+            if (m.length > 2) m = m.slice(-2);
+            if (d.length > 2) d = d.slice(-2);
+
+            const mNum = parseInt(m, 10);
+            if (m && mNum > 12) m = '12';
+
             if (y && m && d) {
-                const newDate = y + '-' + m + '-' + d;
-                if (datePickerInput.value !== newDate) {
-                    datePickerInput.value = newDate;
+                const maxDay = getDaysInMonth(y, m);
+                const dNum = parseInt(d, 10);
+                if (dNum > maxDay) d = String(maxDay);
+            }
+
+            dateYearInput.value = y;
+            dateMonthInput.value = m;
+            dateDayInput.value = d;
+
+            if (y && m && d) {
+                const dateStr = y + '-' + m.padStart(2, '0') + '-' + d.padStart(2, '0');
+                if (datePickerInput.value !== dateStr) {
+                    datePickerInput.value = dateStr;
                 }
             }
         };
@@ -684,18 +707,50 @@ const Modal = {
         if (dateDayInput) dateDayInput.addEventListener('blur', syncToDatePicker);
         if (datePickerInput) datePickerInput.addEventListener('change', syncFromDatePicker);
 
-        // 输入到最大位数时自动跳到下一个字段
+        // 点击全选
+        if (dateYearInput) dateYearInput.addEventListener('click', function() { this.select(); });
+        if (dateMonthInput) dateMonthInput.addEventListener('click', function() { this.select(); });
+        if (dateDayInput) dateDayInput.addEventListener('click', function() { this.select(); });
+
+        // 年份输入：超过4位保留最后4位
         if (dateYearInput) dateYearInput.addEventListener('input', function() {
-            if (this.value.length >= 4) {
+            let val = this.value.replace(/\D/g, '');
+            if (val.length > 4) val = val.slice(-4);
+            this.value = val;
+            if (val.length === 4) {
                 dateMonthInput.focus();
                 dateMonthInput.select();
             }
         });
+
+        // 月份输入：超过12限制为12，2位后跳到日
         if (dateMonthInput) dateMonthInput.addEventListener('input', function() {
-            if (this.value.length >= 2) {
+            let val = this.value.replace(/\D/g, '');
+            if (val.length > 2) val = val.slice(-2);
+            const num = parseInt(val, 10);
+            if (val && num > 12) val = '12';
+            this.value = val;
+            if (val.length === 2) {
                 dateDayInput.focus();
                 dateDayInput.select();
             }
+        });
+
+        // 日输入：超过该月最大天数限制
+        if (dateDayInput) dateDayInput.addEventListener('input', function() {
+            let val = this.value.replace(/\D/g, '');
+            if (val.length > 2) val = val.slice(-2);
+            const y = dateYearInput ? dateYearInput.value : '';
+            const m = dateMonthInput ? dateMonthInput.value : '';
+            if (y && m) {
+                const maxDay = getDaysInMonth(y, m);
+                const num = parseInt(val, 10);
+                if (val && num > maxDay) val = String(maxDay);
+            } else {
+                const num = parseInt(val, 10);
+                if (val && num > 31) val = '31';
+            }
+            this.value = val;
         });
 
         if (btnDatePicker && datePickerInput) {
