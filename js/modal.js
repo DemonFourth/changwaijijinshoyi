@@ -684,6 +684,20 @@ const Modal = {
         if (dateDayInput) dateDayInput.addEventListener('blur', syncToDatePicker);
         if (datePickerInput) datePickerInput.addEventListener('change', syncFromDatePicker);
 
+        // 输入到最大位数时自动跳到下一个字段
+        if (dateYearInput) dateYearInput.addEventListener('input', function() {
+            if (this.value.length >= 4) {
+                dateMonthInput.focus();
+                dateMonthInput.select();
+            }
+        });
+        if (dateMonthInput) dateMonthInput.addEventListener('input', function() {
+            if (this.value.length >= 2) {
+                dateDayInput.focus();
+                dateDayInput.select();
+            }
+        });
+
         if (btnDatePicker && datePickerInput) {
             btnDatePicker.addEventListener('click', function() {
                 if (typeof datePickerInput.showPicker === 'function') {

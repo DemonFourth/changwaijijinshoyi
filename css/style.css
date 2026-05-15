@@ -5442,27 +5442,7 @@ td.negative {
 .batch-import-modal {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-}
-
-.batch-import-separator-row {
-    display: flex;
-    align-items: center;
     gap: 0.5rem;
-    flex-shrink: 0;
-}
-
-.batch-import-separator-row .form-label {
-    margin: 0;
-    white-space: nowrap;
-    font-size: 0.875rem;
-}
-
-.batch-import-separator-row .form-select {
-    width: auto;
-    min-width: 100px;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
 }
 
 .batch-import-format-hint {
@@ -5496,6 +5476,14 @@ td.negative {
     font-style: italic;
 }
 
+.batch-import-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
 .batch-import-quick-buttons {
     display: flex;
     flex-wrap: wrap;
@@ -5503,9 +5491,28 @@ td.negative {
     flex-shrink: 0;
 }
 
-.batch-import-quick-buttons .btn {
-    padding: 0.25rem 0.5rem;
+.batch-import-quick-buttons .btn-xs {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+}
+
+.batch-import-separator-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+}
+
+.batch-import-separator-inline .separator-label {
     font-size: 0.8125rem;
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+}
+
+.batch-import-separator-inline .form-select-xs {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+    min-width: 80px;
 }
 
 .batch-import-textarea {

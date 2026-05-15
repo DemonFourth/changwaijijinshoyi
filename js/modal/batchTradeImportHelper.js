@@ -26,17 +26,6 @@ const BatchTradeImportHelper = {
     renderContent() {
         const content = `
             <div class="batch-import-modal">
-                <div class="batch-import-separator-row">
-                    <label class="form-label">分隔符：</label>
-                    <select id="batch-import-separator" class="form-select form-select-sm">
-                        <option value="comma">逗号 ,</option>
-                        <option value="slash">斜杠 /</option>
-                        <option value="space">空格</option>
-                        <option value="semicolon">分号 ;</option>
-                        <option value="tab">制表符(Tab)</option>
-                    </select>
-                </div>
-
                 <div class="batch-import-format-hint">
                     <div class="format-title">格式说明：</div>
                     <div class="format-example" id="batch-import-format-example">
@@ -50,11 +39,23 @@ const BatchTradeImportHelper = {
                     </div>
                 </div>
 
-                <div class="batch-import-quick-buttons">
-                    <button type="button" class="btn btn-secondary btn-sm btn-quick-type" data-type="1">1 买入</button>
-                    <button type="button" class="btn btn-secondary btn-sm btn-quick-type" data-type="2">2 卖出</button>
-                    <button type="button" class="btn btn-secondary btn-sm btn-quick-type" data-type="3">3 分红(现金)</button>
-                    <button type="button" class="btn btn-secondary btn-sm btn-quick-type" data-type="4">4 分红(再投资)</button>
+                <div class="batch-import-controls-row">
+                    <div class="batch-import-quick-buttons">
+                        <button type="button" class="btn btn-secondary btn-xs btn-quick-type" data-type="1">1 买入</button>
+                        <button type="button" class="btn btn-secondary btn-xs btn-quick-type" data-type="2">2 卖出</button>
+                        <button type="button" class="btn btn-secondary btn-xs btn-quick-type" data-type="3">3 分红(现金)</button>
+                        <button type="button" class="btn btn-secondary btn-xs btn-quick-type" data-type="4">4 分红(再投资)</button>
+                    </div>
+                    <div class="batch-import-separator-inline">
+                        <label class="separator-label">分隔符：</label>
+                        <select id="batch-import-separator" class="form-select form-select-xs">
+                            <option value="comma">逗号 ,</option>
+                            <option value="slash">斜杠 /</option>
+                            <option value="space">空格</option>
+                            <option value="semicolon">分号 ;</option>
+                            <option value="tab">制表符</option>
+                        </select>
+                    </div>
                 </div>
 
                 <textarea id="batch-import-textarea" class="batch-import-textarea"
