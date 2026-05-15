@@ -82,6 +82,14 @@ const Detail = {
             });
         }
 
+        // 批量导入交易按钮
+        const btnBatchImport = document.getElementById('btn-batch-import-trade');
+        if (btnBatchImport) {
+            btnBatchImport.addEventListener('click', () => {
+                window.BatchTradeImportHelper.show(this.currentFundId);
+            });
+        }
+
         // 监听数据变化事件
         EventBus.on(EventType.FUND_UPDATED, () => this.refresh());
         EventBus.on(EventType.TRADE_ADDED, () => this.refresh());

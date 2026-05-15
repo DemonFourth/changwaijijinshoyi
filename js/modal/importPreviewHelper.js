@@ -239,6 +239,11 @@ const ImportPreviewHelper = {
                     Utils.showToast(`合并成功：${result.importedTrades}条交易记录`, 'success');
                     this.hide();
                     EventBus.emit(EventType.DATA_IMPORTED, { merge: true, data: this._analysis.normalized });
+                    const firstFund = this._analysis.normalized?.funds?.[0];
+                    const fundId = firstFund?.id || firstFund?.fundId;
+                    if (fundId) {
+                        EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
+                    }
                 } else {
                     Utils.showToast('合并失败：' + result.reason, 'error');
                 }
@@ -252,6 +257,11 @@ const ImportPreviewHelper = {
                     Utils.showToast(`覆盖成功：${result.importedTrades}条交易记录`, 'success');
                     this.hide();
                     EventBus.emit(EventType.DATA_IMPORTED, { merge: false, data: this._analysis.normalized });
+                    const firstFund = this._analysis.normalized?.funds?.[0];
+                    const fundId = firstFund?.id || firstFund?.fundId;
+                    if (fundId) {
+                        EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
+                    }
                 } else {
                     Utils.showToast('覆盖失败：' + result.reason, 'error');
                 }

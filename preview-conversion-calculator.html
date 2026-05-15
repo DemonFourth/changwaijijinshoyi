@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基金转换计算器 - UI预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .preview-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .preview-title {
+            text-align: center;
+            margin-bottom: 24px;
+            color: #1d1d1f;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .preview-subtitle {
+            text-align: center;
+            color: #86868b;
+            font-size: 13px;
+            margin-bottom: 32px;
+        }
+
+        /* Card styles */
+        .calc-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .calc-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e7;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .calc-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .calc-badge {
+            background: #0071e3;
+            color: white;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .calc-body {
+            padding: 24px;
+        }
+
+        /* Two column layout */
+        .fund-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .fund-column {
+            background: #f5f5f7;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .fund-column.transfer-out {
+            border-left: 3px solid #ff3b30;
+        }
+
+        .fund-column.transfer-in {
+            border-left: 3px solid #34c759;
+        }
+
+        .column-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .column-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .transfer-out .column-icon {
+            background: #ff3b30;
+            color: white;
+        }
+
+        .transfer-in .column-icon {
+            background: #34c759;
+            color: white;
+        }
+
+        .column-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .column-subtitle {
+            font-size: 12px;
+            color: #86868b;
+            margin-left: auto;
+        }
+
+        .fund-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .fund-row.single-column {
+            grid-template-columns: 1fr;
+        }
+
+        .fund-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-label {
+            font-size: 11px;
+            color: #86868b;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .input-field {
+            height: 36px;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #0071e3;
+        }
+
+        .input-field::placeholder {
+            color: #86868b;
+        }
+
+        /* Fee mode toggle */
+        .fee-section {
+            margin-top: 12px;
+        }
+
+        .fee-mode-toggle {
+            display: inline-flex;
+            background: #e5e5e7;
+            border-radius: 8px;
+            padding: 2px;
+        }
+
+        .fee-mode-btn {
+            padding: 6px 14px;
+            font-size: 13px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #86868b;
+            transition: all 0.2s;
+        }
+
+        .fee-mode-btn.active {
+            background: white;
+            color: #1d1d1f;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .fee-tier-rows {
+            margin-top: 10px;
+        }
+
+        .fee-tier-row {
+            display: grid;
+            grid-template-columns: 1fr 80px 36px;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .btn-remove-tier {
+            height: 36px;
+            border: none;
+            background: #ff3b30;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .btn-add-tier {
+            width: 100%;
+            height: 36px;
+            border: 1px dashed #d2d2d7;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #0071e3;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .validation-msg {
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .validation-msg.valid {
+            color: #34c759;
+        }
+
+        .validation-msg.invalid {
+            color: #ff3b30;
+        }
+
+        /* Transaction info */
+        .transaction-section {
+            background: #f5f5f7;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .transaction-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 12px;
+        }
+
+        .transaction-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .transaction-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Calculate button */
+        .btn-calculate {
+            width: 100%;
+            height: 48px;
+            background: #0071e3;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-calculate:hover {
+            background: #0077ed;
+        }
+
+        .btn-calculate:active {
+            background: #005bb5;
+        }
+
+        /* Result section */
+        .result-section {
+            margin-top: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .result-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .result-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        /* Result grid */
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .result-card.highlight {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .result-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 4px;
+        }
+
+        .result-value {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .result-card .result-label::before {
+            content: '📤 ';
+        }
+
+        .transfer-in .result-card .result-label::before {
+            content: '📥 ';
+        }
+
+        /* Summary row */
+        .result-summary {
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 4px;
+        }
+
+        .summary-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .summary-value.profit {
+            color: #34c759;
+        }
+
+        .summary-value.loss {
+            color: #ff3b30;
+        }
+
+        .summary-value.neutral {
+            color: white;
+        }
+
+        /* Fee details */
+        .fee-details {
+            margin-top: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .fee-details-title {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .fee-detail-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .fee-detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .fee-detail-fee {
+            font-weight: 600;
+        }
+
+        /* Action buttons */
+        .result-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-action {
+            flex: 1;
+            height: 44px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-save {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-save:hover {
+            background: #f0f0f0;
+        }
+
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Arrow between columns */
+        .fund-arrow {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .fund-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .fund-arrow {
+                display: none;
+            }
+        }
+
+        /* Sample filled state */
+        .sample-filled .input-field {
+            background: #e8f0fe;
+            border-color: #a8c7fa;
+        }
+
+        .sample-filled .result-section {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Light theme result */
+        .result-section.light {
+            background: #f5f5f7;
+            color: #1d1d1f;
+        }
+
+        .result-section.light .result-card {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-section.light .result-label {
+            color: #86868b;
+        }
+
+        .result-section.light .result-value {
+            color: #1d1d1f;
+        }
+
+        .result-section.light .result-badge {
+            background: #0071e3;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <h1 class="preview-title">基金转换计算器 UI 设计预览</h1>
+        <p class="preview-subtitle">双列布局 · 转出/转入分区 · 结果卡片式呈现</p>
+
+        <div class="calc-card sample-filled">
+            <div class="calc-header">
+                <span class="calc-title">🔄 基金转换计算</span>
+                <span class="calc-badge">工具箱</span>
+            </div>
+
+            <div class="calc-body">
+                <!-- 双列基金输入 -->
+                <div class="fund-columns">
+                    <!-- 转出基金 -->
+                    <div class="fund-column transfer-out">
+                        <div class="column-header">
+                            <div class="column-icon">📤</div>
+                            <span class="column-title">转出基金</span>
+                            <span class="column-subtitle">A基金</span>
+                        </div>
+
+                        <div class="fund-row single-column">
+                            <div class="input-group">
+                                <label class="input-label">净值</label>
+                                <input type="number" class="input-field" id="a-net-value" value="1.2500" step="0.0001" min="0" placeholder="0.0000">
+                            </div>
+                        </div>
+                        <div class="fund-row single-column">
+                            <div class="input-group">
+                                <label class="input-label">份额</label>
+                                <input type="number" class="input-field" id="a-shares" value="10000.00" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div class="fee-section">
+                            <div class="fee-mode-toggle">
+                                <button class="fee-mode-btn active" data-mode="single">单费率</button>
+                                <button class="fee-mode-btn" data-mode="tiered">分段费率</button>
+                            </div>
+
+                            <div id="single-fee-area">
+                                <div class="fund-row single-column" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label class="input-label">卖出费率 (%)</label>
+                                        <input type="number" class="input-field" id="a-sell-rate" value="0.50" step="0.01" min="0" placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="tiered-fee-area" style="display: none;">
+                                <div class="fee-tier-rows">
+                                    <div class="fee-tier-row">
+                                        <div class="input-group">
+                                            <label class="input-label">份额</label>
+                                            <input type="number" class="input-field" placeholder="0.00">
+                                        </div>
+                                        <div class="input-group">
+                                            <label class="input-label">费率(%)</label>
+                                            <input type="number" class="input-field" placeholder="0.00">
+                                        </div>
+                                        <button class="btn-remove-tier">×</button>
+                                    </div>
+                                </div>
+                                <button class="btn-add-tier">+ 添加费率段</button>
+                                <div class="validation-msg valid">✓ 已分配 10000.00 / 10000.00 份</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 转入基金 -->
+                    <div class="fund-column transfer-in">
+                        <div class="column-header">
+                            <div class="column-icon">📥</div>
+                            <span class="column-title">转入基金</span>
+                            <span class="column-subtitle">B基金</span>
+                        </div>
+
+                        <div class="fund-row single-column">
+                            <div class="input-group">
+                                <label class="input-label">净值</label>
+                                <input type="number" class="input-field" id="b-net-value" value="2.0000" step="0.0001" min="0" placeholder="0.0000">
+                            </div>
+                        </div>
+                        <div class="fund-row single-column">
+                            <div class="input-group">
+                                <label class="input-label">份额</label>
+                                <input type="number" class="input-field" id="b-shares" value="5000.00" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="fund-row single-column" style="margin-top: 10px;">
+                            <div class="input-group">
+                                <label class="input-label">买入费率 (%)</label>
+                                <input type="number" class="input-field" id="b-buy-rate" value="0.15" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 交易信息 -->
+                <div class="transaction-section">
+                    <div class="transaction-title">📋 交易信息</div>
+                    <div class="transaction-row">
+                        <div class="input-group">
+                            <label class="input-label">交易日期</label>
+                            <input type="date" class="input-field" value="2024-01-15">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">备注</label>
+                            <input type="text" class="input-field" placeholder="可选备注信息">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-calculate">计算转换</button>
+
+                <!-- 计算结果 -->
+                <div class="result-section">
+                    <div class="result-header">
+                        <span class="result-title">💰 转换结果</span>
+                        <span class="result-badge">手续费 ¥75.10</span>
+                    </div>
+
+                    <div class="result-grid">
+                        <!-- 转出部分 -->
+                        <div>
+                            <div class="result-card">
+                                <div class="result-label">转出金额</div>
+                                <div class="result-value">¥12,500.00</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">卖出手续费</div>
+                                <div class="result-value">-¥62.50</div>
+                            </div>
+                            <div class="result-card highlight">
+                                <div class="result-label">实际到手</div>
+                                <div class="result-value">¥12,437.50</div>
+                            </div>
+                        </div>
+
+                        <!-- 转入部分 -->
+                        <div>
+                            <div class="result-card">
+                                <div class="result-label">B基金基础金额</div>
+                                <div class="result-value">¥10,000.00</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">买入手续费</div>
+                                <div class="result-value">-¥15.00</div>
+                            </div>
+                            <div class="result-card highlight">
+                                <div class="result-label">实际支付</div>
+                                <div class="result-value">¥10,015.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 汇总 -->
+                    <div class="result-summary">
+                        <div class="summary-item">
+                            <div class="summary-label">💵 退还/补交</div>
+                            <div class="summary-value profit">+¥2,422.50</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">📊 资金差额</div>
+                            <div class="summary-value neutral">¥2,422.50</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">💸 总手续费</div>
+                            <div class="summary-value">¥77.50</div>
+                        </div>
+                    </div>
+
+                    <!-- 分段费率明细 -->
+                    <div class="fee-details" style="display: none;">
+                        <div class="fee-details-title">📋 卖出手续费明细</div>
+                        <div class="fee-detail-item">
+                            <span>第1段：5,000.00份 × 0.50%</span>
+                            <span class="fee-detail-fee">¥25.00</span>
+                        </div>
+                        <div class="fee-detail-item">
+                            <span>第2段：5,000.00份 × 0.75%</span>
+                            <span class="fee-detail-fee">¥37.50</span>
+                        </div>
+                    </div>
+
+                    <div class="result-actions">
+                        <button class="btn-action btn-save">💾 保存到交易记录</button>
+                        <button class="btn-action btn-reset">🔄 重新计算</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo interactions
+        const feeModeBtns = document.querySelectorAll('.fee-mode-btn');
+        feeModeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                feeModeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const mode = btn.dataset.mode;
+                document.getElementById('single-fee-area').style.display = mode === 'single' ? 'block' : 'none';
+                document.getElementById('tiered-fee-area').style.display = mode === 'tiered' ? 'block' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>
