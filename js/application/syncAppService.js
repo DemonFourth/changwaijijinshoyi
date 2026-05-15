@@ -348,7 +348,8 @@ const SyncAppService = {
             pendingChanges: localSnapshot.syncMeta && localSnapshot.syncMeta.pendingChanges || 0,
             cloudRevision: localSnapshot.syncMeta && localSnapshot.syncMeta.cloudRevision || 0
         });
-        const result = await adapter.push(localSnapshot.funds, localSnapshot.trades);
+        const pushSource = localSnapshot.syncMeta && localSnapshot.syncMeta.pendingSource;
+        const result = await adapter.push(localSnapshot.funds, localSnapshot.trades, { source: pushSource });
 
         SyncAppService._syncInProgress = false;
 

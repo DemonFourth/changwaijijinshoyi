@@ -236,11 +236,12 @@ const ImportPreviewHelper = {
             if (this._analysis?.normalized) {
                 const result = await window.ImportAppService.importData(this._analysis.normalized, { merge: true });
                 if (result.success) {
-                    Utils.showToast(`合并成功：${result.importedTrades}条交易记录`, 'success');
-                    this.hide();
-                    EventBus.emit(EventType.DATA_IMPORTED, { merge: true, data: this._analysis.normalized });
                     const firstFund = this._analysis.normalized?.funds?.[0];
                     const fundId = firstFund?.id || firstFund?.fundId;
+                    const data = this._analysis.normalized;
+                    Utils.showToast(`合并成功：${result.importedTrades}条交易记录`, 'success');
+                    this.hide();
+                    EventBus.emit(EventType.DATA_IMPORTED, { merge: true, data: data });
                     if (fundId) {
                         EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
                     }
@@ -254,11 +255,12 @@ const ImportPreviewHelper = {
             if (this._analysis?.normalized) {
                 const result = await window.ImportAppService.importData(this._analysis.normalized, { merge: false });
                 if (result.success) {
-                    Utils.showToast(`覆盖成功：${result.importedTrades}条交易记录`, 'success');
-                    this.hide();
-                    EventBus.emit(EventType.DATA_IMPORTED, { merge: false, data: this._analysis.normalized });
                     const firstFund = this._analysis.normalized?.funds?.[0];
                     const fundId = firstFund?.id || firstFund?.fundId;
+                    const data = this._analysis.normalized;
+                    Utils.showToast(`覆盖成功：${result.importedTrades}条交易记录`, 'success');
+                    this.hide();
+                    EventBus.emit(EventType.DATA_IMPORTED, { merge: false, data: data });
                     if (fundId) {
                         EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
                     }

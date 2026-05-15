@@ -85,20 +85,26 @@ const CloudflareD1SyncAdapter = {
         }
     },
 
-    async push(funds, trades) {
+    async push(funds, trades, options) {
         if (!CloudflareD1SyncAdapter.isConfigured()) {
             return { success: false, reason: 'not_configured' };
         }
 
         const syncMeta = window.LocalStorageAdapter.getSyncMeta();
 
+        const body = {
+            deviceId: syncMeta.deviceId,
+            baseRevision: syncMeta.cloudRevision,
+            funds: funds,
+            trades: trades
+        };
+
+        if (options && options.source) {
+            body.source = options.source;
+        }
+
         try {
-            const response = await CloudflareD1SyncAdapter._request('/push', 'POST', {
-                deviceId: syncMeta.deviceId,
-                baseRevision: syncMeta.cloudRevision,
-                funds: funds,
-                trades: trades
-            });
+            const response = await CloudflareD1SyncAdapter._request('/push', 'POST', body);
 
             if (response.success) {
                 window.LocalStorageAdapter.updateSyncMeta({

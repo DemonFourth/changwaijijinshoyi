@@ -403,34 +403,44 @@ const BatchTradeImportHelper = {
             return;
         }
 
+        const cleanTrades = trades.map(t => this._cleanUndefinedFields(t));
+
         const analysis = {
             success: true,
             summary: {
                 newFundsCount: 0,
                 existingFundsCount: 1,
-                newTradesCount: trades.length,
+                newTradesCount: cleanTrades.length,
                 duplicateTradesCount: 0,
                 importFundsCount: 1,
-                importTradesCount: trades.length,
+                importTradesCount: cleanTrades.length,
                 existingFundsCount2: 1,
                 existingTradesCount: TradeManager.getTradesByFund(this._fundId).length
             },
             fundsWithNewTrades: [{
                 fund: fund,
-                trades: trades,
-                tradeItems: trades.map(t => ({ trade: t, isNew: true })),
-                newTrades: trades,
+                trades: cleanTrades,
+                tradeItems: cleanTrades.map(t => ({ trade: t, isNew: true })),
+                newTrades: cleanTrades,
                 duplicateTrades: []
             }],
             allDuplicateFunds: [],
             normalized: {
                 funds: [fund],
-                trades: trades
+                trades: cleanTrades
             }
         };
 
         window.Modal.hide();
         window.ImportPreviewHelper.show(analysis);
+    },
+
+    _cleanUndefinedFields(obj) {
+        const clean = {};
+        Object.keys(obj).forEach(key => {
+            clean[key] = obj[key] === undefined ? null : obj[key];
+        });
+        return clean;
     }
 };
 

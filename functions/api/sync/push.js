@@ -26,12 +26,12 @@ export const onRequest = async (context) => {
         await ensureTables(env);
 
         const body = await request.json();
-        const { deviceId, baseRevision, funds, trades } = body;
+        const { deviceId, baseRevision, funds, trades, source } = body;
 
         // 乐观并发检查
         const current = await getSnapshot(env, 'default');
 
-        if (current.revision !== baseRevision) {
+        if (current.revision !== baseRevision && source !== 'import') {
             // 版本不一致，检测冲突
             const conflicts = detectConflicts(funds, current.funds);
             const tradeConflicts = detectConflicts(trades, current.trades);
