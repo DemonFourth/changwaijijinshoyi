@@ -46,6 +46,15 @@ const ImportPreviewHelper = {
     },
 
     hide() {
+        const container = document.getElementById('modal-container');
+        if (container) {
+            const modalEl = container.querySelector('.modal');
+            if (modalEl) {
+                const existingActions = modalEl.querySelector('.ip-actions');
+                if (existingActions) existingActions.remove();
+            }
+            container.classList.remove('modal-import-preview');
+        }
         const footer = document.getElementById('modal-footer');
         if (footer) {
             footer.style.display = '';
