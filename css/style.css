@@ -2060,9 +2060,17 @@ td.negative {
     grid-column: span 2;
 }
 
+.chart-detail-grid .chart-item-full {
+    grid-column: span 2;
+}
+
 @media (width <= 768px) {
     .chart-detail-grid {
         grid-template-columns: 1fr;
+    }
+
+    .chart-detail-grid .chart-item-full {
+        grid-column: span 1;
     }
 
     .chart-detail-grid .chart-item:last-child:nth-child(odd) {

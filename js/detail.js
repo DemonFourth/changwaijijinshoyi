@@ -413,18 +413,11 @@ const Detail = {
      */
     updateChart(fund, stats) {
         if (ChartManager.isEChartsAvailable()) {
-            // 持仓成本趋势图
-            const costTrendContainer = document.getElementById('chart-cost-trend');
-            if (costTrendContainer) {
+            // 持仓成本与份额组合图
+            const costShareContainer = document.getElementById('chart-cost-share');
+            if (costShareContainer) {
                 const trades = TradeManager.getTradesByFund(fund.id);
-                ChartManager.createChart('chart-cost-trend', ChartManager.buildCostTrendOption(fund, trades, stats));
-            }
-
-            // 持仓份额变化图
-            const shareContainer = document.getElementById('chart-share-change');
-            if (shareContainer) {
-                const trades = TradeManager.getTradesByFund(fund.id);
-                ChartManager.createChart('chart-share-change', ChartManager.buildShareChangeOption(trades, fund.netValue));
+                ChartManager.createChart('chart-cost-share', ChartManager.buildCostAndShareOption(fund, trades, stats));
             }
 
             // 资金流动图
@@ -443,7 +436,7 @@ const Detail = {
 
         } else {
             // Fallback: ECharts不可用时显示空状态提示
-            const chartIds = ['chart-cost-trend', 'chart-share-change', 'chart-fund-flow', 'chart-cycle-compare'];
+            const chartIds = ['chart-cost-share', 'chart-fund-flow', 'chart-cycle-compare'];
             chartIds.forEach(function(id) {
                 const container = document.getElementById(id);
                 if (container) container.innerHTML = '<p style="text-align: center; color: var(--color-text-tertiary); padding: 40px;">ECharts未加载</p>';
@@ -687,7 +680,7 @@ const Detail = {
      */
     bindPaginationEvents() {
         const paginationContainer = document.getElementById('trade-pagination-container');
-        const paginator = CycleTradeDisplay._groupedPaginator;
+        const paginator = CycleTradeDisplay._groupedPaginator || Detail._tradePaginator;
         if (!paginationContainer || !paginator) return;
 
         // 页码按钮

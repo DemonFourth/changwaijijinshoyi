@@ -1075,6 +1075,359 @@ const ChartManager = {
         };
     },
 
+    buildCostAndShareOption(fund, trades, stats) {
+        const themeConfig = ChartManager.getThemeConfig();
+
+        const allTrades = (trades || []).slice().sort(function(a, b) {
+            return new Date(a.date) - new Date(b.date);
+        });
+
+        if (allTrades.length === 0) {
+            return ChartManager.buildEmptyOption('暂无交易数据');
+        }
+
+        let cycles = CalculatorV2.identifyHoldingCycles(allTrades);
+        if (!cycles || cycles.length === 0) {
+            cycles = [{
+                id: 1,
+                status: 'active',
+                startDate: allTrades[0].date,
+                endDate: null,
+                trades: allTrades
+            }];
+        }
+
+        const allDates = [];
+        const detailByDate = {};
+        let minVal = Infinity;
+        let maxVal = -Infinity;
+
+        const cycleDataList = [];
+
+        for (let c = 0; c < cycles.length; c++) {
+            const cycle = cycles[c];
+            const cycleTrades = (cycle.trades || []).slice().sort(function(a, b) {
+                return new Date(a.date) - new Date(b.date);
+            });
+
+            if (cycleTrades.length === 0) continue;
+
+            let cumulativeShares = 0;
+            let cumulativeCost = 0;
+            const cycleDates = [];
+            const cycleNetValues = [];
+            const cycleCostPrices = [];
+            const cycleShareValues = [];
+            const cycleSellValues = [];
+
+            for (let i = 0; i < cycleTrades.length; i++) {
+                const trade = cycleTrades[i];
+                const shares = parseFloat(trade.shares) || 0;
+                const amount = parseFloat(trade.amount) || 0;
+                const netValue = parseFloat(trade.netValue) || 0;
+                const tradeType = trade.type;
+                const isDividendReinvest = tradeType === 'dividend' && trade.dividendMode === 'reinvest';
+
+                if (tradeType === 'buy') {
+                    cumulativeShares += shares;
+                    cumulativeCost += amount;
+                } else if (tradeType === 'sell') {
+                    const prevCost = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                    cumulativeShares -= shares;
+                    cumulativeCost -= shares * prevCost;
+                } else if (isDividendReinvest) {
+                    const reinvestShares = parseFloat(trade.reinvestShares) || shares;
+                    cumulativeShares += reinvestShares;
+                }
+
+                const costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                const recordDate = trade.date;
+                const recordNetValue = (tradeType === 'buy' || isDividendReinvest)
+                    ? (isDividendReinvest ? (parseFloat(trade.netValue) || 0) : netValue) : null;
+
+                const sellNetValue = tradeType === 'sell' ? (parseFloat(trade.netValue) || 0) : null;
+
+                cycleDates.push(recordDate);
+                allDates.push(recordDate);
+                cycleNetValues.push(recordNetValue);
+                cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
+                cycleShareValues.push(parseFloat(cumulativeShares.toFixed(2)));
+                cycleSellValues.push(sellNetValue);
+
+                if (recordNetValue !== null) {
+                    if (recordNetValue < minVal) minVal = recordNetValue;
+                    if (recordNetValue > maxVal) maxVal = recordNetValue;
+                }
+                if (sellNetValue !== null) {
+                    if (sellNetValue < minVal) minVal = sellNetValue;
+                    if (sellNetValue > maxVal) maxVal = sellNetValue;
+                }
+                if (costPrice < minVal) minVal = costPrice;
+                if (costPrice > maxVal) maxVal = costPrice;
+
+                detailByDate[recordDate] = {
+                    shares: parseFloat(cumulativeShares.toFixed(2)),
+                    netValue: recordNetValue,
+                    sellNetValue: sellNetValue,
+                    costPrice: parseFloat(costPrice.toFixed(4)),
+                    cycleId: cycle.id,
+                    tradeType: tradeType,
+                    isDividendReinvest: isDividendReinvest
+                };
+            }
+
+            cycleDataList.push({
+                cycleId: cycle.id,
+                dates: cycleDates,
+                netValues: cycleNetValues,
+                costPrices: cycleCostPrices,
+                shareValues: cycleShareValues,
+                sellValues: cycleSellValues,
+            });
+        }
+
+        allDates.sort(function(a, b) {
+            return new Date(a) - new Date(b);
+        });
+        const uniqueDates = [];
+        const seen = {};
+        for (let i = 0; i < allDates.length; i++) {
+            if (!seen[allDates[i]]) {
+                seen[allDates[i]] = true;
+                uniqueDates.push(allDates[i]);
+            }
+        }
+
+        const latestNetValue = parseFloat(fund.netValue) || parseFloat(fund.estimatedValue) || 0;
+        if (latestNetValue > 0) {
+            if (latestNetValue < minVal) minVal = latestNetValue;
+            if (latestNetValue > maxVal) maxVal = latestNetValue;
+        }
+
+        const valueRange = maxVal - minVal;
+        const yAxisMin = Math.max(0, minVal - valueRange * 0.1);
+        const yAxisMax = Math.max(maxVal + valueRange * 0.1, 0.01);
+
+        const colors = [themeConfig.itemColor[0], '#ed8936', '#9f7aea', '#38b2ac', '#f56565', '#66d9ef'];
+        const series = [];
+        const legendData = [];
+        var hasBuyNav = false;
+        var hasCost = false;
+        var hasSell = false;
+        const barData = new Array(uniqueDates.length).fill(null);
+
+        for (let ci = 0; ci < cycleDataList.length; ci++) {
+            const cycleData = cycleDataList[ci];
+            const cycleColor = colors[ci % colors.length];
+
+            const alignedNetValues = [];
+            const alignedCostPrices = [];
+            const alignedShares = [];
+            const alignedSellValues = [];
+            let dateIdx = 0;
+
+            for (let di = 0; di < uniqueDates.length; di++) {
+                if (dateIdx < cycleData.dates.length && uniqueDates[di] === cycleData.dates[dateIdx]) {
+                    alignedNetValues.push(cycleData.netValues[dateIdx]);
+                    alignedCostPrices.push(cycleData.costPrices[dateIdx]);
+                    alignedShares.push(cycleData.shareValues[dateIdx]);
+                    alignedSellValues.push(cycleData.sellValues[dateIdx]);
+                    dateIdx++;
+                } else {
+                    alignedNetValues.push(null);
+                    alignedCostPrices.push(null);
+                    alignedShares.push(null);
+                    alignedSellValues.push(null);
+                }
+            }
+
+            var hasNetValue = false;
+            for (let ni = 0; ni < alignedNetValues.length; ni++) {
+                if (alignedNetValues[ni] !== null) { hasNetValue = true; break; }
+            }
+            if (hasNetValue) {
+                series.push({
+                    name: ci === 0 ? '买入净值' : '买入净值_' + cycleData.cycleId,
+                    type: 'line',
+                    yAxisIndex: 0,
+                    data: alignedNetValues,
+                    lineStyle: { color: themeConfig.itemColor[1], width: 2 },
+                    itemStyle: { color: themeConfig.itemColor[1] },
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 8,
+                    connectNulls: false
+                });
+                if (!hasBuyNav) {
+                    legendData.push('买入净值');
+                    hasBuyNav = true;
+                }
+            }
+
+            var hasCostPrice = false;
+            for (let ci2 = 0; ci2 < alignedCostPrices.length; ci2++) {
+                if (alignedCostPrices[ci2] !== null) { hasCostPrice = true; break; }
+            }
+            if (hasCostPrice) {
+                series.push({
+                    name: ci === 0 ? '持仓成本' : '持仓成本_' + cycleData.cycleId,
+                    type: 'line',
+                    yAxisIndex: 0,
+                    data: alignedCostPrices,
+                    lineStyle: { color: cycleColor, width: 2 },
+                    itemStyle: { color: cycleColor },
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 6,
+                    connectNulls: false
+                });
+                if (!hasCost) {
+                    legendData.push('持仓成本');
+                    hasCost = true;
+                }
+            }
+
+            for (let si = 0; si < alignedShares.length; si++) {
+                if (alignedShares[si] !== null) {
+                    barData[si] = { value: alignedShares[si], itemStyle: { color: cycleColor, opacity: 0.7 } };
+                }
+            }
+
+            var hasSellData = false;
+            for (let si2 = 0; si2 < alignedSellValues.length; si2++) {
+                if (alignedSellValues[si2] !== null) { hasSellData = true; break; }
+            }
+            if (hasSellData) {
+                series.push({
+                    name: ci === 0 ? '卖出净值' : '卖出净值_' + cycleData.cycleId,
+                    type: 'line',
+                    yAxisIndex: 0,
+                    data: alignedSellValues,
+                    lineStyle: { color: '#e53e3e', width: 2, type: 'dashed' },
+                    itemStyle: { color: '#e53e3e' },
+                    smooth: false,
+                    symbol: 'diamond',
+                    symbolSize: 10,
+                    connectNulls: false
+                });
+                if (!hasSell) {
+                    legendData.push('卖出净值');
+                    hasSell = true;
+                }
+            }
+        }
+
+        var hasAnyBar = false;
+        for (let bi = 0; bi < barData.length; bi++) {
+            if (barData[bi] !== null) { hasAnyBar = true; break; }
+        }
+        if (hasAnyBar) {
+            series.push({
+                name: '持仓份额',
+                type: 'bar',
+                yAxisIndex: 1,
+                data: barData,
+                barWidth: '50%'
+            });
+            legendData.push('持仓份额');
+        }
+
+        if (latestNetValue > 0) {
+            const latestLine = [];
+            for (let j = 0; j < uniqueDates.length; j++) {
+                latestLine.push(latestNetValue);
+            }
+            series.push({
+                name: '最新净值',
+                type: 'line',
+                yAxisIndex: 0,
+                data: latestLine,
+                lineStyle: { color: themeConfig.profitColor, width: 2, type: 'dashed' },
+                itemStyle: { color: themeConfig.profitColor },
+                symbol: 'none'
+            });
+            legendData.push('最新净值');
+        }
+
+        return {
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    const validParams = params.filter(function(p) { return p.value !== null; });
+                    if (validParams.length === 0) return '';
+                    const date = validParams[0].axisValue;
+                    const detail = detailByDate[date];
+                    let result = date + '<br/>';
+                    if (detail) {
+                        result += '持仓周期: 第' + detail.cycleId + '轮<br/>';
+                        if (detail.tradeType === 'sell') {
+                            result += '卖出净值: ' + (detail.sellNetValue !== null ? detail.sellNetValue.toFixed(4) : '-') + '<br/>';
+                        } else if (detail.tradeType === 'buy') {
+                            result += '买入净值: ' + (detail.netValue !== null ? detail.netValue.toFixed(4) : '-') + '<br/>';
+                        } else if (detail.isDividendReinvest) {
+                            result += '分红再投资净值: ' + (detail.netValue !== null ? detail.netValue.toFixed(4) : '-') + '<br/>';
+                        }
+                        result += '持仓成本价: ' + detail.costPrice.toFixed(4) + '<br/>';
+                        result += '持仓份额: ' + detail.shares.toFixed(2) + '份';
+                    }
+                    return result;
+                }
+            },
+            legend: {
+                data: legendData,
+                textStyle: { color: themeConfig.textColor },
+                top: 10
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                top: 60,
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: uniqueDates,
+                axisLabel: {
+                    color: themeConfig.textColor,
+                    rotate: 30
+                },
+                axisLine: {
+                    lineStyle: { color: themeConfig.borderColor }
+                }
+            },
+            yAxis: [
+                {
+                    type: 'value',
+                    name: '净值/成本价',
+                    nameTextStyle: { color: themeConfig.textColor },
+                    min: yAxisMin,
+                    max: yAxisMax,
+                    axisLabel: { color: themeConfig.textColor },
+                    axisLine: {
+                        lineStyle: { color: themeConfig.borderColor }
+                    },
+                    splitLine: {
+                        lineStyle: { color: themeConfig.borderColor, type: 'dashed' }
+                    }
+                },
+                {
+                    type: 'value',
+                    name: '份额',
+                    nameTextStyle: { color: themeConfig.textColor },
+                    axisLabel: { color: themeConfig.textColor },
+                    axisLine: {
+                        lineStyle: { color: themeConfig.borderColor }
+                    },
+                    splitLine: {
+                        show: false
+                    }
+                }
+            ],
+            series: series
+        };
+    },
+
     buildEmptyOption(message) {
         return {
             title: {
