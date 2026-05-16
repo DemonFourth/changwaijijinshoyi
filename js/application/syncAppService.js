@@ -48,6 +48,7 @@ const SyncAppService = {
             pendingChanges: 0,
             lastError: null
         });
+        SyncAppService._emitSyncApplied({ mode: 'push', hasChanges: true });
     },
 
     async init(config = {}) {
