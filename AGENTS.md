@@ -415,6 +415,49 @@ _scheduleRetry(reason) {
 }
 ```
 
+### 同步推送常见问题
+
+#### D1_TYPE_ERROR: Type 'undefined' not supported for value 'undefined'
+
+**现象**：PUSH 请求服务端返回 500，错误信息 `D1_TYPE_ERROR: Type 'undefined' not supported for value 'undefined'`。push 重试 3 次后停止，同步卡在 `error` 状态。
+
+**根因链**：
+1. 批量导入的交易记录在创建时缺少 `id` 字段（`batchTradeImportHelper._parseText` 未生成 `id`）
+2. `StorageSchema.createTradeEntity` 执行 `id: trade.id` → `undefined`；`syncId: trade.syncId || trade.id` → `undefined`
+3. `JSON.stringify` 丢弃 `undefined` 键 → localStorage 中存储的交易缺少 `id`/`syncId`
+4. 同步推送时服务端 `appendChangeLogs` 执行 `entity.syncId` → 传入 D1 bind 参数 → `D1_TYPE_ERROR`
+
+**修复方案**（三处缺一不可）：
+
+| # | 文件 | 修改 | 作用 |
+|---|------|------|------|
+| 1 | `functions/_shared/syncRepository.js:118` | `entity.syncId` → `entity.syncId \|\| null` | **服务端防御** — 阻止 `undefined` 进入 D1 bind，已损坏数据也能推送 |
+| 2 | `js/storage/schema.js:65` | `id: trade.id` → `id: trade.id \|\| Utils.generateId()` | **持久化层修复** — `createTradeEntity` 时回退生成 ID |
+| 3 | `js/modal/batchTradeImportHelper.js:212` | 新增 `id: Utils.generateId()` | **源头修复** — 导入解析时直接生成 ID |
+
+**排查步骤**：
+```javascript
+// 1. 检查 localStroage 中是否有缺失 id 的交易
+const snapshot = JSON.parse(localStorage.getItem('fund_calculator_snapshot'));
+snapshot.trades.filter(t => !t.id).length
+
+// 2. 检查 syncId 是否完好
+snapshot.trades.filter(t => !t.syncId).length
+
+// 3. 手动修复（必要时代码执行）
+snapshot.trades = snapshot.trades.map(t => ({
+    ...t,
+    id: t.id || 'fix_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9),
+    syncId: t.syncId || t.id
+}));
+localStorage.setItem('fund_calculator_snapshot', JSON.stringify(snapshot));
+```
+
+**注意事项**：
+- `JSON.stringify` 会静默丢弃对象中的 `undefined` 值（不报错），这是 root cause 难以追踪的原因
+- 即使客户端修复了新导入代码路径，localStorage 中已有的损坏交易仍需通过修复 1（服务端防御）来兼容
+- D1 的 `bind()` 方法对 `undefined` 敏感，但对 `null` 友好，因此 `|| null` 是可靠的安全垫
+
 ### Public API
 
 | 接口 | 方法 | 说明 |
