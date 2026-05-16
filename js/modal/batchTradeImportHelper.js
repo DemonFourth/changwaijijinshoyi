@@ -209,6 +209,7 @@ const BatchTradeImportHelper = {
 
             const typeInfo = this.TYPE_MAP[typeCode];
             const trade = {
+                id: Utils.generateId(),
                 fundId: this._fundId,
                 date: dateStr,
                 type: typeInfo.type,

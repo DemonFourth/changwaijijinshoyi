@@ -115,7 +115,7 @@ export async function appendChangeLogs(env, revision, entities, entityType, oper
             revision,
             userId,
             entityType,
-            entity.syncId,
+            entity.syncId || null,
             operation,
             JSON.stringify(entity)
         ).run();

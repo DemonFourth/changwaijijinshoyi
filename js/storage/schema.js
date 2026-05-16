@@ -62,7 +62,7 @@ const StorageSchema = {
 
         return {
             ...trade,
-            id: trade.id,
+            id: trade.id || (typeof Utils !== 'undefined' ? Utils.generateId() : 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9)),
             fundId: trade.fundId,
             date: trade.date,
             type: trade.type,
