@@ -1215,7 +1215,6 @@ td.negative {
     padding: var(--spacing-lg);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
-    margin-bottom: var(--spacing-md);
 }
 
 .top5-board h3 {
@@ -1283,6 +1282,7 @@ td.negative {
     font-size: var(--font-size-sm);
     font-weight: 600;
     font-family: var(--font-family-mono);
+    flex-shrink: 0;
 }
 
 .top5-rate.positive {
@@ -2576,11 +2576,18 @@ td.negative {
     background: var(--color-bg-hover);
 }
 
-/* 卡片视图网格 */
+/* 卡片视图堆叠（分组上下排列） */
 .fund-list.card-view {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: 1fr;
     gap: var(--spacing-md);
+}
+
+/* 每个分组内卡片两列 */
+.fund-list.card-view .fund-group-body {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
 }
 
 /* 持仓分组 */

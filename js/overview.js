@@ -575,7 +575,7 @@ const Overview = {
             const colorClass = item.profitRate >= 0 ? 'positive' : 'negative';
             html += `<div class="top5-item" data-fund-id="${item.fund.id}">`;
             html += `<span class="top5-rank">${index + 1}</span>`;
-            html += `<span class="top5-name">${item.fund.name}</span>`;
+            html += `<span class="top5-name" title="${item.fund.name}">${item.fund.name}</span>`;
             html += `<span class="top5-rate ${colorClass}">${item.profitRate.toFixed(2)}%</span>`;
             html += '</div>';
         });
@@ -585,17 +585,34 @@ const Overview = {
     },
 
     /**
-     * 更新Top5盈亏榜单
+     * 更新Top5盈亏榜单（持仓中/已清仓各两组）
      */
     updateTop5() {
         const funds = FundManager.getAllFunds();
         const container = document.querySelector('.top5-container');
         if (!container) return;
 
-        const { profitTop5, lossTop5 } = Overview.calculateTop5(funds);
+        // 拆分持仓中与已清仓
+        const holdingFunds = [];
+        const clearedFunds = [];
 
-        let html = Overview.renderTop5Board('盈利 Top5', profitTop5, 'profit');
-        html += Overview.renderTop5Board('亏损 Top5', lossTop5, 'loss');
+        funds.forEach(fund => {
+            const stats = FundManager.getFundStats(fund.id);
+            const shares = stats ? (stats.summary.currentHolding.shares || 0) : 0;
+            if (Utils.isPositive(shares)) {
+                holdingFunds.push(fund);
+            } else {
+                clearedFunds.push(fund);
+            }
+        });
+
+        const holdingTop5 = Overview.calculateTop5(holdingFunds);
+        const clearedTop5 = Overview.calculateTop5(clearedFunds);
+
+        let html = Overview.renderTop5Board('持仓盈利 Top5', holdingTop5.profitTop5, 'profit');
+        html += Overview.renderTop5Board('持仓亏损 Top5', holdingTop5.lossTop5, 'loss');
+        html += Overview.renderTop5Board('已清仓盈利 Top5', clearedTop5.profitTop5, 'profit');
+        html += Overview.renderTop5Board('已清仓亏损 Top5', clearedTop5.lossTop5, 'loss');
         container.innerHTML = html;
 
         // 绑定点击事件
@@ -611,7 +628,13 @@ const Overview = {
      * 更新汇总页图表
      */
     updateChart() {
-        const funds = FundManager.getAllFunds();
+        const allFunds = FundManager.getAllFunds();
+        // 只显示持仓中的基金
+        const funds = allFunds.filter(function(fund) {
+            const stats = FundManager.getFundStats(fund.id);
+            const shares = stats ? (stats.summary.currentHolding.shares || 0) : 0;
+            return Utils.isPositive(shares);
+        });
 
         if (ChartManager.isEChartsAvailable()) {
             const container = document.getElementById('chart-profit-trend');
