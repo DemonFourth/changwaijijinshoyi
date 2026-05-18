@@ -140,6 +140,19 @@ const Detail = {
             });
         }
 
+        // 持仓成本图表周期筛选（使用事件委托，因为页面切换后元素可能未重新绑定）
+        const detailPage = document.getElementById('page-detail');
+        if (detailPage) {
+            detailPage.addEventListener('change', (e) => {
+                if (e.target && e.target.id === 'filter-cost-share-cycle') {
+                    const fund = FundManager.getFund(Detail.currentFundId);
+                    if (fund) {
+                        Detail.updateChart(fund, FundManager.getFundStats(fund.id));
+                    }
+                }
+            });
+        }
+
         // 展示模式切换按钮（事件委托）
         const filterBar = document.querySelector('.trade-filter-bar');
         if (filterBar) {
@@ -413,17 +426,42 @@ const Detail = {
      */
     updateChart(fund, stats) {
         if (ChartManager.isEChartsAvailable()) {
+            const trades = TradeManager.getTradesByFund(fund.id);
+            const cycles = CalculatorV2.identifyHoldingCycles(trades);
+            const filterContainer = document.getElementById('cost-share-cycle-filter');
+            const filterSelect = document.getElementById('filter-cost-share-cycle');
+
+            if (cycles.length > 1) {
+                filterContainer.style.display = 'flex';
+                const currentValue = filterSelect.value;
+                filterSelect.innerHTML = '<option value="">全部周期</option>';
+                cycles.forEach(function(cycle) {
+                    const statusText = cycle.status === 'closed' ? '已结束' : '进行中';
+                    const option = document.createElement('option');
+                    option.value = cycle.id;
+                    option.textContent = '第' + cycle.id + '轮 (' + statusText + ')';
+                    filterSelect.appendChild(option);
+                });
+                if (currentValue && filterSelect.querySelector('option[value="' + currentValue + '"]')) {
+                    filterSelect.value = currentValue;
+                } else {
+                    filterSelect.value = '';
+                }
+            } else {
+                filterContainer.style.display = 'none';
+            }
+
+            const selectedCycleId = filterSelect.value ? parseInt(filterSelect.value) : null;
+
             // 持仓成本与份额组合图
             const costShareContainer = document.getElementById('chart-cost-share');
             if (costShareContainer) {
-                const trades = TradeManager.getTradesByFund(fund.id);
-                ChartManager.createChart('chart-cost-share', ChartManager.buildCostAndShareOption(fund, trades, stats));
+                ChartManager.createChart('chart-cost-share', ChartManager.buildCostAndShareOption(fund, trades, stats, { selectedCycleId: selectedCycleId }));
             }
 
             // 资金流动图
             const fundFlowContainer = document.getElementById('chart-fund-flow');
             if (fundFlowContainer) {
-                const trades = TradeManager.getTradesByFund(fund.id);
                 ChartManager.createChart('chart-fund-flow', ChartManager.buildFundFlowOption(trades, fund.netValue));
             }
 
@@ -464,15 +502,19 @@ const Detail = {
             const statusColor = cycle.status === 'closed' ? '#4caf50' : '#ff9800';
 
             html += `
-                <div class="cycle-item" style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 8px; border-left: 4px solid ${statusColor};">
+                <div class="cycle-item" style="margin-bottom: 15px; padding: 15px; background: var(--color-bg-secondary); border-radius: 8px; border-left: 4px solid ${statusColor};">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <span style="font-weight: bold; color: ${statusColor};">周期${cycle.id} (${statusText})</span>
-                        <span style="color: #666; font-size: 14px;">${cycle.startDate} ~ ${cycle.endDate || '至今'}</span>
+                        <span style="color: var(--color-text-tertiary); font-size: 14px;">${cycle.startDate} ~ ${cycle.endDate || '至今'}</span>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 14px;">
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; font-size: 14px;">
                         <div>
-                            <span style="color: #666;">投入：</span>
+                            <span style="color: var(--color-text-tertiary);">投入：</span>
                             <span style="font-weight: bold;">¥${cycle.totalInvest.toFixed(2)}</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--color-text-tertiary);">卖出：</span>
+                            <span style="font-weight: bold;">¥${(cycle.totalSellAmount || 0).toFixed(2)}</span>
                         </div>
                         <div>
                             <span style="color: var(--color-text-tertiary);">收益：</span>
