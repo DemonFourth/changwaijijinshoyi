@@ -306,7 +306,7 @@ const SyncAppService = {
             window.LocalStorageAdapter.saveSnapshot(newSnapshot);
             SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
             SyncAppService._syncInProgress = false;
-            return { success: true, reason: 'filled_from_cloud' };
+            return { success: true, reason: 'filled_from_cloud', pulledChanges: { fundsAdded: cloudFunds.length, fundsUpdated: 0, tradesAdded: cloudTrades.length, tradesUpdated: 0 } };
         }
 
         // 本地有数据，云端为空（且 revision 有更新）→ 云端被清空了，用空数据覆盖本地
@@ -384,7 +384,7 @@ const SyncAppService = {
         adapter.markSyncComplete();
 
         SyncAppService._syncInProgress = false;
-        return { success: true };
+        return { success: true, pulledChanges: mergeResult.pulledChanges };
     },
 
     async _executePush() {
@@ -470,6 +470,12 @@ const SyncAppService = {
             hasChanges,
             hasConflicts: conflicts.length > 0,
             conflicts,
+            pulledChanges: {
+                fundsAdded: mergedFunds.addedCount || 0,
+                fundsUpdated: mergedFunds.updatedCount || 0,
+                tradesAdded: mergedTrades.addedCount || 0,
+                tradesUpdated: mergedTrades.updatedCount || 0
+            },
             snapshot: {
                 ...localSnapshot,
                 funds: mergedFunds.result,
@@ -495,6 +501,8 @@ const SyncAppService = {
 
         const result = [];
         let hasChanges = false;
+        let addedCount = 0;
+        let updatedCount = 0;
         const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
         for (const [syncId, localEntity] of localMap) {
@@ -525,6 +533,7 @@ const SyncAppService = {
             } else if (cloudModifiedAfterSync) {
                 result.push(cloudEntity);
                 hasChanges = true;
+                updatedCount++;
             } else if (lastSyncedTime === 0 && localTime > thirtyDaysAgo && cloudTime > thirtyDaysAgo && localTime !== cloudTime) {
                 if (this._isEntityDataChanged(localEntity, cloudEntity)) {
                     conflicts.push({
@@ -545,10 +554,11 @@ const SyncAppService = {
             if (!localMap.has(syncId)) {
                 result.push(cloudEntity);
                 hasChanges = true;
+                addedCount++;
             }
         }
 
-        return { result: result, hasChanges: hasChanges };
+        return { result: result, hasChanges: hasChanges, addedCount: addedCount, updatedCount: updatedCount };
     },
 
     async resolveConflicts(conflicts, resolutions) {

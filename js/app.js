@@ -119,6 +119,20 @@ const App = {
                 return syncResult;
             }
 
+            if (syncResult && syncResult.pulledChanges) {
+                const pc = syncResult.pulledChanges;
+                const parts = [];
+                if ((pc.fundsAdded || 0) > 0) parts.push('新增' + pc.fundsAdded + '条基金');
+                if ((pc.tradesAdded || 0) > 0) parts.push('新增' + pc.tradesAdded + '条交易');
+                if ((pc.fundsUpdated || 0) > 0) parts.push('更新' + pc.fundsUpdated + '条基金');
+                if ((pc.tradesUpdated || 0) > 0) parts.push('更新' + pc.tradesUpdated + '条交易');
+                if (parts.length > 0) {
+                    window.Utils.showToast('从云端同步：' + parts.join('、'), 'success');
+                }
+            } else if (syncResult && syncResult.reason === 'cleared_by_cloud') {
+                window.Utils.showToast('从云端同步：已清空全部数据', 'info');
+            }
+
             window.Overview.refresh();
 
             const funds = window.FundManager.getAllFunds();
