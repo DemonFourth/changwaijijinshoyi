@@ -10,6 +10,23 @@ const SyncAppService = {
     _firstSyncCloudData: null,
     _firstSyncCloudRevision: 0,
 
+    _FUND_SYNC_SKIP_FIELDS: new Set([
+        'netValue', 'netValueDate', 'estimatedValue', 'estimatedGrowth',
+        'updateTime', 'nameSource', 'nameUpdateTime'
+    ]),
+
+    _sanitizeFundsForSync(funds) {
+        return (funds || []).map(function (fund) {
+            const sanitized = {};
+            for (const key of Object.keys(fund)) {
+                if (!SyncAppService._FUND_SYNC_SKIP_FIELDS.has(key)) {
+                    sanitized[key] = fund[key];
+                }
+            }
+            return sanitized;
+        });
+    },
+
     _getNowIso() {
         return new Date().toISOString();
     },
@@ -401,7 +418,8 @@ const SyncAppService = {
             cloudRevision: localSnapshot.syncMeta && localSnapshot.syncMeta.cloudRevision || 0
         });
         const pushSource = localSnapshot.syncMeta && localSnapshot.syncMeta.pendingSource;
-        const result = await adapter.push(localSnapshot.funds, localSnapshot.trades, { source: pushSource });
+        const sanitizedFunds = SyncAppService._sanitizeFundsForSync(localSnapshot.funds);
+        const result = await adapter.push(sanitizedFunds, localSnapshot.trades, { source: pushSource });
 
         SyncAppService._syncInProgress = false;
 
@@ -461,7 +479,8 @@ const SyncAppService = {
     },
 
     _isEntityDataChanged(local, cloud) {
-        const skipKeys = new Set(['updatedAt', 'createdAt', 'deletedAt', 'lastSyncedAt', 'updateTime', 'createTime', 'deleteTime', 'syncId', 'id']);
+        const skipKeys = new Set(['updatedAt', 'createdAt', 'deletedAt', 'lastSyncedAt', 'updateTime', 'createTime', 'deleteTime', 'syncId', 'id',
+            'netValue', 'netValueDate', 'estimatedValue', 'estimatedGrowth', 'nameSource', 'nameUpdateTime']);
         const keys = new Set([...Object.keys(local), ...Object.keys(cloud)]);
         for (const key of keys) {
             if (skipKeys.has(key)) continue;
@@ -582,7 +601,8 @@ const SyncAppService = {
 
         window.LocalStorageAdapter.updateSyncMeta({ cloudRevision: 0 });
 
-        return adapter.push(snapshot.funds, snapshot.trades);
+        const sanitizedFunds = SyncAppService._sanitizeFundsForSync(snapshot.funds);
+        return adapter.push(sanitizedFunds, snapshot.trades);
     },
 
     async forcePullCloud() {

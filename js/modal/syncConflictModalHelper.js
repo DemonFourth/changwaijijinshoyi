@@ -1,37 +1,60 @@
 const SyncConflictModalHelper = {
-    show(conflicts, onResolve) {
+    FUND_FIELDS: [
+        { key: 'name', label: '名称', fmt: function (v) { return v || '-'; } },
+        { key: 'code', label: '代码', fmt: function (v) { return v || '-'; } },
+        { key: 'feeTiers', label: '费率配置', fmt: function (v) { return SyncConflictModalHelper._formatFeeTiers(v); } },
+        { key: 'remark', label: '备注', fmt: function (v) { return v || '-'; } }
+    ],
+
+    TRADE_FIELDS: [
+        { key: 'date', label: '日期', fmt: function (v) { return v || '-'; } },
+        { key: 'type', label: '类型', fmt: function (v) {
+            const map = { buy: '\u4e70\u5165', sell: '\u5356\u51fa', dividend: '\u5206\u7ea2' };
+            return map[v] || v || '-';
+        } },
+        { key: 'shares', label: '\u4efd\u989d', fmt: function (v) { return v !== null && v !== undefined ? v : '-'; } },
+        { key: 'amount', label: '\u91d1\u989d', fmt: function (v) { return v !== null && v !== undefined ? v : '-'; } },
+        { key: 'fee', label: '\u624b\u7eed\u8d39', fmt: function (v) { return v !== null && v !== undefined ? v : '-'; } },
+        { key: 'dividendMode', label: '分红方式', fmt: function (v) {
+            if (v === 'reinvest') return '红利再投';
+            if (v === 'cash') return '现金分红';
+            return '-';
+        } },
+        { key: 'remark', label: '备注', fmt: function (v) { return v || '-'; } }
+    ],
+
+    show: function (conflicts, onResolve) {
         const container = document.getElementById('modal-container');
         const title = document.getElementById('modal-title');
         const body = document.getElementById('modal-body');
         const footer = document.getElementById('modal-footer');
 
         title.textContent = '同步冲突';
-        body.innerHTML = `
-            <p>检测到 ${conflicts.length} 个冲突，请选择保留的版本：</p>
-            <div class="conflict-list">
-                ${conflicts.map((conflict, index) => this._renderConflictItem(conflict, index)).join('')}
-            </div>
-        `;
-        footer.innerHTML = `
-            <button class="btn btn-secondary" id="btn-conflict-use-local">全部使用本地版本</button>
-            <button class="btn btn-secondary" id="btn-conflict-use-cloud">全部使用云端版本</button>
-            <button class="btn btn-primary" id="btn-conflict-apply">应用选择</button>
-        `;
+        body.innerHTML = '\
+            <div class="sync-conflict-info">&#9888; 检测到 ' + conflicts.length + ' 个冲突，点击展开查看详情：</div>\
+            <div class="conflict-list">\
+                ' + conflicts.map(function (conflict, index) {
+            return SyncConflictModalHelper._renderConflictItem(conflict, index);
+        }).join('') + '\
+            </div>\
+        ';
+        footer.innerHTML = '\
+            <button class="btn btn-secondary" id="btn-conflict-use-local">全部使用本地版本</button>\
+            <button class="btn btn-secondary" id="btn-conflict-use-cloud">全部使用云端版本</button>\
+            <button class="btn btn-primary" id="btn-conflict-apply">应用选择</button>\
+        ';
 
         container.classList.remove('hidden');
         container.classList.add('modal-sync-conflict');
 
-        this._bindEvents(conflicts, onResolve);
+        SyncConflictModalHelper._bindEvents(conflicts, onResolve);
     },
 
-    _getDiffFields(entityType, local, cloud) {
+    _getDiffFields: function (entityType, local, cloud) {
         const diffFields = new Set();
         if (entityType === 'fund') {
             if (local.name !== cloud.name) diffFields.add('name');
             if (local.code !== cloud.code) diffFields.add('code');
-            if (local.netValue !== cloud.netValue) diffFields.add('netValue');
-            if (local.estimatedValue !== cloud.estimatedValue) diffFields.add('estimatedValue');
-            if (local.netValueDate !== cloud.netValueDate) diffFields.add('netValueDate');
             if (local.remark !== cloud.remark) diffFields.add('remark');
             if (JSON.stringify(local.feeTiers) !== JSON.stringify(cloud.feeTiers)) diffFields.add('feeTiers');
         } else {
@@ -47,125 +70,150 @@ const SyncConflictModalHelper = {
         return diffFields;
     },
 
-    _formatFieldLabel(field, value, isDiff) {
-        const label = isDiff ? `<span class="diff-highlight">${field}</span>` : field;
-        return `<div class="detail-row">${label}: ${value}</div>`;
-    },
-
-    _renderConflictItem(conflict, index) {
+    _renderConflictItem: function (conflict, index) {
         const entityTypeLabel = conflict.entityType === 'fund' ? '基金' : '交易';
         const localVersion = conflict.local;
         const cloudVersion = conflict.cloud;
-        const diffFields = this._getDiffFields(conflict.entityType, localVersion, cloudVersion);
+        const diffFields = SyncConflictModalHelper._getDiffFields(conflict.entityType, localVersion, cloudVersion);
+        const diffCount = diffFields.size;
+        let titleText = localVersion.name || localVersion.date || '-';
+        if (localVersion.code) titleText += ' (' + localVersion.code + ')';
 
-        const hasDiff = diffFields.size > 0;
-        const lastSyncedAt = localVersion.lastSyncedAt || cloudVersion.lastSyncedAt || '-';
-        const conflictHint = hasDiff
-            ? '<div class="conflict-hint">以下标红字段存在差异，请仔细核对后选择保留版本</div>'
-            : `<div class="conflict-hint conflict-hint--warning">实体内容完全相同，冲突原因：双方均在 ${lastSyncedAt} 之后分别修改过此记录（仅时间戳不同）。建议选择「全部使用本地版本」或「全部使用云端版本」</div>`;
+        const badgeHtml = diffCount > 0
+            ? '<span class="conflict-badge">' + diffCount + '\u5904\u5dee\u5f02</span>'
+            : '<span class="conflict-badge conflict-badge-warn">\u4ec5\u65f6\u95f4\u6233\u4e0d\u540c</span>';
 
-        return `
-            <div class="conflict-item" data-index="${index}">
-                <div class="conflict-header">
-                    <span class="conflict-type">${entityTypeLabel}</span>
-                    <span class="conflict-id">${localVersion.name || localVersion.date}</span>
-                </div>
-                ${conflictHint}
-                <div class="conflict-versions">
-                    <div class="version local">
-                        <label>
-                            <input type="radio" name="conflict-${index}" value="local" checked />
-                            <strong>本地版本</strong>
-                            <span class="version-time">${localVersion.updatedAt}</span>
-                        </label>
-                        <div class="version-detail">
-                            ${this._formatVersionDetail(conflict.entityType, localVersion, diffFields)}
-                        </div>
-                    </div>
-                    <div class="version cloud">
-                        <label>
-                            <input type="radio" name="conflict-${index}" value="cloud" />
-                            <strong>云端版本</strong>
-                            <span class="version-time">${cloudVersion.updatedAt}</span>
-                        </label>
-                        <div class="version-detail">
-                            ${this._formatVersionDetail(conflict.entityType, cloudVersion, diffFields)}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        const tableHtml = SyncConflictModalHelper._renderConflictTable(conflict.entityType, localVersion, cloudVersion, diffFields);
+
+        return '\
+            <div class="conflict-item" data-index="' + index + '">\
+                <div class="conflict-header">\
+                    <div class="conflict-header-left">\
+                        <span class="conflict-expand-icon">&#9654;</span>\
+                        <span class="conflict-type-badge">' + entityTypeLabel + '</span>\
+                        <span class="conflict-title">' + SyncConflictModalHelper._escapeHtml(titleText) + '</span>\
+                    </div>\
+                    <div class="conflict-header-right">\
+                        ' + badgeHtml + '\
+                        <span class="conflict-version-time">' + SyncConflictModalHelper._escapeHtml(localVersion.updatedAt || '') + '</span>\
+                    </div>\
+                </div>\
+                <div class="conflict-body" style="display:none">\
+                    <div class="conflict-radio-row">\
+                        <label class="radio-local"><input type="radio" name="conflict-' + index + '" value="local" checked> \u4f7f\u7528\u672c\u5730\u7248\u672c</label>\
+                        <label class="radio-cloud"><input type="radio" name="conflict-' + index + '" value="cloud"> \u4f7f\u7528\u4e91\u7aef\u7248\u672c</label>\
+                    </div>\
+                    ' + tableHtml + '\
+                </div>\
+            </div>\
+        ';
     },
 
-    _formatFeeTiers(tiers) {
-        if (!tiers || (!tiers.buyTiers?.length && !tiers.sellTiers?.length)) return '未设置';
+    _renderConflictTable: function (type, local, cloud, diffFields) {
+        const fields = type === 'fund'
+            ? SyncConflictModalHelper.FUND_FIELDS
+            : SyncConflictModalHelper.TRADE_FIELDS;
+
+        const rows = fields.map(function (field) {
+            const isDiff = diffFields.has(field.key);
+            const localVal = field.fmt(local[field.key]);
+            const cloudVal = field.fmt(cloud[field.key]);
+            const localClass = isDiff ? ' class="cell-diff"' : '';
+            const cloudClass = isDiff ? ' class="cell-diff"' : '';
+            return '\
+                <tr>\
+                    <td class="cell-label">' + field.label + '</td>\
+                    <td' + localClass + '>' + localVal + '</td>\
+                    <td' + cloudClass + '>' + cloudVal + '</td>\
+                </tr>\
+            ';
+        }).join('');
+
+        return '\
+            <table class="conflict-table">\
+                <thead><tr><th>\u5b57\u6bb5</th><th>\u672c\u5730</th><th>\u4e91\u7aef</th></tr></thead>\
+                <tbody>' + rows + '</tbody>\
+            </table>\
+        ';
+    },
+
+    _escapeHtml: function (str) {
+        if (typeof str !== 'string') return String(str);
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    },
+
+    _formatFeeTiers: function (tiers) {
+        if (!tiers || (!tiers.buyTiers || !tiers.buyTiers.length) && (!tiers.sellTiers || !tiers.sellTiers.length)) return '\u672a\u8bbe\u7f6e';
         const parts = [];
-        if (tiers.buyTiers?.length) {
-            parts.push('买入: ' + tiers.buyTiers.map(t => `${t.minAmount / 10000}-${t.maxAmount ? t.maxAmount / 10000 + '万' : '∞'}: ${t.rate}%`).join(', '));
+        if (tiers.buyTiers && tiers.buyTiers.length) {
+            parts.push('\u4e70\u5165: ' + tiers.buyTiers.map(function (t) {
+                return t.minAmount / 10000 + '-' + (t.maxAmount ? t.maxAmount / 10000 + '\u4e07' : '\u221e') + ': ' + t.rate + '%';
+            }).join(', '));
         }
-        if (tiers.sellTiers?.length) {
-            parts.push('卖出: ' + tiers.sellTiers.map(t => `${t.minDays}-${t.maxDays ? t.maxDays + '天' : '∞'}: ${t.rate}%`).join(', '));
+        if (tiers.sellTiers && tiers.sellTiers.length) {
+            parts.push('\u5356\u51fa: ' + tiers.sellTiers.map(function (t) {
+                return t.minDays + '-' + (t.maxDays ? t.maxDays + '\u5929' : '\u221e') + ': ' + t.rate + '%';
+            }).join(', '));
         }
         return parts.join(' | ');
     },
 
-    _formatVersionDetail(type, entity, diffFields) {
-        if (type === 'fund') {
-            return `
-                ${this._formatFieldLabel('名称', entity.name, diffFields.has('name'))}
-                ${this._formatFieldLabel('代码', entity.code, diffFields.has('code'))}
-                ${this._formatFieldLabel('净值', entity.netValue ?? '-', diffFields.has('netValue'))}
-                ${this._formatFieldLabel('估算净值', entity.estimatedValue ?? '-', diffFields.has('estimatedValue'))}
-                ${this._formatFieldLabel('净值日期', entity.netValueDate ?? '-', diffFields.has('netValueDate'))}
-                ${this._formatFieldLabel('费率配置', this._formatFeeTiers(entity.feeTiers), diffFields.has('feeTiers'))}
-                ${this._formatFieldLabel('备注', entity.remark || '-', diffFields.has('remark'))}
-            `;
-        } else {
-            const typeMap = { buy: '买入', sell: '卖出', dividend: '分红' };
-            return `
-                ${this._formatFieldLabel('日期', entity.date, diffFields.has('date'))}
-                ${this._formatFieldLabel('类型', typeMap[entity.type] || entity.type, diffFields.has('type'))}
-                ${this._formatFieldLabel('净值', entity.netValue, diffFields.has('netValue'))}
-                ${this._formatFieldLabel('份额', entity.shares, diffFields.has('shares'))}
-                ${this._formatFieldLabel('金额', entity.amount, diffFields.has('amount'))}
-                ${this._formatFieldLabel('手续费', entity.fee, diffFields.has('fee'))}
-                ${this._formatFieldLabel('分红方式', entity.dividendMode === 'reinvest' ? '红利再投' : entity.dividendMode === 'cash' ? '现金分红' : '-', diffFields.has('dividendMode'))}
-                ${this._formatFieldLabel('备注', entity.remark || '-', diffFields.has('remark'))}
-            `;
-        }
-    },
-
-    _bindEvents(conflicts, onResolve) {
+    _bindEvents: function (conflicts, onResolve) {
         const btnUseLocal = document.getElementById('btn-conflict-use-local');
         const btnUseCloud = document.getElementById('btn-conflict-use-cloud');
         const btnApply = document.getElementById('btn-conflict-apply');
         const btnClose = document.querySelector('.modal-close');
 
-        btnUseLocal?.addEventListener('click', () => {
-            const resolutions = conflicts.map(() => 'local');
-            onResolve(resolutions);
-            this.close();
-        });
-
-        btnUseCloud?.addEventListener('click', () => {
-            const resolutions = conflicts.map(() => 'cloud');
-            onResolve(resolutions);
-            this.close();
-        });
-
-        btnApply?.addEventListener('click', () => {
-            const resolutions = conflicts.map((_, index) => {
-                const checked = document.querySelector(`input[name="conflict-${index}"]:checked`);
-                return checked?.value || 'local';
+        const conflictList = document.querySelector('.conflict-list');
+        if (conflictList) {
+            conflictList.addEventListener('click', function (e) {
+                const header = e.target.closest('.conflict-header');
+                if (!header) return;
+                const item = header.closest('.conflict-item');
+                if (!item) return;
+                const body = item.querySelector('.conflict-body');
+                const icon = header.querySelector('.conflict-expand-icon');
+                if (body) {
+                    const isHidden = body.style.display === 'none' || body.style.display === '';
+                    body.style.display = isHidden ? 'block' : 'none';
+                    if (icon) icon.textContent = isHidden ? '\u25BC' : '\u25B6';
+                }
             });
-            onResolve(resolutions);
-            this.close();
-        });
+        }
 
-        btnClose?.addEventListener('click', () => this.close());
+        if (btnUseLocal) {
+            btnUseLocal.addEventListener('click', function () {
+                const resolutions = conflicts.map(function () { return 'local'; });
+                onResolve(resolutions);
+                SyncConflictModalHelper.close();
+            });
+        }
+
+        if (btnUseCloud) {
+            btnUseCloud.addEventListener('click', function () {
+                const resolutions = conflicts.map(function () { return 'cloud'; });
+                onResolve(resolutions);
+                SyncConflictModalHelper.close();
+            });
+        }
+
+        if (btnApply) {
+            btnApply.addEventListener('click', function () {
+                const resolutions = conflicts.map(function (_, index) {
+                    const checked = document.querySelector('input[name="conflict-' + index + '"]:checked');
+                    return checked && checked.value || 'local';
+                });
+                onResolve(resolutions);
+                SyncConflictModalHelper.close();
+            });
+        }
+
+        if (btnClose) {
+            btnClose.addEventListener('click', function () { SyncConflictModalHelper.close(); });
+        }
     },
 
-    close() {
+    close: function () {
         window.Modal.hide();
     }
 };
