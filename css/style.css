@@ -2797,6 +2797,12 @@ td.negative {
     background: var(--color-bg-hover);
 }
 
+.cycle-filter-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
 .filter-cycle-select {
     padding: 0.3rem 0.5rem;
     font-size: var(--font-size-sm);

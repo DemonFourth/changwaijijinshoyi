@@ -72,17 +72,21 @@ const CalculatorV2 = {
     },
 
     /**
-     * 识别持仓周期
-     * @param {array} trades - 排序后的交易记录
+     * 识别持仓周期（内部自动按日期排序，无论输入顺序如何）
+     * @param {array} trades - 交易记录（支持任意顺序）
      * @returns {array} 持仓周期数组
      */
     identifyHoldingCycles(trades) {
+        const sortedTrades = (trades || []).slice().sort(function(a, b) {
+            return new Date(a.date) - new Date(b.date);
+        });
+
         const cycles = [];
         let currentCycle = null;
         let holdingShares = 0;
         let cycleId = 1;
 
-        for (const trade of trades) {
+        for (const trade of sortedTrades) {
             if (trade.type === 'buy') {
                 if (holdingShares <= Utils.EPSILON) {
                     currentCycle = {

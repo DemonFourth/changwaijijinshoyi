@@ -163,6 +163,51 @@ CalculatorV2.calculateEstimatedFloatingProfit(trades, fund)
 - 费率区间为左闭右开：`minDays <= 持有天数 < maxDays`
 - 持有天数 = 卖出日期 - 买入日期（向下取整）
 
+### 持仓周期识别（`calculatorV2.js`）
+
+`CalculatorV2.identifyHoldingCycles(trades)` 函数用于将交易记录按"买入-持有-卖出"划分为不同的持仓周期。
+
+#### 重要特性：内部自动排序
+**该函数内部会自动按日期排序，无论输入顺序如何。**
+
+这意味着：
+- 即使交易记录在 storage 中的存储顺序与日期顺序不一致，函数仍能正确识别周期
+- 不用担心调用方是否排序，函数内部有自我保护
+
+#### 周期切换规则
+- **开启新周期条件**：`holdingShares <= Utils.EPSILON` 时遇到买入 → 创建新周期
+- **关闭周期条件**：卖出后 `holdingShares <= Utils.EPSILON` → 当前周期结束
+
+```javascript
+// 内部逻辑简化
+const sortedTrades = trades.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+for (const trade of sortedTrades) {
+    if (trade.type === 'buy' && holdingShares <= Utils.EPSILON) {
+        // 开启新周期
+    }
+    // ... 处理买卖
+    if (trade.type === 'sell' && holdingShares <= Utils.EPSILON) {
+        // 周期结束
+    }
+}
+```
+
+#### 常见问题：周期识别数量与预期不符
+如果实际识别出的周期数与交易记录表格中显示的"第X轮"不符，可能原因：
+1. **存储顺序问题**：交易记录存储顺序与日期顺序不一致（已通过内部排序解决）
+2. **卖出份额未清零**：某次卖出后 `holdingShares` 未归零，导致周期未关闭
+3. **时间间隔问题**（未实现）：长时间无交易应视为周期结束
+
+#### 调试方法
+```javascript
+const trades = TradeManager.getTradesByFund(fundId);
+const cycles = CalculatorV2.identifyHoldingCycles(trades);
+console.log('识别出的周期数:', cycles.length);
+cycles.forEach((c, i) => {
+  console.log(`周期${i+1}:`, c.startDate, '~', c.endDate, '状态:', c.status, '交易数:', c.trades.length);
+});
+```
+
 ### 计提计算（`calculatorV2.js`）
 - 用途：根据提取比例计算需要卖出的份额
 - 核心逻辑：**目标金额 = 累计买入成本 × 提取比例**（不是基于当前持仓成本、估算市值或收益）
@@ -191,6 +236,75 @@ CalculatorV2.calculateEstimatedFloatingProfit(trades, fund)
 - 目标金额基于"累计买入成本"计算，不是基于"当前持仓成本"、"当前市值"或"收益"
 - 每次提取金额固定：只要累计买入成本不变、比例不变，每次提取金额相同
 - 累计提取上限：理论上累计提取金额上限 = 收益总额（持仓市值 - 累计买入成本）
+
+---
+
+## 图表相关问题修复
+
+### 持仓成本曲线卖出日断连问题
+
+**现象**：卖出日（如 02-25）持仓成本曲线显示为 null，曲线断裂。
+
+**根因**：`chartManager.js` 中成本价记录使用了阈值优化——如果成本变化小于 0.0001 就设为 null。这导致卖出日即使成本没变，也不在图表上记录点。
+
+**修复**（`chartManager.js:1164-1168`）：
+```javascript
+const isSellDay = tradeType === 'sell';
+const costPriceValue = (isSellDay || prevCostPrice === null || Math.abs(costPrice - prevCostPrice) > 0.0001)
+    ? parseFloat(costPrice.toFixed(4)) : null;
+```
+卖出日强制记录成本价，无论是否变化。
+
+### 多周期数据对齐算法问题
+
+**现象**：周期1的数据错误显示在周期2的日期位置，导致只有少数点可见。
+
+**根因**：`buildCostAndShareOption` 使用单指针递增算法进行日期对齐，无法正确处理多周期场景。当 `uniqueDates`（所有周期日期并集）与单个周期的 `dates` 数组长度不同时，索引错位。
+
+**修复**（`chartManager.js:1248-1268`）：
+```javascript
+const alignedDateToIdx = {};
+for (let di = 0; di < cycleData.dates.length; di++) {
+    alignedDateToIdx[cycleData.dates[di]] = di;  // 建立日期→索引的Hash映射
+}
+
+for (let di = 0; di < uniqueDates.length; di++) {
+    const dateKey = uniqueDates[di];
+    if (alignedDateToIdx.hasOwnProperty(dateKey)) {
+        const dataIdx = alignedDateToIdx[dateKey];
+        alignedNetValues.push(cycleData.netValues[dataIdx]);
+        // ...
+    } else {
+        alignedNetValues.push(null);  // 非本周期日期填null
+    }
+}
+```
+
+### 周期内曲线断连问题
+
+**现象**：同一周期内，有交易的日期之间曲线断开。
+
+**根因**：`connectNulls: false` 导致所有 null 值位置都断开。
+
+**修复**（`chartManager.js:1293, 1316, 1345`）：
+- 买入净值、持仓成本、卖出净值 series 的 `connectNulls` 改为 `true`
+- 效果：周期内曲线自动连线，周期之间因数据全为 null 而自然断开
+
+### 周期过滤时X轴未过滤问题
+
+**现象**：选择单个周期时，X轴仍显示所有周期的日期（只是没有曲线）。
+
+**修复**（`chartManager.js:1216-1221`）：
+```javascript
+let uniqueDates = allDates;
+if (selectedCycleId) {
+    const selectedCycleData = cycleDataList.find(function(c) { return c.cycleId === selectedCycleId; });
+    if (selectedCycleData) {
+        uniqueDates = selectedCycleData.dates.slice();  // 只用选中周期的日期
+    }
+}
+```
+当选中特定周期时，X轴只显示该周期的日期范围。
 
 ---
 

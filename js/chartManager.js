@@ -1075,7 +1075,8 @@ const ChartManager = {
         };
     },
 
-    buildCostAndShareOption(fund, trades, stats) {
+    buildCostAndShareOption(fund, trades, stats, options = {}) {
+        const selectedCycleId = options.selectedCycleId || null;
         const themeConfig = ChartManager.getThemeConfig();
 
         const allTrades = (trades || []).slice().sort(function(a, b) {
@@ -1096,6 +1097,18 @@ const ChartManager = {
                 trades: allTrades
             }];
         }
+
+        // 固定颜色配置（数据类型区分）
+        const SERIES_COLORS = {
+            buyNetValue: '#4A90D9',
+            costPrice: '#ED8936',
+            sellNetValue: '#E53E3E',
+            latestNetValue: '#38A169',
+            shareBar: '#9F7AEA'
+        };
+
+        // 周期线条样式（实线、虚线、点线交替）
+        const CYCLE_LINE_STYLES = ['solid', 'dashed', 'dotted'];
 
         const allDates = [];
         const detailByDate = {};
@@ -1119,6 +1132,7 @@ const ChartManager = {
             const cycleCostPrices = [];
             const cycleShareValues = [];
             const cycleSellValues = [];
+            let prevCostPrice = null;
 
             for (let i = 0; i < cycleTrades.length; i++) {
                 const trade = cycleTrades[i];
@@ -1147,10 +1161,16 @@ const ChartManager = {
 
                 const sellNetValue = tradeType === 'sell' ? (parseFloat(trade.netValue) || 0) : null;
 
+                // 持仓成本：卖出日强制记录，买入日或成本变化时也记录
+                const isSellDay = tradeType === 'sell';
+                const costPriceValue = (isSellDay || prevCostPrice === null || Math.abs(costPrice - prevCostPrice) > 0.0001)
+                    ? parseFloat(costPrice.toFixed(4)) : null;
+                prevCostPrice = costPrice;
+
                 cycleDates.push(recordDate);
                 allDates.push(recordDate);
                 cycleNetValues.push(recordNetValue);
-                cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
+                cycleCostPrices.push(costPriceValue);
                 cycleShareValues.push(parseFloat(cumulativeShares.toFixed(2)));
                 cycleSellValues.push(sellNetValue);
 
@@ -1162,14 +1182,16 @@ const ChartManager = {
                     if (sellNetValue < minVal) minVal = sellNetValue;
                     if (sellNetValue > maxVal) maxVal = sellNetValue;
                 }
-                if (costPrice < minVal) minVal = costPrice;
-                if (costPrice > maxVal) maxVal = costPrice;
+                if (costPriceValue !== null) {
+                    if (costPriceValue < minVal) minVal = costPriceValue;
+                    if (costPriceValue > maxVal) maxVal = costPriceValue;
+                }
 
                 detailByDate[recordDate] = {
                     shares: parseFloat(cumulativeShares.toFixed(2)),
                     netValue: recordNetValue,
                     sellNetValue: sellNetValue,
-                    costPrice: parseFloat(costPrice.toFixed(4)),
+                    costPrice: costPrice,
                     cycleId: cycle.id,
                     tradeType: tradeType,
                     isDividendReinvest: isDividendReinvest
@@ -1186,15 +1208,17 @@ const ChartManager = {
             });
         }
 
+        // Build ALL dates array (keeping duplicates for same-day multiple trades)
         allDates.sort(function(a, b) {
             return new Date(a) - new Date(b);
         });
-        const uniqueDates = [];
-        const seen = {};
-        for (let i = 0; i < allDates.length; i++) {
-            if (!seen[allDates[i]]) {
-                seen[allDates[i]] = true;
-                uniqueDates.push(allDates[i]);
+
+        // 如果选择了特定周期，只使用该周期的日期作为X轴
+        let uniqueDates = allDates;
+        if (selectedCycleId) {
+            const selectedCycleData = cycleDataList.find(function(c) { return c.cycleId === selectedCycleId; });
+            if (selectedCycleData) {
+                uniqueDates = selectedCycleData.dates.slice();  // 只用选中周期的日期
             }
         }
 
@@ -1218,21 +1242,31 @@ const ChartManager = {
 
         for (let ci = 0; ci < cycleDataList.length; ci++) {
             const cycleData = cycleDataList[ci];
-            const cycleColor = colors[ci % colors.length];
 
+            if (selectedCycleId && cycleData.cycleId !== selectedCycleId) {
+                continue;
+            }
+
+            const cycleStyle = CYCLE_LINE_STYLES[ci % CYCLE_LINE_STYLES.length];
+            const cycleLabel = '第' + cycleData.cycleId + '轮';
             const alignedNetValues = [];
             const alignedCostPrices = [];
             const alignedShares = [];
             const alignedSellValues = [];
-            let dateIdx = 0;
+            const alignedDateToIdx = {};
+
+            for (let di = 0; di < cycleData.dates.length; di++) {
+                alignedDateToIdx[cycleData.dates[di]] = di;
+            }
 
             for (let di = 0; di < uniqueDates.length; di++) {
-                if (dateIdx < cycleData.dates.length && uniqueDates[di] === cycleData.dates[dateIdx]) {
-                    alignedNetValues.push(cycleData.netValues[dateIdx]);
-                    alignedCostPrices.push(cycleData.costPrices[dateIdx]);
-                    alignedShares.push(cycleData.shareValues[dateIdx]);
-                    alignedSellValues.push(cycleData.sellValues[dateIdx]);
-                    dateIdx++;
+                const dateKey = uniqueDates[di];
+                if (alignedDateToIdx.hasOwnProperty(dateKey)) {
+                    const dataIdx = alignedDateToIdx[dateKey];
+                    alignedNetValues.push(cycleData.netValues[dataIdx]);
+                    alignedCostPrices.push(cycleData.costPrices[dataIdx]);
+                    alignedShares.push(cycleData.shareValues[dataIdx]);
+                    alignedSellValues.push(cycleData.sellValues[dataIdx]);
                 } else {
                     alignedNetValues.push(null);
                     alignedCostPrices.push(null);
@@ -1247,16 +1281,16 @@ const ChartManager = {
             }
             if (hasNetValue) {
                 series.push({
-                    name: ci === 0 ? '买入净值' : '买入净值_' + cycleData.cycleId,
+                    name: '买入净值',
                     type: 'line',
                     yAxisIndex: 0,
                     data: alignedNetValues,
-                    lineStyle: { color: themeConfig.itemColor[1], width: 2 },
-                    itemStyle: { color: themeConfig.itemColor[1] },
+                    lineStyle: { color: SERIES_COLORS.buyNetValue, width: 2, type: cycleStyle },
+                    itemStyle: { color: SERIES_COLORS.buyNetValue },
                     smooth: true,
                     symbol: 'circle',
                     symbolSize: 8,
-                    connectNulls: false
+                    connectNulls: true
                 });
                 if (!hasBuyNav) {
                     legendData.push('买入净值');
@@ -1270,16 +1304,16 @@ const ChartManager = {
             }
             if (hasCostPrice) {
                 series.push({
-                    name: ci === 0 ? '持仓成本' : '持仓成本_' + cycleData.cycleId,
+                    name: '持仓成本',
                     type: 'line',
                     yAxisIndex: 0,
                     data: alignedCostPrices,
-                    lineStyle: { color: cycleColor, width: 2 },
-                    itemStyle: { color: cycleColor },
+                    lineStyle: { color: SERIES_COLORS.costPrice, width: 2, type: cycleStyle },
+                    itemStyle: { color: SERIES_COLORS.costPrice },
                     smooth: true,
                     symbol: 'circle',
                     symbolSize: 6,
-                    connectNulls: false
+                    connectNulls: true
                 });
                 if (!hasCost) {
                     legendData.push('持仓成本');
@@ -1289,7 +1323,7 @@ const ChartManager = {
 
             for (let si = 0; si < alignedShares.length; si++) {
                 if (alignedShares[si] !== null) {
-                    barData[si] = { value: alignedShares[si], itemStyle: { color: cycleColor, opacity: 0.7 } };
+                    barData[si] = { value: alignedShares[si], itemStyle: { color: cycleDataList.length > 1 ? colors[ci % colors.length] : SERIES_COLORS.shareBar, opacity: 0.7 } };
                 }
             }
 
@@ -1299,16 +1333,16 @@ const ChartManager = {
             }
             if (hasSellData) {
                 series.push({
-                    name: ci === 0 ? '卖出净值' : '卖出净值_' + cycleData.cycleId,
+                    name: '卖出净值',
                     type: 'line',
                     yAxisIndex: 0,
                     data: alignedSellValues,
-                    lineStyle: { color: '#e53e3e', width: 2, type: 'dashed' },
-                    itemStyle: { color: '#e53e3e' },
+                    lineStyle: { color: SERIES_COLORS.sellNetValue, width: 2, type: cycleStyle },
+                    itemStyle: { color: SERIES_COLORS.sellNetValue },
                     smooth: false,
                     symbol: 'diamond',
                     symbolSize: 10,
-                    connectNulls: false
+                    connectNulls: true
                 });
                 if (!hasSell) {
                     legendData.push('卖出净值');
@@ -1342,9 +1376,10 @@ const ChartManager = {
                 type: 'line',
                 yAxisIndex: 0,
                 data: latestLine,
-                lineStyle: { color: themeConfig.profitColor, width: 2, type: 'dashed' },
-                itemStyle: { color: themeConfig.profitColor },
-                symbol: 'none'
+                lineStyle: { color: SERIES_COLORS.latestNetValue, width: 2, type: 'dotted' },
+                itemStyle: { color: SERIES_COLORS.latestNetValue },
+                symbol: 'none',
+                connectNulls: false
             });
             legendData.push('最新净值');
         }
