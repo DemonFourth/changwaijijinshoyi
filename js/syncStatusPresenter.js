@@ -205,7 +205,15 @@ const SyncStatusPresenter = {
             Utils.showLoading('同步中...');
             const result = await SyncAppService.manualSync();
             Utils.hideLoading();
-            if (result.success) {
+            if (result && result.firstSync) {
+                if (window.SyncFirstSyncHelper) {
+                    window.SyncFirstSyncHelper.show(result, async function (choice) {
+                        await SyncAppService._handleFirstSyncChoice(choice);
+                        Overview.refresh();
+                        Modal.hide();
+                    });
+                }
+            } else if (result.success) {
                 Utils.showToast('同步成功', 'success');
                 Overview.refresh();
                 Modal.hide();
@@ -236,7 +244,7 @@ const SyncStatusPresenter = {
         document.getElementById('btn-force-pull')?.addEventListener('click', async () => {
             if (!confirm('确定强制下载云端数据覆盖本地吗？此操作不可撤销。')) return;
             Utils.showLoading('下载中...');
-            const result = await SyncAppService.forcePullCloud();
+            const result = await SyncAppService.forceOverwriteLocal();
             Utils.hideLoading();
             if (result.success) {
                 Utils.showToast('强制下载成功', 'success');

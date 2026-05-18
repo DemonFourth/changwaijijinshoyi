@@ -53,10 +53,10 @@ const SyncConflictModalHelper = {
     },
 
     _renderConflictItem(conflict, index) {
-        const entityType = conflict.entityType === 'fund' ? '基金' : '交易';
+        const entityTypeLabel = conflict.entityType === 'fund' ? '基金' : '交易';
         const localVersion = conflict.local;
         const cloudVersion = conflict.cloud;
-        const diffFields = this._getDiffFields(entityType, localVersion, cloudVersion);
+        const diffFields = this._getDiffFields(conflict.entityType, localVersion, cloudVersion);
 
         const hasDiff = diffFields.size > 0;
         const lastSyncedAt = localVersion.lastSyncedAt || cloudVersion.lastSyncedAt || '-';
@@ -67,7 +67,7 @@ const SyncConflictModalHelper = {
         return `
             <div class="conflict-item" data-index="${index}">
                 <div class="conflict-header">
-                    <span class="conflict-type">${entityType}</span>
+                    <span class="conflict-type">${entityTypeLabel}</span>
                     <span class="conflict-id">${localVersion.name || localVersion.date}</span>
                 </div>
                 ${conflictHint}
@@ -79,7 +79,7 @@ const SyncConflictModalHelper = {
                             <span class="version-time">${localVersion.updatedAt}</span>
                         </label>
                         <div class="version-detail">
-                            ${this._formatVersionDetail(entityType, localVersion, diffFields)}
+                            ${this._formatVersionDetail(conflict.entityType, localVersion, diffFields)}
                         </div>
                     </div>
                     <div class="version cloud">
@@ -89,7 +89,7 @@ const SyncConflictModalHelper = {
                             <span class="version-time">${cloudVersion.updatedAt}</span>
                         </label>
                         <div class="version-detail">
-                            ${this._formatVersionDetail(entityType, cloudVersion, diffFields)}
+                            ${this._formatVersionDetail(conflict.entityType, cloudVersion, diffFields)}
                         </div>
                     </div>
                 </div>

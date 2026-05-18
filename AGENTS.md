@@ -87,7 +87,8 @@ NameCache, NameValidator, FIFOCalculator, FIFOValidator,
 BigNumberFormatter, echarts, ConversionCalculator, ToolPage,
 StatisticsAppService, SyncAppService, LocalStorageAdapter,
 CloudflareD1SyncAdapter, SyncAdapterRegistry, FundProviderRegistry,
-TiantianFundProvider
+TiantianFundProvider, SyncConflictModalHelper, SyncFirstSyncHelper,
+SyncStatusPresenter
 ```
 
 ### 模块组织约定
@@ -369,9 +370,81 @@ if (localModifiedAfterSync && cloudModifiedAfterSync) {
 }
 ```
 
-### 关键实现细节
+### Pull 三种路径
 
-#### 同步锁
+`_executePull()` 根据本地云端数据状态走三种路径：
+
+| 路径 | 条件 | 行为 |
+|------|------|------|
+| **填充** | 本地空 + 云端有 | 直接用云端数据覆盖本地，更新 syncMeta（`cloudFunds/cloudTrades` 设为云端长度，`pendingChanges: 0`），并设置所有实体 `lastSyncedAt` |
+| **清空** | 本地有 + 云端空（revision更新） | 清空本地数据，syncMeta 同上处理 |
+| **合并** | 双方都有数据 | 走首次同步检测或冲突检测合并 |
+
+**注意**：填充/清空路径必须通过 `StorageSchema.createEmptySnapshot()` 结果覆盖 `cloudFunds/cloudTrades`，而非从旧 `localSnapshot` 展开，否则 syncMeta 会显示 `cloudFunds: 0, cloudTrades: 0` 的错误值。
+
+### 首次同步检测
+
+当本地和云端都有数据时，`_executePull()` 检测是否首次同步：
+
+```javascript
+// 检测条件：syncMeta.lastSyncAt 为空，且所有实体均无 lastSyncedAt
+const isFirstSync = !syncMeta.lastSyncAt &&
+    localSnapshot.funds.every(f => !f.lastSyncedAt) &&
+    localSnapshot.trades.every(t => !t.lastSyncedAt);
+```
+
+首次同步时返回 `{ firstSync: true, ... }`，由上层（`manualSync()` / `startBackgroundSync()`）交给 `_handleFirstSyncChoice()` 处理——弹出三选一对话框：
+
+| 选项 | 行为 |
+|------|------|
+| **保留本地** | 推送本地数据覆盖云端 |
+| **使用云端** | 拉取云端数据覆盖本地（调用 `forceOverwriteLocal()`） |
+| **合并** | 执行正常的冲突检测合并流程 |
+
+对话框由 `SyncFirstSyncHelper`（`js/modal/syncFirstSyncHelper.js`）实现，样式在 `style.css` 中以 `.first-sync-*` 类定义。
+
+### 核心方法
+
+#### `forceOverwriteLocal()`
+直接替换本地 snapshot 为云端数据，跳过 merge。应对"强制下载云端"场景：
+
+```javascript
+SyncAppService.forceOverwriteLocal = async function() {
+    const cloudData = await adapter.pull(syncMeta.deviceId, 0);
+    LocalStorageAdapter.saveSnapshot({
+        funds: cloudData.funds,
+        trades: cloudData.trades
+    });
+    LocalStorageAdapter.updateSyncMeta({
+        cloudRevision: cloudData.revision,
+        syncStatus: 'idle',
+        pendingChanges: 0
+    });
+};
+```
+
+#### `_mergeEntities()`（统一冲突检测算法）
+客户端与服务端使用同一套冲突检测逻辑：
+
+```javascript
+const lastSyncedTime = localEntity.lastSyncedAt
+    ? new Date(localEntity.lastSyncedAt).getTime() : 0;
+const localTime = new Date(localEntity.updateTime).getTime();
+const cloudTime = new Date(cloudEntity.updateTime).getTime();
+const localChangedAfterSync = lastSyncedTime === 0 || localTime > lastSyncedTime;
+const cloudChangedAfterSync = lastSyncedTime === 0 || cloudTime > lastSyncedTime;
+// 首次同步（lastSyncedAt 为空）30 天阈值
+const FIRST_SYNC_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000;
+const isWithinFirstSyncWindow = lastSyncedTime === 0 &&
+    Math.abs(localTime - cloudTime) < FIRST_SYNC_THRESHOLD_MS;
+const isFirstSync = lastSyncedTime === 0;
+```
+
+关键差异：
+- 使用 `Date.getTime()`（毫秒时间戳）而非 ISO 字符串比较——ISO 字符串与 0 比较会得到 `NaN`
+- 首次同步增加 30 天兜底阈值
+
+### 同步锁
 使用 `_syncInProgress` 标志防止 Pull/Push 并发执行：
 ```javascript
 async _executePull() {
@@ -414,6 +487,24 @@ _scheduleRetry(reason) {
     // ...
 }
 ```
+
+### 同步拉取常见问题
+
+#### 填充/清空后 cloudFunds 显示为 0
+
+**现象**：Pull 填充（local空 + cloud有）或清空（local有 + cloud空）后，syncMeta 显示 `cloudFunds: 0, cloudTrades: 0`，即云端数据条目数错误显示为零。
+
+**根因**：`_executePull()` 填充/清空路径在设置 syncMeta 前，先构造了 `newSnapshot = { ...localSnapshot }`，这会把旧的 syncMeta（`cloudFunds: 0` 等默认值）展开进来；然后 `saveSnapshot()` 内部调用 `migrateSnapshot()` 时 `{ ...defaultMeta, ...meta }` 合并顺序又把 `pendingChanges` 覆盖为 `0`。
+
+**修复**：填充/清空路径使用 `StorageSchema.createEmptySnapshot()` 的结果作为目标 syncMeta 模板，明确设置 `cloudFunds: cloudData.funds.length`、`cloudTrades: cloudData.trades.length`、`pendingChanges: 0`，并对所有实体设置 `lastSyncedAt`。
+
+#### 冲突弹窗字段显示 undefined
+
+**现象**：冲突解决弹窗中，基金冲突的各项字段显示为 `undefined`。
+
+**根因**：`syncConflictModalHelper.js` 中提前将 `entityType` 变量从英文（`'fund'`/`'trade'`）翻译为中文（`'基金'`/`'交易'`），而下游 `_formatVersionDetail(fund)` 只对交易走 `else` 分支渲染模板，对基金行走 `if (entityType === 'fund')` 分支但 `entityType` 已是中文，永远不命中，导致基金字段全为 `undefined`。
+
+**修复**：保留 `entityType` 为英文值传递到下游方法，仅在最终 UI 显示时才使用翻译后的标签变量。
 
 ### 同步推送常见问题
 
@@ -483,7 +574,7 @@ await SyncAppService.manualSync()
 await SyncAppService.forcePushLocal()
 
 // 强制拉取云端数据（覆盖本地）
-await SyncAppService.forcePullCloud()
+await SyncAppService.forceOverwriteLocal()
 ```
 
 ---
@@ -610,6 +701,7 @@ js/
 ├── providers/     # 基金数据提供者（可替换API源）
 │   └── tiantianProvider.js   # 天天基金JSONP提供者
 ├── modal/         # modal相关helper
+│   ├── syncFirstSyncHelper.js   # 首次同步三选一对话框
 ├── detail/        # detail页相关helper
 │   ├── accrualHelper.js      # 计提计算UI辅助
 │   ├── detailHoldingHelper.js

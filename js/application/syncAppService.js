@@ -7,6 +7,8 @@ const SyncAppService = {
     _retryCount: 0,
     _maxRetryCount: 3,
     _retryBaseDelay: 3000,
+    _firstSyncCloudData: null,
+    _firstSyncCloudRevision: 0,
 
     _getNowIso() {
         return new Date().toISOString();
@@ -268,10 +270,21 @@ const SyncAppService = {
         // 本地空，云端有数据 → 直接填充
         if ((localFunds.length === 0 && localTrades.length === 0) &&
             (cloudFunds.length > 0 || cloudTrades.length > 0)) {
+            const now = SyncAppService._getNowIso();
             const newSnapshot = {
                 ...localSnapshot,
-                funds: cloudFunds,
-                trades: cloudTrades
+                funds: cloudFunds.map(function (f) { return { ...f, lastSyncedAt: now }; }),
+                trades: cloudTrades.map(function (t) { return { ...t, lastSyncedAt: now }; }),
+                syncMeta: {
+                    ...localSnapshot.syncMeta,
+                    cloudFunds: cloudFunds.length,
+                    cloudTrades: cloudTrades.length,
+                    pendingChanges: 0,
+                    lastSyncAt: now,
+                    lastPulledAt: now,
+                    syncStatus: 'idle',
+                    lastError: null
+                }
             };
             window.LocalStorageAdapter.saveSnapshot(newSnapshot);
             SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
@@ -285,15 +298,48 @@ const SyncAppService = {
         if ((localFunds.length > 0 || localTrades.length > 0) &&
             (cloudFunds.length === 0 && cloudTrades.length === 0) &&
             result.revision > localCloudRevision) {
+            const now = SyncAppService._getNowIso();
             const newSnapshot = {
                 ...localSnapshot,
                 funds: [],
-                trades: []
+                trades: [],
+                syncMeta: {
+                    ...localSnapshot.syncMeta,
+                    cloudFunds: 0,
+                    cloudTrades: 0,
+                    pendingChanges: 0,
+                    lastSyncAt: now,
+                    lastPulledAt: now,
+                    syncStatus: 'idle',
+                    lastError: null
+                }
             };
             window.LocalStorageAdapter.saveSnapshot(newSnapshot);
             SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
             SyncAppService._syncInProgress = false;
             return { success: true, reason: 'cleared_by_cloud' };
+        }
+
+        // 首次同步检测：双方有数据且所有本地实体均未标记 lastSyncedAt
+        const firstSyncMeta = window.LocalStorageAdapter.getSyncMeta();
+        const anyEntitySynced = localFunds.some(function (f) { return f.lastSyncedAt; }) ||
+            localTrades.some(function (t) { return t.lastSyncedAt; });
+        const isFirstSync = !firstSyncMeta.lastSyncAt && !anyEntitySynced &&
+            (localFunds.length > 0 || localTrades.length > 0) &&
+            (cloudFunds.length > 0 || cloudTrades.length > 0);
+
+        if (isFirstSync) {
+            SyncAppService._firstSyncCloudData = { funds: cloudFunds, trades: cloudTrades };
+            SyncAppService._firstSyncCloudRevision = result.revision || firstSyncMeta.cloudRevision || 0;
+            SyncAppService._syncInProgress = false;
+            return {
+                success: true,
+                firstSync: true,
+                localFunds: localFunds.length,
+                localTrades: localTrades.length,
+                cloudFunds: cloudFunds.length,
+                cloudTrades: cloudTrades.length
+            };
         }
 
         // 本地有数据 → 差异检测与合并
@@ -312,6 +358,11 @@ const SyncAppService = {
             window.LocalStorageAdapter.saveSnapshot(mergeResult.snapshot);
             SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
         }
+
+        window.LocalStorageAdapter.updateSyncMeta({
+            cloudFunds: cloudFunds.length,
+            cloudTrades: cloudTrades.length
+        });
 
         adapter.markSyncComplete();
 
@@ -420,11 +471,12 @@ const SyncAppService = {
     },
 
     _mergeEntities(localEntities, cloudEntities, entityType, conflicts) {
-        const localMap = new Map(localEntities.map(e => [e.syncId, e]));
-        const cloudMap = new Map(cloudEntities.map(e => [e.syncId, e]));
+        const localMap = new Map(localEntities.map(function (e) { return [e.syncId, e]; }));
+        const cloudMap = new Map(cloudEntities.map(function (e) { return [e.syncId, e]; }));
 
         const result = [];
         let hasChanges = false;
+        const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
         for (const [syncId, localEntity] of localMap) {
             const cloudEntity = cloudMap.get(syncId);
@@ -434,21 +486,36 @@ const SyncAppService = {
                 continue;
             }
 
-            const baseTime = localEntity.lastSyncedAt || 0;
+            const lastSyncedTime = localEntity.lastSyncedAt ? new Date(localEntity.lastSyncedAt).getTime() : 0;
+            const localTime = new Date(localEntity.updatedAt).getTime();
+            const cloudTime = new Date(cloudEntity.updatedAt).getTime();
+            const localModifiedAfterSync = lastSyncedTime === 0 || localTime > lastSyncedTime;
+            const cloudModifiedAfterSync = lastSyncedTime === 0 || cloudTime > lastSyncedTime;
 
-            if (localEntity.updatedAt > baseTime && cloudEntity.updatedAt > baseTime) {
+            if (localModifiedAfterSync && cloudModifiedAfterSync) {
                 if (this._isEntityDataChanged(localEntity, cloudEntity)) {
                     conflicts.push({
-                        entityType,
-                        syncId,
+                        entityType: entityType,
+                        syncId: syncId,
                         local: localEntity,
                         cloud: cloudEntity
                     });
                 }
                 result.push(localEntity);
                 hasChanges = true;
-            } else if (cloudEntity.updatedAt > baseTime) {
+            } else if (cloudModifiedAfterSync) {
                 result.push(cloudEntity);
+                hasChanges = true;
+            } else if (lastSyncedTime === 0 && localTime > thirtyDaysAgo && cloudTime > thirtyDaysAgo && localTime !== cloudTime) {
+                if (this._isEntityDataChanged(localEntity, cloudEntity)) {
+                    conflicts.push({
+                        entityType: entityType,
+                        syncId: syncId,
+                        local: localEntity,
+                        cloud: cloudEntity
+                    });
+                }
+                result.push(localEntity);
                 hasChanges = true;
             } else {
                 result.push(localEntity);
@@ -462,7 +529,7 @@ const SyncAppService = {
             }
         }
 
-        return { result, hasChanges };
+        return { result: result, hasChanges: hasChanges };
     },
 
     async resolveConflicts(conflicts, resolutions) {
@@ -502,7 +569,10 @@ const SyncAppService = {
     },
 
     async manualSync() {
-        await this._executePull();
+        const pullResult = await this._executePull();
+        if (pullResult && pullResult.firstSync) {
+            return pullResult;
+        }
         return this._executePush();
     },
 
@@ -518,6 +588,160 @@ const SyncAppService = {
     async forcePullCloud() {
         window.LocalStorageAdapter.updateSyncMeta({ cloudRevision: 0 });
         return this._executePull();
+    },
+
+    async forceOverwriteLocal() {
+        const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
+        if (!adapter || typeof adapter.getStatus !== 'function') {
+            return { success: false, reason: 'not_configured' };
+        }
+
+        const status = adapter.getStatus();
+        if (!status.canPull) {
+            SyncAppService._toLogText('[同步调试] forceOverwriteLocal 跳过：当前适配器不可拉取', status);
+            return { success: false, reason: 'not_configured' };
+        }
+
+        SyncAppService._syncInProgress = true;
+        window.LocalStorageAdapter.updateSyncMeta({ syncStatus: 'syncing' });
+
+        const result = await adapter.pull();
+        if (!result.success) {
+            SyncAppService._syncInProgress = false;
+            return result;
+        }
+
+        const now = SyncAppService._getNowIso();
+        const cloudFunds = result.funds || [];
+        const cloudTrades = result.trades || [];
+        const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
+
+        const newSnapshot = {
+            ...localSnapshot,
+            funds: cloudFunds.map(function (f) { return { ...f, lastSyncedAt: now }; }),
+            trades: cloudTrades.map(function (t) { return { ...t, lastSyncedAt: now }; }),
+            syncMeta: {
+                ...localSnapshot.syncMeta,
+                cloudFunds: cloudFunds.length,
+                cloudTrades: cloudTrades.length,
+                cloudRevision: result.revision || localSnapshot.syncMeta.cloudRevision || 0,
+                pendingChanges: 0,
+                lastSyncAt: now,
+                lastPulledAt: now,
+                syncStatus: 'idle',
+                lastError: null
+            }
+        };
+
+        window.LocalStorageAdapter.saveSnapshot(newSnapshot);
+        SyncAppService._syncInProgress = false;
+        SyncAppService._emitSyncApplied({ mode: 'overwrite', hasChanges: true });
+
+        SyncAppService._toLogText('[同步调试] forceOverwriteLocal 成功', {
+            funds: cloudFunds.length,
+            trades: cloudTrades.length
+        });
+
+        return { success: true, reason: 'overwritten_from_cloud' };
+    },
+
+    async _handleFirstSyncChoice(choice) {
+        const cloudData = SyncAppService._firstSyncCloudData;
+        const cloudRevision = SyncAppService._firstSyncCloudRevision;
+        const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
+        const now = SyncAppService._getNowIso();
+
+        if (choice === 'local') {
+            const newSnapshot = {
+                ...localSnapshot,
+                funds: localSnapshot.funds.map(function (f) { return { ...f, lastSyncedAt: now }; }),
+                trades: localSnapshot.trades.map(function (t) { return { ...t, lastSyncedAt: now }; }),
+                syncMeta: {
+                    ...localSnapshot.syncMeta,
+                    cloudRevision: cloudRevision,
+                    cloudFunds: cloudData ? cloudData.funds.length : localSnapshot.funds.length,
+                    cloudTrades: cloudData ? cloudData.trades.length : localSnapshot.trades.length,
+                    pendingChanges: 0,
+                    lastSyncAt: now,
+                    lastPulledAt: now,
+                    syncStatus: 'idle',
+                    lastError: null
+                }
+            };
+            window.LocalStorageAdapter.saveSnapshot(newSnapshot);
+            SyncAppService._firstSyncCloudData = null;
+            SyncAppService._emitSyncApplied({ mode: 'first-sync-local', hasChanges: false });
+            return { success: true, reason: 'first_sync_keep_local' };
+        }
+
+        if (choice === 'cloud') {
+            const cloudFunds = (cloudData && cloudData.funds) || [];
+            const cloudTrades = (cloudData && cloudData.trades) || [];
+            const newSnapshot = {
+                ...localSnapshot,
+                funds: cloudFunds.map(function (f) { return { ...f, lastSyncedAt: now }; }),
+                trades: cloudTrades.map(function (t) { return { ...t, lastSyncedAt: now }; }),
+                syncMeta: {
+                    ...localSnapshot.syncMeta,
+                    cloudRevision: cloudRevision,
+                    cloudFunds: cloudFunds.length,
+                    cloudTrades: cloudTrades.length,
+                    pendingChanges: 0,
+                    lastSyncAt: now,
+                    lastPulledAt: now,
+                    syncStatus: 'idle',
+                    lastError: null
+                }
+            };
+            window.LocalStorageAdapter.saveSnapshot(newSnapshot);
+            SyncAppService._firstSyncCloudData = null;
+            SyncAppService._emitSyncApplied({ mode: 'first-sync-cloud', hasChanges: true });
+            return { success: true, reason: 'first_sync_use_cloud' };
+        }
+
+        if (choice === 'merge') {
+            if (!cloudData) {
+                return { success: false, reason: 'no_cloud_data' };
+            }
+            const mergeResult = SyncAppService._mergeData(localSnapshot, cloudData);
+            if (mergeResult.hasConflicts) {
+                SyncAppService._firstSyncCloudData = null;
+                return { success: true, hasConflicts: true, conflicts: mergeResult.conflicts };
+            }
+            if (mergeResult.hasChanges) {
+                const mergedSnapshot = {
+                    ...mergeResult.snapshot,
+                    syncMeta: {
+                        ...mergeResult.snapshot.syncMeta,
+                        cloudRevision: cloudRevision,
+                        cloudFunds: cloudData.funds.length,
+                        cloudTrades: cloudData.trades.length,
+                        pendingChanges: 0,
+                        lastSyncAt: now,
+                        lastPulledAt: now,
+                        syncStatus: 'idle',
+                        lastError: null
+                    }
+                };
+                window.LocalStorageAdapter.saveSnapshot(mergedSnapshot);
+            } else {
+                window.LocalStorageAdapter.updateSyncMeta({
+                    cloudRevision: cloudRevision,
+                    cloudFunds: cloudData.funds.length,
+                    cloudTrades: cloudData.trades.length,
+                    pendingChanges: 0,
+                    lastSyncAt: now,
+                    lastPulledAt: now,
+                    syncStatus: 'idle'
+                });
+            }
+            SyncAppService._firstSyncCloudData = null;
+            SyncAppService._emitSyncApplied({ mode: 'first-sync-merge', hasChanges: true });
+            return { success: true, reason: 'first_sync_merge' };
+        }
+
+        SyncAppService._firstSyncCloudData = null;
+        return { success: false, reason: 'invalid_choice' };
     },
 
     async refreshCloudMeta() {

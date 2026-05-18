@@ -109,6 +109,16 @@ const App = {
                 return syncResult;
             }
 
+            if (syncResult && syncResult.firstSync) {
+                if (window.SyncFirstSyncHelper) {
+                    window.SyncFirstSyncHelper.show(syncResult, async function (choice) {
+                        await window.SyncAppService._handleFirstSyncChoice(choice);
+                        window.Overview.refresh();
+                    });
+                }
+                return syncResult;
+            }
+
             window.Overview.refresh();
 
             const funds = window.FundManager.getAllFunds();

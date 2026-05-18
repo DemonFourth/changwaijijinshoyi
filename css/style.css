@@ -5584,4 +5584,59 @@ td.negative {
     margin-bottom: 0.25rem;
 }
 
+/* 首次同步弹窗 */
+.first-sync-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.first-sync-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border-primary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.first-sync-option:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-secondary);
+}
+
+.first-sync-option input[type="radio"] {
+    margin-top: 3px;
+}
+
+.first-sync-option-content {
+    flex: 1;
+}
+
+.first-sync-option-content strong {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 14px;
+}
+
+.first-sync-desc {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.first-sync-info {
+    text-align: center;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-top: 12px;
+    padding: 8px;
+    background: var(--color-bg-secondary);
+    border-radius: 6px;
+}
+
+
 
