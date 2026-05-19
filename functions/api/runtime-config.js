@@ -29,11 +29,3 @@ export const onRequest = async (context) => {
         }
     });
 };
-
-    return new Response(JSON.stringify(config), {
-        headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store'
-        }
-    });
-};
