@@ -553,6 +553,7 @@ const SyncAppService = {
                         local: localEntity,
                         cloud: cloudEntity
                     });
+                    hasChanges = true;
                 }
                 // 如果云端已删除且本地未同步该删除，保留本地（冲突由用户决定）
                 if (cloudEntity.deletedAt && !localEntity.deletedAt) {
@@ -560,16 +561,18 @@ const SyncAppService = {
                 } else {
                     result.push(localEntity);
                 }
-                hasChanges = true;
             } else if (cloudModifiedAfterSync) {
                 // 云端有变更：如果云端标记了删除，本地也应删除
                 if (cloudEntity.deletedAt) {
                     result.push({ ...localEntity, deletedAt: cloudEntity.deletedAt, lastSyncedAt: null });
-                } else {
+                    hasChanges = true;
+                } else if (this._isEntityDataChanged(localEntity, cloudEntity)) {
                     result.push(cloudEntity);
+                    hasChanges = true;
+                    updatedCount++;
+                } else {
+                    result.push(localEntity);
                 }
-                hasChanges = true;
-                updatedCount++;
             } else if (lastSyncedTime === 0 && cloudLastSyncedTime === 0 && localTime > thirtyDaysAgo && cloudTime > thirtyDaysAgo && localTime !== cloudTime) {
                 // 双方都未同步：30 天阈值内且数据不同
                 if (this._isEntityDataChanged(localEntity, cloudEntity)) {
@@ -579,9 +582,9 @@ const SyncAppService = {
                         local: localEntity,
                         cloud: cloudEntity
                     });
+                    hasChanges = true;
                 }
                 result.push(localEntity);
-                hasChanges = true;
             } else {
                 result.push(localEntity);
             }
