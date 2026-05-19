@@ -140,6 +140,12 @@ const App = {
             if (funds.length > 0) {
                 window.FundManager.refreshAllFunds().then(() => {
                     window.Overview.refresh();
+                    // 净值刷新触发的 FUND_UPDATED 不应触发同步
+                    // 净值为动态字段，推送时已被 _sanitizeFundsForSync 排除
+                    window.LocalStorageAdapter.updateSyncMeta({
+                        pendingChanges: 0,
+                        syncStatus: 'idle'
+                    });
                 });
             }
 
