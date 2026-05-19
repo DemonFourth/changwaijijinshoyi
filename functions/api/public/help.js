@@ -10,7 +10,7 @@ export const onRequest = async (context) => {
     const { request, env } = context;
 
     if (request.method === 'OPTIONS') {
-        return handleOptions();
+        return handleOptions(request);
     }
 
     if (request.method !== 'GET') {

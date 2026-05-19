@@ -12,14 +12,14 @@
  */
 
 import { checkApiKey, badRequestResponse, notFoundResponse, internalErrorResponse, handleOptions, generateSyncId, getNowIso } from '../../_shared/authMiddleware.js';
-import { getSnapshot, updateSnapshot } from '../../_shared/syncRepository.js';
+import { getSnapshot, updateSnapshot, appendChangeLogs } from '../../_shared/syncRepository.js';
 import { ensureTables } from '../../_shared/d1Schema.js';
 
 export const onRequest = async (context) => {
     const { request, env } = context;
 
     if (request.method === 'OPTIONS') {
-        return handleOptions();
+        return handleOptions(request);
     }
 
     if (request.method === 'GET') {
@@ -127,11 +127,18 @@ async function handlePost(env, request) {
             dividendMode: body.dividendMode || null,
             createdAt: now,
             updatedAt: now,
-            deletedAt: null
+            deletedAt: null,
+            lastSyncedAt: now
         };
 
         const trades = [...(snapshot.trades || []), newTrade];
-        const newRevision = await updateSnapshot(env, { funds: snapshot.funds, trades: trades }, 'default');
+        const updateResult = await updateSnapshot(env, { funds: snapshot.funds, trades: trades }, 'default');
+        if (!updateResult.success) {
+            return internalErrorResponse('Failed to update snapshot');
+        }
+
+        // 记录变更日志
+        await appendChangeLogs(env, updateResult.revision, [newTrade], 'trade', 'upsert', 'default');
 
         const nowIso = getNowIso();
 
@@ -152,7 +159,7 @@ async function handlePost(env, request) {
                 createdAt: newTrade.createdAt
             },
             meta: {
-                revision: newRevision,
+                revision: updateResult.revision,
                 timestamp: nowIso
             }
         }), {

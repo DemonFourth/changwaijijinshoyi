@@ -44,7 +44,7 @@ const SyncAppService = {
         }
     },
 
-    _finalizePushSuccess(result) {
+    _finalizePushSuccess(result, prePushPendingCount) {
         const now = SyncAppService._getNowIso();
         const snapshot = window.LocalStorageAdapter.loadSnapshot();
         const currentSyncMeta = window.LocalStorageAdapter.getSyncMeta();
@@ -58,25 +58,29 @@ const SyncAppService = {
             lastSyncedAt: now
         }));
 
+        // 递减 pendingChanges：只减去已推送的变更数
+        const remainingChanges = Math.max(0, (currentSyncMeta.pendingChanges || 0) - (prePushPendingCount || 0));
+
         window.LocalStorageAdapter.saveSnapshot(snapshot);
         window.LocalStorageAdapter.updateSyncMeta({
             lastSyncAt: now,
             lastPushedAt: now,
             cloudRevision: result.revision || currentSyncMeta.cloudRevision,
             syncStatus: 'idle',
-            pendingChanges: 0,
+            pendingChanges: remainingChanges,
             lastError: null
         });
         SyncAppService._emitSyncApplied({ mode: 'push', hasChanges: true });
     },
 
     async init(config = {}) {
-        const { enabled, basePath, timeout } = config;
+        const { enabled, basePath, timeout, syncKey } = config;
 
         if (enabled && basePath) {
             window.CloudflareD1SyncAdapter.init({
                 basePath: basePath,
-                timeout: timeout || 10000
+                timeout: timeout || 10000,
+                syncKey: syncKey || null
             });
             window.SyncAdapterRegistry.registerCloudflareAdapter();
 
@@ -92,14 +96,15 @@ const SyncAppService = {
         this._setupEventListeners();
 
         if (document && typeof document.addEventListener === 'function') {
-            document.addEventListener('visibilitychange', () => {
+            document.addEventListener('visibilitychange', function () {
+                // 页面切换到后台时触发推送（利用浏览器页面冻结前的机会保存数据）
                 if (!document.hidden) {
                     return;
                 }
 
                 const syncMeta = window.LocalStorageAdapter.getSyncMeta();
                 if ((syncMeta.pendingChanges || 0) > 0 && syncMeta.syncStatus === 'pending') {
-                    this._executePush();
+                    SyncAppService._executePush();
                 }
             });
         }
@@ -238,7 +243,7 @@ const SyncAppService = {
         const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
         if (!adapter || typeof adapter.getStatus !== 'function') {
             console.log('[同步调试] pull 跳过：未找到可用同步适配器');
-            return { success: true, reason: 'not_configured' };
+            return { success: false, reason: 'not_configured' };
         }
 
         const status = adapter.getStatus();
@@ -250,141 +255,139 @@ const SyncAppService = {
 
         SyncAppService._syncInProgress = true;
 
-        SyncAppService._toLogText('[同步调试] 开始执行 pull', {
-            provider: status.provider || 'unknown',
-            cloudRevision: window.LocalStorageAdapter.getSyncMeta().cloudRevision || 0
-        });
-        window.LocalStorageAdapter.updateSyncMeta({ syncStatus: 'syncing' });
+        try {
+            SyncAppService._toLogText('[同步调试] 开始执行 pull', {
+                provider: status.provider || 'unknown',
+                cloudRevision: window.LocalStorageAdapter.getSyncMeta().cloudRevision || 0
+            });
+            window.LocalStorageAdapter.updateSyncMeta({ syncStatus: 'syncing' });
 
-        const result = await adapter.pull();
+            const result = await SyncAppService._pullWithRetry(adapter);
 
-        if (!result.success) {
-            SyncAppService._syncInProgress = false;
-            SyncAppService._toLogText('[同步调试] pull 失败', result);
-            if (window.Utils && typeof window.Utils.showToast === 'function') {
-                window.Utils.showToast('自动同步失败：' + (result.reason || 'pull_failed'), 'error');
+            if (!result.success) {
+                SyncAppService._toLogText('[同步调试] pull 失败', result);
+                if (window.Utils && typeof window.Utils.showToast === 'function') {
+                    window.Utils.showToast('自动同步失败：' + (result.reason || 'pull_failed'), 'error');
+                }
+                return result;
             }
-            return result;
-        }
 
-        SyncAppService._toLogText('[同步调试] pull 成功', {
-            revision: result.revision || 0,
-            funds: (result.funds || []).length,
-            trades: (result.trades || []).length
-        });
+            SyncAppService._toLogText('[同步调试] pull 成功', {
+                revision: result.revision || 0,
+                funds: (result.funds || []).length,
+                trades: (result.trades || []).length
+            });
 
-        const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
-        const localFunds = localSnapshot.funds || [];
-        const localTrades = localSnapshot.trades || [];
-        const cloudFunds = result.funds || [];
-        const cloudTrades = result.trades || [];
+            const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
+            const localFunds = localSnapshot.funds || [];
+            const localTrades = localSnapshot.trades || [];
+            const cloudFunds = result.funds || [];
+            const cloudTrades = result.trades || [];
 
-        window.LocalStorageAdapter.updateSyncMeta({
-            cloudFunds: cloudFunds.length,
-            cloudTrades: cloudTrades.length
-        });
-
-        // 本地空，云端有数据 → 直接填充
-        if ((localFunds.length === 0 && localTrades.length === 0) &&
-            (cloudFunds.length > 0 || cloudTrades.length > 0)) {
-            const now = SyncAppService._getNowIso();
-            const newSnapshot = {
-                ...localSnapshot,
-                funds: cloudFunds.map(function (f) { return { ...f, lastSyncedAt: now }; }),
-                trades: cloudTrades.map(function (t) { return { ...t, lastSyncedAt: now }; }),
-                syncMeta: {
-                    ...localSnapshot.syncMeta,
-                    cloudFunds: cloudFunds.length,
-                    cloudTrades: cloudTrades.length,
-                    pendingChanges: 0,
-                    lastSyncAt: now,
-                    lastPulledAt: now,
-                    syncStatus: 'idle',
-                    lastError: null
-                }
-            };
-            window.LocalStorageAdapter.saveSnapshot(newSnapshot);
-            SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
-            SyncAppService._syncInProgress = false;
-            return { success: true, reason: 'filled_from_cloud', pulledChanges: { fundsAdded: cloudFunds.length, fundsUpdated: 0, tradesAdded: cloudTrades.length, tradesUpdated: 0 } };
-        }
-
-        // 本地有数据，云端为空（且 revision 有更新）→ 云端被清空了，用空数据覆盖本地
-        const syncMeta = window.LocalStorageAdapter.getSyncMeta();
-        const localCloudRevision = syncMeta.cloudRevision || 0;
-        if ((localFunds.length > 0 || localTrades.length > 0) &&
-            (cloudFunds.length === 0 && cloudTrades.length === 0) &&
-            result.revision > localCloudRevision) {
-            const now = SyncAppService._getNowIso();
-            const newSnapshot = {
-                ...localSnapshot,
-                funds: [],
-                trades: [],
-                syncMeta: {
-                    ...localSnapshot.syncMeta,
-                    cloudFunds: 0,
-                    cloudTrades: 0,
-                    pendingChanges: 0,
-                    lastSyncAt: now,
-                    lastPulledAt: now,
-                    syncStatus: 'idle',
-                    lastError: null
-                }
-            };
-            window.LocalStorageAdapter.saveSnapshot(newSnapshot);
-            SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
-            SyncAppService._syncInProgress = false;
-            return { success: true, reason: 'cleared_by_cloud' };
-        }
-
-        // 首次同步检测：双方有数据且所有本地实体均未标记 lastSyncedAt
-        const firstSyncMeta = window.LocalStorageAdapter.getSyncMeta();
-        const anyEntitySynced = localFunds.some(function (f) { return f.lastSyncedAt; }) ||
-            localTrades.some(function (t) { return t.lastSyncedAt; });
-        const isFirstSync = !firstSyncMeta.lastSyncAt && !anyEntitySynced &&
-            (localFunds.length > 0 || localTrades.length > 0) &&
-            (cloudFunds.length > 0 || cloudTrades.length > 0);
-
-        if (isFirstSync) {
-            SyncAppService._firstSyncCloudData = { funds: cloudFunds, trades: cloudTrades };
-            SyncAppService._firstSyncCloudRevision = result.revision || firstSyncMeta.cloudRevision || 0;
-            SyncAppService._syncInProgress = false;
-            return {
-                success: true,
-                firstSync: true,
-                localFunds: localFunds.length,
-                localTrades: localTrades.length,
+            window.LocalStorageAdapter.updateSyncMeta({
                 cloudFunds: cloudFunds.length,
                 cloudTrades: cloudTrades.length
-            };
-        }
+            });
 
-        // 本地有数据 → 差异检测与合并
-        const mergeResult = this._mergeData(localSnapshot, result);
+            // 本地空，云端有数据 → 直接填充
+            if ((localFunds.length === 0 && localTrades.length === 0) &&
+                (cloudFunds.length > 0 || cloudTrades.length > 0)) {
+                const now = SyncAppService._getNowIso();
+                const newSnapshot = {
+                    ...localSnapshot,
+                    funds: cloudFunds.map(function (f) { return { ...window.StorageSchema.createFundEntity(f), lastSyncedAt: now }; }),
+                    trades: cloudTrades.map(function (t) { return { ...window.StorageSchema.createTradeEntity(t), lastSyncedAt: now }; }),
+                    syncMeta: {
+                        ...localSnapshot.syncMeta,
+                        cloudFunds: cloudFunds.length,
+                        cloudTrades: cloudTrades.length,
+                        pendingChanges: 0,
+                        lastSyncAt: now,
+                        lastPulledAt: now,
+                        syncStatus: 'idle',
+                        lastError: null
+                    }
+                };
+                window.LocalStorageAdapter.saveSnapshot(newSnapshot);
+                SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
+                return { success: true, reason: 'filled_from_cloud', pulledChanges: { fundsAdded: cloudFunds.length, fundsUpdated: 0, tradesAdded: cloudTrades.length, tradesUpdated: 0 } };
+            }
 
-        if (mergeResult.hasConflicts) {
+            // 本地有数据，云端为空（且 revision 有更新）→ 云端被清空了，用空数据覆盖本地
+            const syncMeta = window.LocalStorageAdapter.getSyncMeta();
+            const localCloudRevision = syncMeta.cloudRevision || 0;
+            if ((localFunds.length > 0 || localTrades.length > 0) &&
+                (cloudFunds.length === 0 && cloudTrades.length === 0) &&
+                result.revision > localCloudRevision) {
+                const now = SyncAppService._getNowIso();
+                const newSnapshot = {
+                    ...localSnapshot,
+                    funds: [],
+                    trades: [],
+                    syncMeta: {
+                        ...localSnapshot.syncMeta,
+                        cloudFunds: 0,
+                        cloudTrades: 0,
+                        pendingChanges: 0,
+                        lastSyncAt: now,
+                        lastPulledAt: now,
+                        syncStatus: 'idle',
+                        lastError: null
+                    }
+                };
+                window.LocalStorageAdapter.saveSnapshot(newSnapshot);
+                SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
+                return { success: true, reason: 'cleared_by_cloud' };
+            }
+
+            // 首次同步检测：双方有数据且所有本地实体均未标记 lastSyncedAt
+            const firstSyncMeta = window.LocalStorageAdapter.getSyncMeta();
+            const anyEntitySynced = localFunds.some(function (f) { return f.lastSyncedAt; }) ||
+                localTrades.some(function (t) { return t.lastSyncedAt; });
+            const isFirstSync = !firstSyncMeta.lastSyncAt && !anyEntitySynced &&
+                (localFunds.length > 0 || localTrades.length > 0) &&
+                (cloudFunds.length > 0 || cloudTrades.length > 0);
+
+            if (isFirstSync) {
+                SyncAppService._firstSyncCloudData = { funds: cloudFunds, trades: cloudTrades };
+                SyncAppService._firstSyncCloudRevision = result.revision || firstSyncMeta.cloudRevision || 0;
+                return {
+                    success: true,
+                    firstSync: true,
+                    localFunds: localFunds.length,
+                    localTrades: localTrades.length,
+                    cloudFunds: cloudFunds.length,
+                    cloudTrades: cloudTrades.length
+                };
+            }
+
+            // 本地有数据 → 差异检测与合并
+            const mergeResult = this._mergeData(localSnapshot, result);
+
+            if (mergeResult.hasConflicts) {
+                return {
+                    success: true,
+                    hasConflicts: true,
+                    conflicts: mergeResult.conflicts
+                };
+            }
+
+            if (mergeResult.hasChanges) {
+                window.LocalStorageAdapter.saveSnapshot(mergeResult.snapshot);
+                SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
+            }
+
+            window.LocalStorageAdapter.updateSyncMeta({
+                cloudFunds: cloudFunds.length,
+                cloudTrades: cloudTrades.length
+            });
+
+            adapter.markSyncComplete();
+
+            return { success: true, pulledChanges: mergeResult.pulledChanges };
+        } finally {
             SyncAppService._syncInProgress = false;
-            return {
-                success: true,
-                hasConflicts: true,
-                conflicts: mergeResult.conflicts
-            };
         }
-
-        if (mergeResult.hasChanges) {
-            window.LocalStorageAdapter.saveSnapshot(mergeResult.snapshot);
-            SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
-        }
-
-        window.LocalStorageAdapter.updateSyncMeta({
-            cloudFunds: cloudFunds.length,
-            cloudTrades: cloudTrades.length
-        });
-
-        adapter.markSyncComplete();
-
-        SyncAppService._syncInProgress = false;
-        return { success: true, pulledChanges: mergeResult.pulledChanges };
     },
 
     async _executePush() {
@@ -396,7 +399,7 @@ const SyncAppService = {
         const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
         if (!adapter || typeof adapter.getStatus !== 'function') {
             console.log('[同步调试] push 跳过：未找到可用同步适配器');
-            return { success: true, reason: 'not_configured' };
+            return { success: false, reason: 'not_configured' };
         }
 
         const status = adapter.getStatus();
@@ -409,49 +412,51 @@ const SyncAppService = {
         SyncAppService._syncInProgress = true;
         window.LocalStorageAdapter.updateSyncMeta({ syncStatus: 'syncing' });
 
-        const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
-        SyncAppService._toLogText('[同步调试] 开始执行 push', {
-            provider: status.provider || 'unknown',
-            funds: (localSnapshot.funds || []).length,
-            trades: (localSnapshot.trades || []).length,
-            pendingChanges: localSnapshot.syncMeta && localSnapshot.syncMeta.pendingChanges || 0,
-            cloudRevision: localSnapshot.syncMeta && localSnapshot.syncMeta.cloudRevision || 0
-        });
-        const pushSource = localSnapshot.syncMeta && localSnapshot.syncMeta.pendingSource;
-        const sanitizedFunds = SyncAppService._sanitizeFundsForSync(localSnapshot.funds);
-        const result = await adapter.push(sanitizedFunds, localSnapshot.trades, { source: pushSource });
-
-        SyncAppService._syncInProgress = false;
-
-        if (result.conflict) {
-            SyncAppService._toLogText('[同步调试] push 检测到冲突', {
-                conflicts: (result.conflicts || []).length
+        try {
+            const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
+            SyncAppService._toLogText('[同步调试] 开始执行 push', {
+                provider: status.provider || 'unknown',
+                funds: (localSnapshot.funds || []).length,
+                trades: (localSnapshot.trades || []).length,
+                pendingChanges: localSnapshot.syncMeta && localSnapshot.syncMeta.pendingChanges || 0,
+                cloudRevision: localSnapshot.syncMeta && localSnapshot.syncMeta.cloudRevision || 0
             });
-            return {
-                success: false,
-                reason: 'conflict',
-                conflicts: result.conflicts
-            };
-        }
+            const prePushPendingCount = (localSnapshot.syncMeta && localSnapshot.syncMeta.pendingChanges) || 0;
+            const sanitizedFunds = SyncAppService._sanitizeFundsForSync(localSnapshot.funds);
+            const result = await adapter.push(sanitizedFunds, localSnapshot.trades);
 
-        if (!result.success) {
-            SyncAppService._toLogText('[同步调试] push 失败，准备重试', result);
-            if (window.Utils && typeof window.Utils.showToast === 'function') {
-                window.Utils.showToast('自动同步失败：' + (result.reason || 'push_failed'), 'error');
+            if (result.conflict) {
+                SyncAppService._toLogText('[同步调试] push 检测到冲突', {
+                    conflicts: (result.conflicts || []).length
+                });
+                return {
+                    success: false,
+                    reason: 'conflict',
+                    conflicts: result.conflicts
+                };
             }
-            SyncAppService._scheduleRetry(result.reason);
+
+            if (!result.success) {
+                SyncAppService._toLogText('[同步调试] push 失败，准备重试', result);
+                if (window.Utils && typeof window.Utils.showToast === 'function') {
+                    window.Utils.showToast('自动同步失败：' + (result.reason || 'push_failed'), 'error');
+                }
+                SyncAppService._scheduleRetry(result.reason);
+                return result;
+            }
+
+            if (result.success) {
+                SyncAppService._toLogText('[同步调试] push 成功', {
+                    revision: result.revision || 0
+                });
+                SyncAppService._retryCount = 0;
+                SyncAppService._finalizePushSuccess(result, prePushPendingCount);
+            }
+
             return result;
+        } finally {
+            SyncAppService._syncInProgress = false;
         }
-
-        if (result.success) {
-            SyncAppService._toLogText('[同步调试] push 成功', {
-                revision: result.revision || 0
-            });
-            SyncAppService._retryCount = 0;
-            SyncAppService._finalizePushSuccess(result);
-        }
-
-        return result;
     },
 
     _mergeData(localSnapshot, cloudSnapshot) {
@@ -466,6 +471,11 @@ const SyncAppService = {
 
         const hasChanges = mergedFunds.hasChanges || mergedTrades.hasChanges;
 
+        // 合并后，所有实体标记 lastSyncedAt
+        const now = SyncAppService._getNowIso();
+        const finalFunds = (mergedFunds.result || []).map(f => ({ ...f, lastSyncedAt: now }));
+        const finalTrades = (mergedTrades.result || []).map(t => ({ ...t, lastSyncedAt: now }));
+
         return {
             hasChanges,
             hasConflicts: conflicts.length > 0,
@@ -478,8 +488,8 @@ const SyncAppService = {
             },
             snapshot: {
                 ...localSnapshot,
-                funds: mergedFunds.result,
-                trades: mergedTrades.result
+                funds: finalFunds,
+                trades: finalTrades
             }
         };
     },
@@ -493,6 +503,20 @@ const SyncAppService = {
             if (JSON.stringify(local[key]) !== JSON.stringify(cloud[key])) return true;
         }
         return false;
+    },
+
+    async _pullWithRetry(adapter, attempt) {
+        if (attempt === undefined) attempt = 1;
+        try {
+            return await adapter.pull();
+        } catch (error) {
+            SyncAppService._toLogText('[同步调试] pull 重试 ' + attempt + '/3', { error: error.message });
+            if (attempt >= 3) {
+                return { success: false, reason: error.message };
+            }
+            await new Promise(function (resolve) { setTimeout(resolve, 2000 * attempt); });
+            return SyncAppService._pullWithRetry(adapter, attempt + 1);
+        }
     },
 
     _mergeEntities(localEntities, cloudEntities, entityType, conflicts) {
@@ -514,10 +538,12 @@ const SyncAppService = {
             }
 
             const lastSyncedTime = localEntity.lastSyncedAt ? new Date(localEntity.lastSyncedAt).getTime() : 0;
+            const cloudLastSyncedTime = cloudEntity.lastSyncedAt ? new Date(cloudEntity.lastSyncedAt).getTime() : 0;
             const localTime = new Date(localEntity.updatedAt).getTime();
             const cloudTime = new Date(cloudEntity.updatedAt).getTime();
-            const localModifiedAfterSync = lastSyncedTime === 0 || localTime > lastSyncedTime;
-            const cloudModifiedAfterSync = lastSyncedTime === 0 || cloudTime > lastSyncedTime;
+            // lastSyncedAt=0 表示从未同步，不视为"有变更"
+            const localModifiedAfterSync = lastSyncedTime > 0 && localTime > lastSyncedTime;
+            const cloudModifiedAfterSync = cloudLastSyncedTime > 0 && cloudTime > cloudLastSyncedTime;
 
             if (localModifiedAfterSync && cloudModifiedAfterSync) {
                 if (this._isEntityDataChanged(localEntity, cloudEntity)) {
@@ -528,13 +554,24 @@ const SyncAppService = {
                         cloud: cloudEntity
                     });
                 }
-                result.push(localEntity);
+                // 如果云端已删除且本地未同步该删除，保留本地（冲突由用户决定）
+                if (cloudEntity.deletedAt && !localEntity.deletedAt) {
+                    result.push(localEntity);
+                } else {
+                    result.push(localEntity);
+                }
                 hasChanges = true;
             } else if (cloudModifiedAfterSync) {
-                result.push(cloudEntity);
+                // 云端有变更：如果云端标记了删除，本地也应删除
+                if (cloudEntity.deletedAt) {
+                    result.push({ ...localEntity, deletedAt: cloudEntity.deletedAt, lastSyncedAt: null });
+                } else {
+                    result.push(cloudEntity);
+                }
                 hasChanges = true;
                 updatedCount++;
-            } else if (lastSyncedTime === 0 && localTime > thirtyDaysAgo && cloudTime > thirtyDaysAgo && localTime !== cloudTime) {
+            } else if (lastSyncedTime === 0 && cloudLastSyncedTime === 0 && localTime > thirtyDaysAgo && cloudTime > thirtyDaysAgo && localTime !== cloudTime) {
+                // 双方都未同步：30 天阈值内且数据不同
                 if (this._isEntityDataChanged(localEntity, cloudEntity)) {
                     conflicts.push({
                         entityType: entityType,
@@ -552,6 +589,11 @@ const SyncAppService = {
 
         for (const [syncId, cloudEntity] of cloudMap) {
             if (!localMap.has(syncId)) {
+                // 跳过云端已删除的实体（墓碑传播）
+                if (cloudEntity.deletedAt) {
+                    hasChanges = true;
+                    continue;
+                }
                 result.push(cloudEntity);
                 hasChanges = true;
                 addedCount++;
@@ -586,6 +628,25 @@ const SyncAppService = {
 
         const result = await adapter.resolve(conflicts, resolutions);
         if (result && result.success) {
+            // 将用户选择的解决结果写回本地 snapshot
+            const now = SyncAppService._getNowIso();
+            const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
+            const localFundMap = new Map((localSnapshot.funds || []).map(f => [f.syncId, f]));
+            const localTradeMap = new Map((localSnapshot.trades || []).map(t => [t.syncId, t]));
+
+            for (const entity of resolvedFunds) {
+                localFundMap.set(entity.syncId, { ...entity, lastSyncedAt: now });
+            }
+            for (const entity of resolvedTrades) {
+                localTradeMap.set(entity.syncId, { ...entity, lastSyncedAt: now });
+            }
+
+            window.LocalStorageAdapter.saveSnapshot({
+                ...localSnapshot,
+                funds: Array.from(localFundMap.values()),
+                trades: Array.from(localTradeMap.values())
+            });
+
             if (result.revision) {
                 window.LocalStorageAdapter.updateSyncMeta({
                     cloudRevision: result.revision,
@@ -609,7 +670,11 @@ const SyncAppService = {
         const adapter = window.LocalStorageAdapter.getCurrentSyncAdapter();
         const snapshot = window.LocalStorageAdapter.loadSnapshot();
 
-        window.LocalStorageAdapter.updateSyncMeta({ cloudRevision: 0 });
+        // 先拉取最新云端 revision，再用正确版本推送
+        const cloudMeta = await adapter.pull();
+        if (cloudMeta && cloudMeta.success) {
+            window.LocalStorageAdapter.updateSyncMeta({ cloudRevision: cloudMeta.revision || 0 });
+        }
 
         const sanitizedFunds = SyncAppService._sanitizeFundsForSync(snapshot.funds);
         return adapter.push(sanitizedFunds, snapshot.trades);
@@ -635,44 +700,46 @@ const SyncAppService = {
         SyncAppService._syncInProgress = true;
         window.LocalStorageAdapter.updateSyncMeta({ syncStatus: 'syncing' });
 
-        const result = await adapter.pull();
-        if (!result.success) {
-            SyncAppService._syncInProgress = false;
-            return result;
-        }
-
-        const now = SyncAppService._getNowIso();
-        const cloudFunds = result.funds || [];
-        const cloudTrades = result.trades || [];
-        const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
-
-        const newSnapshot = {
-            ...localSnapshot,
-            funds: cloudFunds.map(function (f) { return { ...f, lastSyncedAt: now }; }),
-            trades: cloudTrades.map(function (t) { return { ...t, lastSyncedAt: now }; }),
-            syncMeta: {
-                ...localSnapshot.syncMeta,
-                cloudFunds: cloudFunds.length,
-                cloudTrades: cloudTrades.length,
-                cloudRevision: result.revision || localSnapshot.syncMeta.cloudRevision || 0,
-                pendingChanges: 0,
-                lastSyncAt: now,
-                lastPulledAt: now,
-                syncStatus: 'idle',
-                lastError: null
+        try {
+            const result = await adapter.pull();
+            if (!result.success) {
+                return result;
             }
-        };
 
-        window.LocalStorageAdapter.saveSnapshot(newSnapshot);
-        SyncAppService._syncInProgress = false;
-        SyncAppService._emitSyncApplied({ mode: 'overwrite', hasChanges: true });
+            const now = SyncAppService._getNowIso();
+            const cloudFunds = result.funds || [];
+            const cloudTrades = result.trades || [];
+            const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
 
-        SyncAppService._toLogText('[同步调试] forceOverwriteLocal 成功', {
-            funds: cloudFunds.length,
-            trades: cloudTrades.length
-        });
+            const newSnapshot = {
+                ...localSnapshot,
+                funds: cloudFunds.map(function (f) { return { ...f, lastSyncedAt: now }; }),
+                trades: cloudTrades.map(function (t) { return { ...t, lastSyncedAt: now }; }),
+                syncMeta: {
+                    ...localSnapshot.syncMeta,
+                    cloudFunds: cloudFunds.length,
+                    cloudTrades: cloudTrades.length,
+                    cloudRevision: result.revision || localSnapshot.syncMeta.cloudRevision || 0,
+                    pendingChanges: 0,
+                    lastSyncAt: now,
+                    lastPulledAt: now,
+                    syncStatus: 'idle',
+                    lastError: null
+                }
+            };
 
-        return { success: true, reason: 'overwritten_from_cloud' };
+            window.LocalStorageAdapter.saveSnapshot(newSnapshot);
+            SyncAppService._emitSyncApplied({ mode: 'overwrite', hasChanges: true });
+
+            SyncAppService._toLogText('[同步调试] forceOverwriteLocal 成功', {
+                funds: cloudFunds.length,
+                trades: cloudTrades.length
+            });
+
+            return { success: true, reason: 'overwritten_from_cloud' };
+        } finally {
+            SyncAppService._syncInProgress = false;
+        }
     },
 
     async _handleFirstSyncChoice(choice) {
@@ -768,6 +835,16 @@ const SyncAppService = {
             SyncAppService._firstSyncCloudData = null;
             SyncAppService._emitSyncApplied({ mode: 'first-sync-merge', hasChanges: true });
             return { success: true, reason: 'first_sync_merge' };
+        }
+
+        if (choice === 'cancel') {
+            SyncAppService._firstSyncCloudData = null;
+            SyncAppService._syncInProgress = false;
+            window.LocalStorageAdapter.updateSyncMeta({
+                syncStatus: 'idle',
+                lastError: '首次同步已取消'
+            });
+            return { success: false, reason: 'cancelled' };
         }
 
         SyncAppService._firstSyncCloudData = null;

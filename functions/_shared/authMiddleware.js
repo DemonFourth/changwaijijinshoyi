@@ -5,6 +5,7 @@
 
 /**
  * 检查 API Key 是否有效（用于写入操作）
+ * 支持 X-API-Key（Public API）和 X-Sync-Key（Sync API）两种请求头
  * @param {Object} env - Pages Functions 环境对象
  * @param {Request} request - 请求对象
  * @returns {boolean} 是否有效
@@ -16,9 +17,9 @@ export function checkApiKey(env, request) {
         return false;
     }
 
-    const incomingKey = request.headers.get('X-API-Key');
+    const incomingKey = request.headers.get('X-API-Key') || request.headers.get('X-Sync-Key');
     if (!incomingKey) {
-        console.error('[Auth] X-API-Key header missing');
+        console.error('[Auth] API Key header missing');
         return false;
     }
 
@@ -128,17 +129,23 @@ export function internalErrorResponse(message = 'Internal server error') {
 }
 
 /**
- * 处理 OPTIONS 预检请求
+ * 处理 OPTIONS 预检请求（支持 CORS 反射 Origin）
+ * @param {Request} [request] - 请求对象（用于反射 Origin）
  * @returns {Response}
  */
-export function handleOptions() {
-    return new Response(null, {
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, X-API-Key'
-        }
-    });
+export function handleOptions(request) {
+    const origin = request ? request.headers.get('Origin') : null;
+    const headers = {
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, X-API-Key'
+    };
+    if (origin) {
+        headers['Access-Control-Allow-Origin'] = origin;
+        headers['Vary'] = 'Origin';
+    } else {
+        headers['Access-Control-Allow-Origin'] = '*';
+    }
+    return new Response(null, { headers });
 }
 
 /**

@@ -88,7 +88,7 @@ BigNumberFormatter, echarts, ConversionCalculator, ToolPage,
 StatisticsAppService, SyncAppService, LocalStorageAdapter,
 CloudflareD1SyncAdapter, SyncAdapterRegistry, FundProviderRegistry,
 TiantianFundProvider, SyncConflictModalHelper, SyncFirstSyncHelper,
-SyncStatusPresenter
+SyncStatusPresenter, RuntimeConfigLoader, StorageSchema, StorageMigrations
 ```
 
 ### 模块组织约定
@@ -468,21 +468,25 @@ if (selectedCycleId) {
 
 ### 冲突检测规则
 
-服务端和客户端使用**统一的冲突检测逻辑**（以 `lastSyncedAt` 为基准）：
+服务端和客户端使用**统一的冲突检测逻辑**（两方独立检查 `lastSyncedAt`）：
 
-1. **首次同步**（`lastSyncedAt` 为 0 或空）：双方在 30 天内都有修改且数据不同 → 冲突
-2. **非首次同步**：双方自上次同步后都有修改且数据不同 → 冲突
+1. **双方都有 lastSyncedAt**：各自检查 `updatedAt > lastSyncedAt` → 两者都变才冲突
+2. **仅一方有 lastSyncedAt**：有的一方判断是否修改；无的一方视为未同步
+3. **双方都无 lastSyncedAt**：跳过冲突检测，走 30 天首次同步兜底阈值
 
 ```javascript
-// 伪代码描述
-const lastSyncedTime = localEntity.lastSyncedAt ? new Date(localEntity.lastSyncedAt).getTime() : 0;
-const localModifiedAfterSync = lastSyncedTime === 0 || localTime > lastSyncedTime;
-const cloudModifiedAfterSync = lastSyncedTime === 0 || cloudTime > lastSyncedTime;
+// 修复后逻辑（服务端 syncUtils.js + 客户端 _mergeEntities 一致）
+const localLastSynced = localEntity.lastSyncedAt ? new Date(localEntity.lastSyncedAt).getTime() : 0;
+const cloudLastSynced = cloudEntity.lastSyncedAt ? new Date(cloudEntity.lastSyncedAt).getTime() : 0;
+const localModifiedAfterSync = localLastSynced > 0 && localTime > localLastSynced;
+const cloudModifiedAfterSync = cloudLastSynced > 0 && cloudTime > cloudLastSynced;
 
 if (localModifiedAfterSync && cloudModifiedAfterSync) {
-    if (数据有实质变化) conflicts.push(...);
+    if (业务数据有实质差异) conflicts.push(...);
 }
 ```
+
+**关键修复**：`lastSyncedTime === 0` 不再等价于"有变更"（原 bug）。双方都无 `lastSyncedAt` 时静默跳过，30 天阈值做兜底。
 
 ### Pull 三种路径
 
@@ -559,17 +563,20 @@ const isFirstSync = lastSyncedTime === 0;
 - 首次同步增加 30 天兜底阈值
 
 ### 同步锁
-使用 `_syncInProgress` 标志防止 Pull/Push 并发执行：
+使用 `_syncInProgress` 标志 + `try-finally` 防止 Pull/Push 并发执行：
+
 ```javascript
-async _executePull() {
-    if (SyncAppService._syncInProgress) {
-        return { success: true, reason: 'sync_in_progress' };
-    }
+async _executePush() {
     SyncAppService._syncInProgress = true;
-    // ... 执行 pull
-    SyncAppService._syncInProgress = false;
+    try {
+        // ... push 逻辑
+    } finally {
+        SyncAppService._syncInProgress = false;  // 异常时也释放
+    }
 }
 ```
+
+**修复**：原代码在 try 块外释放锁，异常时锁永久持有。现统一使用 `try-finally` 确保始终释放。
 
 #### 冲突解决后更新 revision
 `resolveConflicts()` 成功后必须更新 `cloudRevision`：
@@ -663,6 +670,46 @@ localStorage.setItem('fund_calculator_snapshot', JSON.stringify(snapshot));
 - 即使客户端修复了新导入代码路径，localStorage 中已有的损坏交易仍需通过修复 1（服务端防御）来兼容
 - D1 的 `bind()` 方法对 `undefined` 敏感，但对 `null` 友好，因此 `|| null` 是可靠的安全垫
 
+### 已知修复清单（2026-05-19）
+
+| 问题 | 类型 | 修复 |
+|------|------|------|
+| CORS 凭证冲突 | 阻塞 | `jsonResponse` 反射 `Origin` + 移除 `credentials:'include'` |
+| sync 端点无认证 | 阻塞 | X-Sync-Key 校验（复用 `PUBLIC_API_KEY`） |
+| D1 无乐观锁 | 阻塞 | `UPDATE WHERE revision = ?` + `affectedRows` 检查 |
+| Push 全量替换丢失云端实体 | 阻塞 | 推送时合并云端独有实体到客户端数据 |
+| forcePushLocal 永久失败 | 阻塞 | 先 fetch `cloudRevision` 再 push |
+| this 绑定风险 | 阻塞 | `visibilitychange` 使用 `SyncAppService._executePush()` |
+| 锁释放过早/异常不释放 | 阻塞 | `try-finally` 包裹全部同步操作 |
+| pendingChanges 竞态 | 高 | `prePushPendingCount` 记录，只减增量 |
+| import 旁路 | 高 | 移除 `source: 'import'` 分支 |
+| merge 后无 lastSyncedAt | 高 | 合并后全部实体标记 `lastSyncedAt: now` |
+| entityType 启发式误判 | 高 | `entityType: 'fund'/'trade'` 显式字段 |
+| 冲突解决不保存本地 | 高 | resolve 成功后写回 `localStorage` |
+| 字段清洗虚假冲突 | 中 | 服务端 `isDataChanged` 排除 `netValue` 等动态字段 |
+| lastSyncedAt=0 假冲突 | 中 | 两方独立检查，`0` 不再视为"有变更" |
+| 服务端无输入校验 | 中 | `validateEntities()` 校验 syncId/type/code/name |
+| Resolve 无 revision 检查 | 中 | `baseRevision` 比较 + 乐观锁 |
+| Public API 无 changelog/lastSyncedAt | 中 | POST 写入 `appendChangeLogs` + 设置 `lastSyncedAt` |
+| 删除实体不同步 (tombstone) | 中 | Pull 时过滤 `deletedAt` 实体，Push 携带 |
+| 增量拉取 | 低 | `getChangesSince()` + `sinceRevision` 参数 |
+| 无 adapter 时 success:true | 低 | 改为 `{ success: false, reason: 'not_configured' }` |
+| Pull 无重试 | 低 | `_pullWithRetry` 3 次退避（2s/4s/8s） |
+| banner 不可点击 | 低 | 事件委托 `[data-action="open-sync-tools"]` |
+| conflict modal 无 netValue | 低 | `TRADE_FIELDS` 添加 `netValue` |
+| 本地版本号混淆 | 低 | 本地卡片显示 `-` |
+| 冲突弹窗无 scrollTop 重置 | 低 | `show()` 中重置 |
+| 首次弹窗关闭无回调 | 低 | 关闭时调 `onChoice('cancel')` + `_handleFirstSyncChoice` 处理 |
+| 尾部斜杠导致空 fundCode | 低 | `.filter()` 空字符串 |
+| JSON.stringify 排序依赖 | 低 | `stableStringify` 排序后比较 |
+| handleOptions 重复 | 低 | 统一 Origin 反射 + request 参数 |
+| payload 1MB 限制 | 低 | `Content-Length` 检查 |
+| 遗留 CSS(.sync-status) | 低 | 移除 |
+
+### 修复文档
+- `docs/sync-mechanism-analysis.md` — 全量分析（37 BUG、13 P-GAP、18 E、7 SEC、8 UI）
+- `docs/sync-mechanism-fix-plan.md` — 两阶段修复方案
+
 ### Public API
 
 | 接口 | 方法 | 说明 |
@@ -689,6 +736,15 @@ await SyncAppService.forcePushLocal()
 
 // 强制拉取云端数据（覆盖本地）
 await SyncAppService.forceOverwriteLocal()
+
+// 刷新云端元数据
+await SyncAppService.refreshCloudMeta()
+
+// 查看适配器是否携带 syncKey
+CloudflareD1SyncAdapter._config.syncKey
+
+// 检查是否有缺失 id 的损坏数据
+JSON.parse(localStorage.getItem('fund_calculator_snapshot')).trades.filter(t => !t.id).length
 ```
 
 ---
@@ -836,6 +892,10 @@ functions/
 - Public API 当前仅开放 `funds`、`trades` 与 `help`；其中 GET 公开读取，POST `/api/public/trades` 需 `PUBLIC_API_KEY`
 - Public API 写入记录时，只允许追加单条 trade，不应绕过现有 snapshot / revision 更新逻辑
 - 修改数据模型、存储、application层、detail/modal/overview关键路径或 `functions/api/*` 时，必须补或更新测试
+- 同步端点统一使用 `jsonResponse(data, status, request)` 返回（自动反射 Origin）
+- 认证统一通过 `checkApiKey(env, request)` 检查 X-API-Key 或 X-Sync-Key
+- 服务端输入校验使用 `validateEntities(funds, trades)` 检查必要字段
+- D1 乐观锁通过 `UPDATE WHERE revision = ?` + `affectedRows` 实现
 
 ---
 

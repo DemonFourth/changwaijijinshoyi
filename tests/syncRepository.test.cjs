@@ -48,11 +48,12 @@ test('updateSnapshot upserts app snapshot when main row is missing', async () =>
         }
     };
 
-    const revision = await updateSnapshot(env, {
+    const result = await updateSnapshot(env, {
         funds: [{ id: 'fund-1', syncId: 'fund-1' }],
         trades: [{ id: 'trade-1', syncId: 'trade-1' }]
     }, 'default');
 
-    assert.equal(revision, 1);
+    assert.equal(result.success, true);
+    assert.equal(result.revision, 1);
     assert.equal(sqlCalls.some(sql => sql.includes('INSERT INTO app_snapshot')), true);
 });

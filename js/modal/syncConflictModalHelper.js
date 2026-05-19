@@ -12,6 +12,7 @@ const SyncConflictModalHelper = {
             const map = { buy: '\u4e70\u5165', sell: '\u5356\u51fa', dividend: '\u5206\u7ea2' };
             return map[v] || v || '-';
         } },
+        { key: 'netValue', label: '\u51c0\u503c', fmt: function (v) { return v !== null && v !== undefined ? v : '-'; } },
         { key: 'shares', label: '\u4efd\u989d', fmt: function (v) { return v !== null && v !== undefined ? v : '-'; } },
         { key: 'amount', label: '\u91d1\u989d', fmt: function (v) { return v !== null && v !== undefined ? v : '-'; } },
         { key: 'fee', label: '\u624b\u7eed\u8d39', fmt: function (v) { return v !== null && v !== undefined ? v : '-'; } },
@@ -28,6 +29,10 @@ const SyncConflictModalHelper = {
         const title = document.getElementById('modal-title');
         const body = document.getElementById('modal-body');
         const footer = document.getElementById('modal-footer');
+
+        // 重置滚动位置
+        if (body) body.scrollTop = 0;
+        if (container) container.scrollTop = 0;
 
         title.textContent = '同步冲突';
         body.innerHTML = '\

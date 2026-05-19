@@ -1,7 +1,8 @@
 const CloudflareD1SyncAdapter = {
     _config: {
         basePath: null,
-        timeout: 10000
+        timeout: 10000,
+        syncKey: null
     },
 
     init(config = {}) {
@@ -61,11 +62,17 @@ const CloudflareD1SyncAdapter = {
         const syncMeta = window.LocalStorageAdapter.getSyncMeta();
 
         try {
-            const response = await CloudflareD1SyncAdapter._request('/pull', 'GET', {
+            const params = {
                 deviceId: syncMeta.deviceId,
                 cloudRevision: syncMeta.cloudRevision,
                 lastPulledAt: syncMeta.lastPulledAt
-            });
+            };
+            // 增量拉取：如果有上次同步的 revision，请求增量
+            if (syncMeta.cloudRevision > 0) {
+                params.sinceRevision = syncMeta.cloudRevision;
+            }
+
+            const response = await CloudflareD1SyncAdapter._request('/pull', 'GET', params);
 
             if (response.success) {
                 window.LocalStorageAdapter.updateSyncMeta({
@@ -85,7 +92,7 @@ const CloudflareD1SyncAdapter = {
         }
     },
 
-    async push(funds, trades, options) {
+    async push(funds, trades) {
         if (!CloudflareD1SyncAdapter.isConfigured()) {
             return { success: false, reason: 'not_configured' };
         }
@@ -98,10 +105,6 @@ const CloudflareD1SyncAdapter = {
             funds: funds,
             trades: trades
         };
-
-        if (options && options.source) {
-            body.source = options.source;
-        }
 
         try {
             const response = await CloudflareD1SyncAdapter._request('/push', 'POST', body);
@@ -173,23 +176,28 @@ const CloudflareD1SyncAdapter = {
     },
 
     async _request(endpoint, method, body = null) {
-        const { timeout } = CloudflareD1SyncAdapter._config;
+        const { timeout, syncKey } = CloudflareD1SyncAdapter._config;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (syncKey) {
+            headers['X-Sync-Key'] = syncKey;
+        }
+
         const options = {
             method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            signal: controller.signal,
-            credentials: 'include'
+            headers,
+            signal: controller.signal
         };
 
         // GET/HEAD 请求不能带 body，改为 URL 查询参数
         const GET_OR_HEAD_METHODS = ['GET', 'HEAD'];
         if (body && GET_OR_HEAD_METHODS.includes(method.toUpperCase())) {
             const queryString = Object.entries(body)
+                .filter(([_, value]) => value !== undefined && value !== null)
                 .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
                 .join('&');
             const url = CloudflareD1SyncAdapter._buildUrl(endpoint) + (queryString ? '?' + queryString : '');

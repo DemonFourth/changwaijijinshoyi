@@ -40,6 +40,8 @@ const SyncStatusPresenter = {
                 window.Modal.show('syncTools');
             });
         }
+        // 初始化 banner 点击（事件委托，只绑定一次）
+        SyncStatusPresenter.bindBannerClick();
     },
 
     _getStatusIcon(status) {
@@ -90,6 +92,15 @@ const SyncStatusPresenter = {
         return `<div class="sync-status-banner sync-status-${status}" data-action="open-sync-tools">${statusText}${errorText} · 查看同步工具</div>`;
     },
 
+    bindBannerClick() {
+        document.addEventListener('click', function (e) {
+            const banner = e.target.closest('[data-action="open-sync-tools"]');
+            if (banner) {
+                window.Modal.show('syncTools');
+            }
+        });
+    },
+
     _buildSyncToolsBodyHtml(syncStatus, localSnapshot) {
         const localFunds = localSnapshot.funds || [];
         const localTrades = localSnapshot.trades || [];
@@ -133,7 +144,7 @@ const SyncStatusPresenter = {
                         </div>
                         <div class="sync-tools-card-body">
                             <div class="sync-tools-stat">
-                                <span class="sync-tools-stat-value">${cloudRevision}</span>
+                                <span class="sync-tools-stat-value">-</span>
                                 <span class="sync-tools-stat-label">版本</span>
                             </div>
                             <div class="sync-tools-stat">

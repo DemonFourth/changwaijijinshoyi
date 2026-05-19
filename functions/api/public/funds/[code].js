@@ -11,7 +11,7 @@ export const onRequest = async (context) => {
     const { request, env } = context;
 
     if (request.method === 'OPTIONS') {
-        return handleOptions();
+        return handleOptions(request);
     }
 
     if (request.method !== 'GET') {
@@ -25,7 +25,7 @@ export const onRequest = async (context) => {
     }
 
     const url = new URL(request.url);
-    const pathParts = url.pathname.split('/');
+    const pathParts = url.pathname.split('/').filter(function (p) { return p; });
     const fundCode = pathParts[pathParts.length - 1];
 
     if (!fundCode) {

@@ -44,7 +44,8 @@ const StorageSchema = {
 
         return {
             ...fund,
-            id: fund.id,
+            entityType: 'fund',
+            id: fund.id || (typeof Utils !== 'undefined' ? Utils.generateId() : 'f_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9)),
             code: fund.code,
             name: fund.name,
             remark: fund.remark || '',
@@ -62,6 +63,7 @@ const StorageSchema = {
 
         return {
             ...trade,
+            entityType: 'trade',
             id: trade.id || (typeof Utils !== 'undefined' ? Utils.generateId() : 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9)),
             fundId: trade.fundId,
             date: trade.date,

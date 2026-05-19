@@ -27,7 +27,8 @@ const App = {
             // 初始化同步服务（使用运行时配置）
             const syncEnabled = Config.get('sync.enabled', false);
             const syncBasePath = Config.get('sync.basePath', '');
-            await SyncAppService.init({ enabled: syncEnabled, basePath: syncBasePath, timeout: Config.get('sync.timeout') });
+            const syncKey = Config.get('sync.syncKey', null);
+            await SyncAppService.init({ enabled: syncEnabled, basePath: syncBasePath, timeout: Config.get('sync.timeout'), syncKey: syncKey });
             this.setupSyncCompensation();
             window.SyncStatusPresenter.updateHeaderIndicator();
 

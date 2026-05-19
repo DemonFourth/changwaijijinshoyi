@@ -37,15 +37,15 @@ export async function getSnapshot(env, userId = 'default') {
 }
 
 /**
- * 更新云端快照（用于 push）
+ * 更新云端快照（用于 push），含乐观并发控制
  * @param {Object} env - Pages Functions 的环境对象（含 env.DB）
  * @param {Object} payload - { funds, trades, sync_meta? }
  * @param {string} userId - 用户标识（默认 'default'）
- * @returns {Promise<number>} 新 revision
+ * @returns {Promise<Object>} { success, revision, error? }
  */
 export async function updateSnapshot(env, payload, userId = 'default') {
     if (!env.DB) {
-        return 0;
+        return { success: false, error: 'DB not available' };
     }
 
     const { funds, trades, sync_meta } = payload;
@@ -55,7 +55,8 @@ export async function updateSnapshot(env, payload, userId = 'default') {
         SELECT revision FROM app_snapshot WHERE id = 'main' AND user_id = ?
     `).bind(userId).first();
 
-    const newRevision = (current && current.revision !== undefined ? current.revision : 0) + 1;
+    const currentRevision = current && current.revision !== undefined ? current.revision : 0;
+    const newRevision = currentRevision + 1;
     const serializedFunds = JSON.stringify(funds);
     const serializedTrades = JSON.stringify(trades);
     const serializedSyncMeta = sync_meta ? JSON.stringify(sync_meta) : null;
@@ -71,26 +72,74 @@ export async function updateSnapshot(env, payload, userId = 'default') {
             serializedTrades,
             serializedSyncMeta
         ).run();
-        return newRevision;
+        return { success: true, revision: newRevision };
     }
 
-    await env.DB.prepare(`
+    const result = await env.DB.prepare(`
         UPDATE app_snapshot
         SET revision = ?,
             funds_json = ?,
             trades_json = ?,
             sync_meta_json = ?,
             updated_at = datetime('now')
-        WHERE id = 'main' AND user_id = ?
+        WHERE id = 'main' AND user_id = ? AND revision = ?
     `).bind(
         newRevision,
         serializedFunds,
         serializedTrades,
         serializedSyncMeta,
-        userId
+        userId,
+        currentRevision
     ).run();
 
-    return newRevision;
+    // 乐观锁检查：如果 affectedRows === 0，说明有其他写入并发
+    if (result.meta && result.meta.changes === 0) {
+        return { success: false, error: 'optimistic_lock_conflict', revision: newRevision };
+    }
+
+    return { success: true, revision: newRevision };
+}
+
+/**
+ * 获取增量变更（用于增量 pull）
+ * @param {Object} env - Pages Functions 的环境对象（含 env.DB）
+ * @param {number} sinceRevision - 起始 revision
+ * @param {string} userId - 用户标识（默认 'default'）
+ * @returns {Promise<Object>} { changes, full: boolean } changes 为变更数组，full=true 表示返回了全量快照
+ */
+export async function getChangesSince(env, sinceRevision, userId = 'default') {
+    if (!env.DB || !sinceRevision || sinceRevision <= 0) {
+        return { changes: null, full: true };
+    }
+
+    try {
+        const rows = await env.DB.prepare(`
+            SELECT revision, entity_type, sync_id, operation, payload_json, created_at
+            FROM change_log
+            WHERE revision > ? AND user_id = ?
+            ORDER BY revision ASC, id ASC
+        `).bind(sinceRevision, userId).all();
+
+        if (rows && rows.results && rows.results.length > 0) {
+            return {
+                changes: rows.results.map(function (row) {
+                    return {
+                        revision: row.revision,
+                        entityType: row.entity_type,
+                        syncId: row.sync_id,
+                        operation: row.operation,
+                        payload: row.payload_json ? JSON.parse(row.payload_json) : null,
+                        createdAt: row.created_at
+                    };
+                }),
+                full: false
+            };
+        }
+    } catch (error) {
+        console.error('[SyncRepository] getChangesSince error:', error.message);
+    }
+
+    return { changes: null, full: true };
 }
 
 /**

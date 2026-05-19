@@ -9,17 +9,26 @@
 export const onRequest = async (context) => {
     const env = context.env;
 
-    // 检测是否有 D1 绑定
     const hasD1 = !!env.DB;
+    const syncKey = env.PUBLIC_API_KEY || null;
 
     const config = {
         sync: {
             enabled: hasD1,
             basePath: hasD1 ? '/api/sync' : '',
-            timeout: 10000
+            timeout: 10000,
+            syncKey: syncKey
         },
         storageMode: hasD1 ? 'hybrid' : 'local'
     };
+
+    return new Response(JSON.stringify(config), {
+        headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store'
+        }
+    });
+};
 
     return new Response(JSON.stringify(config), {
         headers: {

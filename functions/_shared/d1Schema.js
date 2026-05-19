@@ -79,6 +79,7 @@ export async function ensureTables(env) {
             console.log('[D1Schema] tables auto-created');
         }
     } catch (error) {
-        console.error('[D1Schema] auto-table-creation failed:', error.message);
+        console.error('[D1Schema] auto-table-creation failed:', error.stack || error.message);
+        throw error;
     }
 }

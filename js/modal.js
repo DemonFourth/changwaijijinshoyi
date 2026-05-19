@@ -131,7 +131,7 @@ const Modal = {
             return;
         }
 
-        Modal.show('syncConflict', syncResult);
+        console.error('[Sync] SyncConflictModalHelper not available');
     },
 
     /**

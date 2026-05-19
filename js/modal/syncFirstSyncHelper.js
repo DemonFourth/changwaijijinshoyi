@@ -71,6 +71,10 @@ const SyncFirstSyncHelper = {
             SyncFirstSyncHelper._removeCloseListener();
             SyncFirstSyncHelper._closeHandler = function () {
                 SyncFirstSyncHelper.close();
+                // 关闭弹窗视为取消，触发回调让上层清理 sync 状态
+                if (typeof onChoice === 'function') {
+                    onChoice('cancel');
+                }
             };
             btnClose.addEventListener('click', SyncFirstSyncHelper._closeHandler);
         }

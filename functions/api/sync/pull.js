@@ -9,8 +9,9 @@
  */
 
 import { ensureTables } from '../../_shared/d1Schema.js';
-import { getSnapshot } from '../../_shared/syncRepository.js';
+import { getSnapshot, getChangesSince } from '../../_shared/syncRepository.js';
 import { jsonResponse } from '../../_shared/syncUtils.js';
+import { checkApiKey, unauthorizedResponse } from '../../_shared/authMiddleware.js';
 
 export const onRequest = async (context) => {
     const { request, env } = context;
@@ -18,7 +19,12 @@ export const onRequest = async (context) => {
 
     // OPTIONS 预检
     if (request.method === 'OPTIONS') {
-        return jsonResponse({});
+        return jsonResponse({}, 200, request);
+    }
+
+    // 鉴权：同步拉取需要 X-Sync-Key
+    if (!checkApiKey(env, request)) {
+        return unauthorizedResponse('Invalid or missing X-Sync-Key');
     }
 
     try {
@@ -27,21 +33,43 @@ export const onRequest = async (context) => {
 
         const deviceId = url.searchParams.get('deviceId') || '';
         const cloudRevision = parseInt(url.searchParams.get('cloudRevision') || '0', 10);
+        const sinceRevision = parseInt(url.searchParams.get('sinceRevision') || '0', 10);
 
         // 获取云端快照
         const snapshot = await getSnapshot(env, 'default');
 
+        // 增量拉取：请求了 sinceRevision 且云端有变更记录
+        let changes = null;
+        let isIncremental = false;
+        if (sinceRevision > 0) {
+            const changesResult = await getChangesSince(env, sinceRevision, 'default');
+            if (!changesResult.full && changesResult.changes) {
+                changes = changesResult.changes;
+                isIncremental = true;
+            }
+        }
+
+        if (isIncremental) {
+            return jsonResponse({
+                success: true,
+                revision: snapshot.revision,
+                incremental: true,
+                changes: changes
+            }, 200, request);
+        }
+
         return jsonResponse({
             success: true,
             revision: snapshot.revision,
+            incremental: false,
             funds: snapshot.funds,
             trades: snapshot.trades,
             serverTime: snapshot.updated_at
-        });
+        }, 200, request);
     } catch (error) {
         return jsonResponse({
             success: false,
             error: error.message
-        }, 500);
+        }, 500, request);
     }
 };
