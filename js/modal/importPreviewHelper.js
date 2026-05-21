@@ -45,6 +45,24 @@ const ImportPreviewHelper = {
         console.log('[ImportPreview] show() complete');
     },
 
+    _cleanupPreviewState() {
+        const container = document.getElementById('modal-container');
+        if (container) {
+            const modalEl = container.querySelector('.modal');
+            if (modalEl) {
+                const existingActions = modalEl.querySelector('.ip-actions');
+                if (existingActions) existingActions.remove();
+            }
+            container.classList.remove('modal-import-preview');
+        }
+        const footer = document.getElementById('modal-footer');
+        if (footer) {
+            footer.style.display = '';
+        }
+        this._pendingData = null;
+        this._analysis = null;
+    },
+
     hide() {
         const container = document.getElementById('modal-container');
         if (container) {
@@ -239,7 +257,10 @@ const ImportPreviewHelper = {
         const btnOverwrite = document.getElementById('btn-import-overwrite');
         const btnClose = document.querySelector('.modal-close');
 
-        btnCancel?.addEventListener('click', () => this.hide());
+        btnCancel?.addEventListener('click', () => {
+            this._cleanupPreviewState();
+            window.BatchTradeImportHelper.restoreState();
+        });
 
         btnMerge?.addEventListener('click', async () => {
             if (this._analysis?.normalized) {

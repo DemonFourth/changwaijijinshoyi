@@ -2,6 +2,8 @@ const BatchTradeImportHelper = {
     _fundId: null,
     _textarea: null,
     _separatorSelect: null,
+    _savedTextareaContent: null,
+    _savedSeparator: null,
 
     TYPE_MAP: {
         '1': { type: 'buy', label: '买入' },
@@ -26,17 +28,21 @@ const BatchTradeImportHelper = {
     renderContent() {
         const content = `
             <div class="batch-import-modal">
-                <div class="batch-import-format-hint">
-                    <div class="format-title">格式说明：</div>
-                    <div class="format-example" id="batch-import-format-example">
-                        日期,类型,净值,份额,手续费,金额,备注
+                <div class="batch-import-info-row">
+                    <div class="batch-import-format-hint">
+                        <div class="format-title">格式说明：</div>
+                        <div class="format-example" id="batch-import-format-example">
+                            日期,类型,净值,份额,手续费,金额,备注
+                        </div>
+                        <div class="format-type-map">
+                            类型：1=买入  2=卖出  3=分红(现金)  4=分红(再投资)
+                        </div>
+                        <div class="format-note">
+                            手续费/金额/备注可留空，导入时自动计算
+                        </div>
                     </div>
-                    <div class="format-type-map">
-                        类型：1=买入  2=卖出  3=分红(现金)  4=分红(再投资)
-                    </div>
-                    <div class="format-note">
-                        手续费/金额/备注可留空，导入时自动计算
-                    </div>
+
+                    <div id="batch-import-error" class="batch-import-error hidden"></div>
                 </div>
 
                 <div class="batch-import-controls-row">
@@ -61,8 +67,6 @@ const BatchTradeImportHelper = {
                 <textarea id="batch-import-textarea" class="batch-import-textarea"
                     placeholder="2024-01-15,1,1.2345,1000,,,首次买入&#10;2024-02-20,2,1.3000,500,,,&#10;2024-03-10,3,1.2500,100,50,1250,季度分红"
                     rows="10"></textarea>
-
-                <div id="batch-import-error" class="batch-import-error hidden"></div>
             </div>
         `;
 
@@ -406,6 +410,9 @@ const BatchTradeImportHelper = {
 
         const cleanTrades = trades.map(t => this._cleanUndefinedFields(t));
 
+        this._savedTextareaContent = this._textarea ? this._textarea.value : '';
+        this._savedSeparator = this._separatorSelect ? this._separatorSelect.value : 'comma';
+
         const analysis = {
             success: true,
             summary: {
@@ -434,6 +441,40 @@ const BatchTradeImportHelper = {
 
         window.Modal.hide();
         window.ImportPreviewHelper.show(analysis);
+    },
+
+    restoreState() {
+        const container = document.getElementById('modal-container');
+        const title = document.getElementById('modal-title');
+        const body = document.getElementById('modal-body');
+        const footer = document.getElementById('modal-footer');
+
+        if (!container || !title || !body) return;
+
+        title.textContent = '批量导入交易记录';
+        body.innerHTML = this.renderContent().content;
+
+        const rendered = this.renderContent();
+        body.innerHTML = rendered.content;
+        footer.innerHTML = rendered.actions || '';
+
+        container.classList.remove('hidden');
+        container.className = 'modal-container modal-batch-trade-import';
+
+        this.bindEvents();
+
+        setTimeout(() => {
+            const textarea = document.getElementById('batch-import-textarea');
+            const separatorSelect = document.getElementById('batch-import-separator');
+            if (textarea && this._savedTextareaContent !== null) {
+                textarea.value = this._savedTextareaContent;
+            }
+            if (separatorSelect && this._savedSeparator !== null) {
+                separatorSelect.value = this._savedSeparator;
+            }
+            this._textarea = textarea;
+            this._separatorSelect = separatorSelect;
+        }, 0);
     },
 
     _cleanUndefinedFields(obj) {
