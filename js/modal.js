@@ -1315,9 +1315,7 @@ const Modal = {
 
         if (needSave) {
             FundManager.updateFund(fund.id, fund);
-            // 重新渲染弹窗内容以显示填充的值
             Modal.show('feeSettings', { fundId: fundId });
-            Modal.bindFeeSettingsEvents({ fundId: fundId });
             return;
         }
 
