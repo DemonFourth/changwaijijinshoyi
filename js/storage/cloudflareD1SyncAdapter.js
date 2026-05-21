@@ -205,8 +205,6 @@ const CloudflareD1SyncAdapter = {
 
     async _request(endpoint, method, body = null) {
         const { timeout, syncKey } = CloudflareD1SyncAdapter._config;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         const headers = {
             'Content-Type': 'application/json'
@@ -217,8 +215,7 @@ const CloudflareD1SyncAdapter = {
 
         const options = {
             method,
-            headers,
-            signal: controller.signal
+            headers
         };
 
         // GET/HEAD 请求不能带 body，改为 URL 查询参数
@@ -229,6 +226,9 @@ const CloudflareD1SyncAdapter = {
                 .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
                 .join('&');
             const url = CloudflareD1SyncAdapter._buildUrl(endpoint) + (queryString ? '?' + queryString : '');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            options.signal = controller.signal;
             const response = await fetch(url, options);
             clearTimeout(timeoutId);
 
@@ -246,6 +246,11 @@ const CloudflareD1SyncAdapter = {
             options.body = compressed;
             headers['Content-Encoding'] = 'gzip';
         }
+
+        // 压缩完成后才启动 AbortController，不侵占超时预算
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        options.signal = controller.signal;
 
         try {
             const url = CloudflareD1SyncAdapter._buildUrl(endpoint);

@@ -93,7 +93,7 @@ const SyncAppService = {
         if (enabled && basePath) {
             window.CloudflareD1SyncAdapter.init({
                 basePath: basePath,
-                timeout: timeout || 10000,
+                timeout: timeout || 30000,
                 syncKey: syncKey || null
             });
             window.SyncAdapterRegistry.registerCloudflareAdapter();

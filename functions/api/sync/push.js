@@ -10,7 +10,7 @@
  */
 
 import { ensureTables } from '../../_shared/d1Schema.js';
-import { getSnapshot, updateSnapshot, appendChangeLogs } from '../../_shared/syncRepository.js';
+import { getSnapshot, updateSnapshot } from '../../_shared/syncRepository.js';
 import { detectConflicts, jsonResponse, validateEntities } from '../../_shared/syncUtils.js';
 import { checkApiKey, unauthorizedResponse } from '../../_shared/authMiddleware.js';
 
@@ -105,10 +105,6 @@ export const onRequest = async (context) => {
                 conflicts: []
             }, 409, request);
         }
-
-        // 记录变更日志（可选）
-        await appendChangeLogs(env, updateResult.revision, funds, 'fund', 'upsert', 'default');
-        await appendChangeLogs(env, updateResult.revision, trades, 'trade', 'upsert', 'default');
 
         return jsonResponse({
             success: true,
