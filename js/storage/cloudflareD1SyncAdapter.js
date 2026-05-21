@@ -175,6 +175,34 @@ const CloudflareD1SyncAdapter = {
         return normalizedBasePath + '/' + normalizedEndpoint;
     },
 
+    async _compress(data) {
+        const jsonString = JSON.stringify(data);
+        const encoder = new TextEncoder();
+        const dataBuffer = encoder.encode(jsonString);
+        const compressionStream = new CompressionStream('gzip');
+        const writer = compressionStream.writable.getWriter();
+        writer.write(dataBuffer);
+        writer.close();
+        const reader = compressionStream.readable.getReader();
+        const chunks = [];
+        let totalLength = 0;
+        let result;
+        do {
+            result = await reader.read();
+            if (!result.done) {
+                chunks.push(result.value);
+                totalLength += result.value.length;
+            }
+        } while (!result.done);
+        const compressed = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of chunks) {
+            compressed.set(chunk, offset);
+            offset += chunk.length;
+        }
+        return compressed;
+    },
+
     async _request(endpoint, method, body = null) {
         const { timeout, syncKey } = CloudflareD1SyncAdapter._config;
         const controller = new AbortController();
@@ -214,7 +242,9 @@ const CloudflareD1SyncAdapter = {
         }
 
         if (body) {
-            options.body = JSON.stringify(body);
+            const compressed = await CloudflareD1SyncAdapter._compress(body);
+            options.body = compressed;
+            headers['Content-Encoding'] = 'gzip';
         }
 
         try {

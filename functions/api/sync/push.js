@@ -41,7 +41,16 @@ export const onRequest = async (context) => {
             }, 413, request);
         }
 
-        const body = await request.json();
+        // 解压缩 gzip 请求体
+        const contentEncoding = request.headers.get('Content-Encoding') || '';
+        let body;
+        if (contentEncoding.includes('gzip')) {
+            const decompressedStream = request.body.pipeThrough(new DecompressionStream('gzip'));
+            const decompressedBuffer = await decompressedStream.arrayBuffer();
+            body = JSON.parse(new TextDecoder().decode(decompressedBuffer));
+        } else {
+            body = await request.json();
+        }
         const { deviceId, baseRevision, funds, trades } = body;
 
         // 输入验证
