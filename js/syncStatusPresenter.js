@@ -206,10 +206,7 @@ const SyncStatusPresenter = {
             Utils.showLoading('刷新中...');
             await SyncAppService.refreshCloudMeta();
             Utils.hideLoading();
-            const freshStatus = SyncAppService.getSyncStatus();
-            const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
-            document.getElementById('modal-body').querySelector('.sync-tools-modal').outerHTML =
-                SyncStatusPresenter._buildSyncToolsBodyHtml(freshStatus, localSnapshot);
+            SyncStatusPresenter.refreshSyncToolsModalContent();
         });
 
         document.getElementById('btn-manual-sync')?.addEventListener('click', async () => {
@@ -225,7 +222,6 @@ const SyncStatusPresenter = {
                     });
                 }
             } else if (result.success) {
-                Utils.showToast('同步成功', 'success');
                 Overview.refresh();
                 Modal.hide();
             } else if (result.conflict) {
@@ -265,6 +261,17 @@ const SyncStatusPresenter = {
                 Utils.showToast(result.reason || '强制下载失败', 'error');
             }
         });
+    },
+
+    refreshSyncToolsModalContent() {
+        const modalBody = document.getElementById('modal-body');
+        if (!modalBody) return;
+        const syncToolsModal = modalBody.querySelector('.sync-tools-modal');
+        if (!syncToolsModal) return;
+        const freshStatus = SyncAppService.getSyncStatus();
+        const localSnapshot = window.LocalStorageAdapter.loadSnapshot();
+        syncToolsModal.outerHTML = SyncStatusPresenter._buildSyncToolsBodyHtml(freshStatus, localSnapshot);
+        SyncStatusPresenter._bindSyncActionEvents();
     }
 };
 

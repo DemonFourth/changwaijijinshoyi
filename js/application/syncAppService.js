@@ -62,15 +62,22 @@ const SyncAppService = {
         const remainingChanges = Math.max(0, (currentSyncMeta.pendingChanges || 0) - (prePushPendingCount || 0));
 
         window.LocalStorageAdapter.saveSnapshot(snapshot);
+        const currentCloudFunds = (snapshot.funds || []).length;
+        const currentCloudTrades = (snapshot.trades || []).length;
         window.LocalStorageAdapter.updateSyncMeta({
             lastSyncAt: now,
             lastPushedAt: now,
             cloudRevision: result.revision || currentSyncMeta.cloudRevision,
             syncStatus: 'idle',
             pendingChanges: remainingChanges,
+            cloudFunds: currentCloudFunds,
+            cloudTrades: currentCloudTrades,
             lastError: null
         });
-        SyncAppService._emitSyncApplied({ mode: 'push', hasChanges: true });
+        if (window.Utils && typeof window.Utils.showToast === 'function' && prePushPendingCount > 0) {
+            window.Utils.showToast('同步成功', 'success');
+        }
+        SyncAppService._emitSyncApplied({ mode: 'push', hasChanges: prePushPendingCount > 0 });
     },
 
     async init(config = {}) {
@@ -814,8 +821,8 @@ const SyncAppService = {
                     syncMeta: {
                         ...mergeResult.snapshot.syncMeta,
                         cloudRevision: cloudRevision,
-                        cloudFunds: cloudData.funds.length,
-                        cloudTrades: cloudData.trades.length,
+                        cloudFunds: mergeResult.snapshot.funds.length,
+                        cloudTrades: mergeResult.snapshot.trades.length,
                         pendingChanges: 0,
                         lastSyncAt: now,
                         lastPulledAt: now,
@@ -827,8 +834,8 @@ const SyncAppService = {
             } else {
                 window.LocalStorageAdapter.updateSyncMeta({
                     cloudRevision: cloudRevision,
-                    cloudFunds: cloudData.funds.length,
-                    cloudTrades: cloudData.trades.length,
+                    cloudFunds: localSnapshot.funds.length,
+                    cloudTrades: localSnapshot.trades.length,
                     pendingChanges: 0,
                     lastSyncAt: now,
                     lastPulledAt: now,

@@ -354,6 +354,7 @@ const App = {
 
         EventBus.on(EventType.SYNC_DATA_APPLIED, () => {
             window.SyncStatusPresenter.updateHeaderIndicator();
+            window.SyncStatusPresenter.refreshSyncToolsModalContent();
         });
         EventBus.on(EventType.DATA_IMPORTED, () => {
             window.SyncStatusPresenter.updateHeaderIndicator();
