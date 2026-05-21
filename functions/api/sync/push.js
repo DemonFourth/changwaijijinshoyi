@@ -45,8 +45,9 @@ export const onRequest = async (context) => {
         const contentEncoding = request.headers.get('Content-Encoding') || '';
         let body;
         if (contentEncoding.includes('gzip')) {
-            const decompressedStream = request.body.pipeThrough(new DecompressionStream('gzip'));
-            const decompressedBuffer = await decompressedStream.arrayBuffer();
+            const decompressedBuffer = await new Response(
+                request.body.pipeThrough(new DecompressionStream('gzip'))
+            ).arrayBuffer();
             body = JSON.parse(new TextDecoder().decode(decompressedBuffer));
         } else {
             body = await request.json();
