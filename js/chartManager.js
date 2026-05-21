@@ -875,7 +875,7 @@ const ChartManager = {
                     if (netValue < minNetValue) minNetValue = netValue;
                     if (netValue > maxNetValue) maxNetValue = netValue;
 
-                    const costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                    const costPrice = Utils.isPositive(cumulativeShares) ? cumulativeCost / cumulativeShares : 0;
                     cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
                     allCostPrices.push(parseFloat(costPrice.toFixed(4)));
                     if (costPrice < minNetValue) minNetValue = costPrice;
@@ -893,7 +893,7 @@ const ChartManager = {
                         isSell: false
                     });
                 } else if (tradeType === 'sell') {
-                    const costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                    const costPrice = Utils.isPositive(cumulativeShares) ? cumulativeCost / cumulativeShares : 0;
                     const sellCost = shares * costPrice;
                     cumulativeShares -= shares;
                     cumulativeCost -= sellCost;
@@ -907,7 +907,7 @@ const ChartManager = {
                     cycleNetValues.push(dividendNetValue > 0 ? dividendNetValue : null);
                     allNetValues.push(dividendNetValue > 0 ? dividendNetValue : null);
 
-                    var costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                    var costPrice = Utils.isPositive(cumulativeShares) ? cumulativeCost / cumulativeShares : 0;
                     cycleCostPrices.push(parseFloat(costPrice.toFixed(4)));
                     allCostPrices.push(parseFloat(costPrice.toFixed(4)));
                     if (costPrice < minNetValue) minNetValue = costPrice;
@@ -1146,7 +1146,7 @@ const ChartManager = {
                     cumulativeShares += shares;
                     cumulativeCost += amount;
                 } else if (tradeType === 'sell') {
-                    const prevCost = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                    const prevCost = Utils.isPositive(cumulativeShares) ? cumulativeCost / cumulativeShares : 0;
                     cumulativeShares -= shares;
                     cumulativeCost -= shares * prevCost;
                 } else if (isDividendReinvest) {
@@ -1154,7 +1154,7 @@ const ChartManager = {
                     cumulativeShares += reinvestShares;
                 }
 
-                const costPrice = cumulativeShares > 0 ? cumulativeCost / cumulativeShares : 0;
+                const costPrice = Utils.isPositive(cumulativeShares) ? cumulativeCost / cumulativeShares : 0;
                 const recordDate = trade.date;
                 const recordNetValue = (tradeType === 'buy' || isDividendReinvest)
                     ? (isDividendReinvest ? (parseFloat(trade.netValue) || 0) : netValue) : null;
@@ -1528,7 +1528,7 @@ const ChartManager = {
                 }
             });
 
-            if (cycle.status === 'active' && cumulativeShares > 0 && currentNetValue) {
+            if (cycle.status === 'active' && Utils.isPositive(cumulativeShares) && currentNetValue) {
                 const today = new Date().toISOString().slice(0, 10);
                 if (!seenDates.has(today)) {
                     seenDates.add(today);
@@ -1865,7 +1865,7 @@ const ChartManager = {
         });
 
         // 过滤空区间
-        const nonEmptyRanges = ranges.filter(r => r.shares > 0);
+        const nonEmptyRanges = ranges.filter(r => Utils.isPositive(r.shares));
 
         // 计算总份额
         const total = nonEmptyRanges.reduce((sum, r) => sum + r.shares, 0);

@@ -826,8 +826,6 @@ const Modal = {
                     if (result.fee > 0 && !isFeeAutoCalculated) {
                         fee.value = result.fee.toFixed(2);
                         isFeeAutoCalculated = true;
-                        calcAmount();
-                        checkMismatch();
                     }
                 }
             } else if (type === 'buy' && Utils.isPositive(nv) && Utils.isPositive(s) && !hasBuyTiers) {
@@ -867,8 +865,6 @@ const Modal = {
                     if (result.fee > 0 && !isFeeAutoCalculated) {
                         fee.value = result.fee.toFixed(2);
                         isFeeAutoCalculated = true;
-                        calcAmount();
-                        checkMismatch();
                     }
                 }
             } else if (type === 'sell' && Utils.isPositive(nv) && Utils.isPositive(s) && dateVal && !hasSellTiers) {
@@ -878,6 +874,8 @@ const Modal = {
                 const panel = document.getElementById('fee-suggestion-panel');
                 if (panel) panel.classList.add('hidden');
             }
+            calcAmount();
+            checkMismatch();
         };
 
         netValue.addEventListener('blur', function() {

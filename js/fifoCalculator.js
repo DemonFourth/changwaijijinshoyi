@@ -198,7 +198,7 @@ const FIFOCalculator = {
             } else if (trade.type === 'sell') {
                 const sellCost = FIFOCalculator.dequeueCost(holdingQueue, shares);
                 const profit = amount - sellCost;
-                const costPerShare = shares > 0 ? sellCost / shares : 0;
+                const costPerShare = Utils.isPositive(shares) ? sellCost / shares : 0;
                 realizedProfit += profit;
                 holdingShares -= shares;
                 holdingCost -= sellCost;

@@ -730,7 +730,7 @@ const CalculatorV2 = {
                 id: activeCycle.id,
                 shares: currentHolding.shares,
                 cost: currentHolding.cost,
-                costPerShare: currentHolding.shares > 0 ? currentHolding.cost / currentHolding.shares : 0
+                costPerShare: Utils.isPositive(currentHolding.shares) ? currentHolding.cost / currentHolding.shares : 0
             },
             totalBuyCost: totalBuyCost,
             feeDetails: feeResult.details
