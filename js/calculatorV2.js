@@ -140,7 +140,7 @@ const CalculatorV2 = {
      */
     calculateCycleProfit(cycle, currentNetValue) {
         let totalInvest = 0; // 总投入(净值×份额+手续费)
-        let totalSellAmount = 0; // 总卖出金额(到手金额，已扣手续费)
+        let totalSellAmount = 0; // 总卖出金额(未扣手续费)
         let totalBuyFee = 0; // 总买入手续费
         let totalSellFee = 0; // 总卖出手续费
         let totalShares = 0; // 总买入份额
@@ -185,8 +185,8 @@ const CalculatorV2 = {
                 holdingShares -= shares;
                 holdingCost -= costAmount;
 
-                // 已实现收益 = 到手金额 - 卖出份额×成本价
-                const profit = amount - costAmount;
+                // 已实现收益 = 卖出金额 - 卖出份额×成本价 - 手续费
+                const profit = amount - costAmount - fee;
                 realizedProfit += profit;
 
                 realizedDetails.push({

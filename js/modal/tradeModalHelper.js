@@ -40,8 +40,7 @@ const TradeModalHelper = {
             amount += fee;
             hintText = '自动计算：净值×份额+手续费 = ' + amount.toFixed(2);
         } else if (type === 'sell') {
-            amount -= fee;
-            hintText = '自动计算：净值×份额-手续费 = ' + amount.toFixed(2);
+            hintText = '自动计算：净值×份额 = ' + amount.toFixed(2);
         }
 
         return {
