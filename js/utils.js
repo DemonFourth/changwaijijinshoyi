@@ -391,9 +391,10 @@ const Utils = {
     /**
      * 显示Toast提示
      * @param {string} message - 提示消息
-     * @param {string} type - 类型 ('success', 'error', 'info')
+     * @param {string} type - 类型 ('success', 'error', 'info', 'warning')
+     * @param {number} duration - 自动消失时间(ms)，0 表示不自动消失需手动关闭
      */
-    showToast(message, type = 'info') {
+    showToast(message, type = 'info', duration = null) {
         const container = document.getElementById('toast-container');
         const iconEl = document.getElementById('toast-icon');
         const messageEl = document.getElementById('toast-message');
@@ -402,16 +403,18 @@ const Utils = {
 
         if (!container || !messageEl) return;
 
-        const duration = Config.get('ui.toastDuration', 3000);
+        const defaultDuration = Config.get('ui.toastDuration', 3000);
+        const actualDuration = duration === null ? defaultDuration : duration;
 
         const icons = {
             success: '✓',
             error: '✕',
-            info: 'ℹ'
+            info: 'ℹ',
+            warning: '⚠'
         };
 
         container.className = `toast-container ${type}`;
-        container.style.setProperty('--toast-duration', `${duration}ms`);
+        container.style.setProperty('--toast-duration', `${actualDuration}ms`);
 
         if (iconEl) iconEl.textContent = icons[type] || icons.info;
         messageEl.textContent = message;
@@ -430,11 +433,14 @@ const Utils = {
             }, 300);
         };
 
-        const timer = setTimeout(hideToast, duration);
+        let timer = null;
+        if (actualDuration > 0) {
+            timer = setTimeout(hideToast, actualDuration);
+        }
 
         if (closeBtn) {
             closeBtn.onclick = () => {
-                clearTimeout(timer);
+                if (timer) clearTimeout(timer);
                 hideToast();
             };
         }

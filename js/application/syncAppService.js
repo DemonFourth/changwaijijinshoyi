@@ -15,6 +15,13 @@ const SyncAppService = {
         'updateTime', 'nameSource', 'nameUpdateTime'
     ]),
 
+    _isRetryableError(reason) {
+        if (!reason) return false;
+        const patterns = ['aborted', 'timeout', 'network', 'fetch', 'etimedout', '连接'];
+        const lowerReason = reason.toLowerCase();
+        return patterns.some(p => lowerReason.includes(p.toLowerCase()));
+    },
+
     _sanitizeFundsForSync(funds) {
         return (funds || []).map(function (fund) {
             const sanitized = {};
@@ -214,13 +221,16 @@ const SyncAppService = {
                 lastError: reason || 'push_failed'
             });
             if (window.Utils && typeof window.Utils.showToast === 'function') {
-                window.Utils.showToast('自动同步失败：' + (reason || 'push_failed'), 'error');
+                window.Utils.showToast('同步失败，请检查网络后重试', 'error', 0);
             }
             return;
         }
 
         SyncAppService._retryCount += 1;
         const delay = SyncAppService._retryBaseDelay * SyncAppService._retryCount;
+        if (window.Utils && typeof window.Utils.showToast === 'function' && SyncAppService._retryCount > 0) {
+            window.Utils.showToast('网络较慢，正在重试（第' + SyncAppService._retryCount + '次）...', 'warning');
+        }
         clearTimeout(SyncAppService._pushTimeout);
         SyncAppService._pushTimeout = setTimeout(() => {
             SyncAppService._executePush();
@@ -274,7 +284,7 @@ const SyncAppService = {
             if (!result.success) {
                 SyncAppService._toLogText('[同步调试] pull 失败', result);
                 if (window.Utils && typeof window.Utils.showToast === 'function') {
-                    window.Utils.showToast('自动同步失败：' + (result.reason || 'pull_failed'), 'error');
+                    window.Utils.showToast('同步失败：' + (result.reason || 'pull_failed'), 'error', 0);
                 }
                 return result;
             }
@@ -445,10 +455,14 @@ const SyncAppService = {
 
             if (!result.success) {
                 SyncAppService._toLogText('[同步调试] push 失败，准备重试', result);
-                if (window.Utils && typeof window.Utils.showToast === 'function') {
-                    window.Utils.showToast('自动同步失败：' + (result.reason || 'push_failed'), 'error');
+                if (SyncAppService._isRetryableError(result.reason)) {
+                    SyncAppService._scheduleRetry(result.reason);
+                } else {
+                    if (window.Utils && typeof window.Utils.showToast === 'function') {
+                        window.Utils.showToast('同步失败：' + (result.reason || 'push_failed'), 'error', 0);
+                    }
+                    SyncAppService._scheduleRetry(result.reason);
                 }
-                SyncAppService._scheduleRetry(result.reason);
                 return result;
             }
 
