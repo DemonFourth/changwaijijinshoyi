@@ -232,8 +232,11 @@ const DataService = {
             errors.push('交易类型不正确');
         }
 
-        if (!Utils.isValidNumber(trade.shares) || !Utils.isPositive(trade.shares)) {
-            errors.push('份额必须大于0');
+        const isCashDividend = trade.type === 'dividend' && trade.dividendMode === 'cash';
+        if (!isCashDividend) {
+            if (!Utils.isValidNumber(trade.shares) || !Utils.isPositive(trade.shares)) {
+                errors.push('份额必须大于0');
+            }
         }
 
         if (!Utils.isValidNumber(trade.amount) || trade.amount <= 0) {

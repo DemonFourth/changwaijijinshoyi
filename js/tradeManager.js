@@ -163,8 +163,11 @@ const TradeManager = {
             errors.push('交易类型不正确');
         }
 
-        if (!Utils.isValidNumber(tradeData.shares) || !Utils.isPositive(parseFloat(tradeData.shares))) {
-            errors.push('份额必须大于0');
+        const isCashDividend = tradeData.type === 'dividend' && tradeData.dividendMode === 'cash';
+        if (!isCashDividend) {
+            if (!Utils.isValidNumber(tradeData.shares) || !Utils.isPositive(parseFloat(tradeData.shares))) {
+                errors.push('份额必须大于0');
+            }
         }
 
         const isDividendReinvest = tradeData.type === 'dividend' && tradeData.dividendMode === 'reinvest';
