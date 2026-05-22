@@ -64,6 +64,7 @@ const App = {
             Overview.init();
             Detail.init();
             ToolPage.init();
+            TradeHistory.init();
 
             // 初始化 TooltipManager
             if (TooltipManager) {
@@ -74,6 +75,9 @@ const App = {
 
             // 绑定主题切换按钮
             this.setupThemeToggle();
+
+            // 绑定交易记录按钮
+            this.setupTradeHistoryButton();
 
             // 绑定工具箱按钮
             this.setupToolsButton();
@@ -186,6 +190,18 @@ const App = {
     },
 
     /**
+     * 设置交易记录按钮
+     */
+    setupTradeHistoryButton() {
+        const btnTradeHistory = document.getElementById('btn-trade-history');
+        if (btnTradeHistory) {
+            btnTradeHistory.addEventListener('click', () => {
+                Router.navigate('tradeHistory');
+            });
+        }
+    },
+
+    /**
      * 设置工具箱按钮
      */
     setupToolsButton() {
@@ -239,6 +255,9 @@ const App = {
         } else if (route.name === 'tools') {
             btnBack.classList.remove('hidden');
             headerTitle.textContent = '工具箱';
+        } else if (route.name === 'tradeHistory') {
+            btnBack.classList.remove('hidden');
+            headerTitle.textContent = '交易记录';
         } else {
             btnBack.classList.add('hidden');
             headerTitle.textContent = '场外基金收益计算器';
@@ -272,6 +291,12 @@ const App = {
             if (toolsPage) {
                 toolsPage.classList.add('active');
                 ToolPage.init();
+            }
+        } else if (route.name === 'tradeHistory') {
+            const tradeHistoryPage = document.getElementById('page-trade-history');
+            if (tradeHistoryPage) {
+                tradeHistoryPage.classList.add('active');
+                TradeHistory.refresh();
             }
         } else {
             const overviewPage = document.getElementById('page-overview');

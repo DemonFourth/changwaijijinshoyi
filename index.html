@@ -32,6 +32,7 @@
             </div>
             <div class="header-actions">
                 <span id="sync-status-container"></span>
+                <button id="btn-trade-history" class="btn btn-secondary" type="button">📋 交易记录</button>
                 <button id="btn-tools" class="btn btn-secondary" type="button">🧰 工具箱</button>
                 <button id="btn-export" class="btn btn-secondary" type="button">导出数据</button>
                 <button id="btn-import" class="btn btn-secondary" type="button">导入数据</button>
@@ -606,6 +607,107 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 交易记录页面 -->
+            <div id="page-trade-history" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">📋 交易记录</h1>
+                    <p class="page-subtitle">查看和筛选您的所有交易记录</p>
+                </div>
+
+                <!-- 筛选区域 -->
+                <div class="filter-section">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="trade-history-start-date">开始日期</label>
+                            <input type="date" id="trade-history-start-date" class="filter-input">
+                        </div>
+                        <div class="filter-group">
+                            <label for="trade-history-end-date">结束日期</label>
+                            <input type="date" id="trade-history-end-date" class="filter-input">
+                        </div>
+                        <div class="filter-group">
+                            <label for="trade-history-fund">基金名称</label>
+                            <select id="trade-history-fund" class="filter-select">
+                                <option value="all">全部基金</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="trade-history-type">交易类型</label>
+                            <select id="trade-history-type" class="filter-select">
+                                <option value="all">全部类型</option>
+                                <option value="buy">买入</option>
+                                <option value="sell">卖出</option>
+                                <option value="dividend">分红</option>
+                            </select>
+                        </div>
+                        <div class="filter-actions">
+                            <button id="trade-history-search" class="btn btn-primary">🔍 筛选</button>
+                            <button id="trade-history-reset" class="btn btn-secondary">🔄 重置</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 汇总信息 -->
+                <div id="trade-history-summary" class="summary-container"></div>
+
+                <!-- 图表区域 -->
+                <div class="charts-wrapper">
+                    <!-- 图表类型切换 -->
+                    <div class="chart-type-tabs">
+                        <button id="chart-type-trend" class="chart-type-tab btn btn-primary" data-type="trend">📈 收益趋势</button>
+                        <button id="chart-type-profit" class="chart-type-tab btn" data-type="profit">💰 盈亏分析</button>
+                        <button id="chart-type-flow" class="chart-type-tab btn" data-type="flow">💹 资金流向</button>
+                        <button id="chart-type-structure" class="chart-type-tab btn" data-type="structure">🥧 资产结构</button>
+                        <button id="chart-type-ratio" class="chart-type-tab btn" data-type="ratio">💸 净流入分析</button>
+                        <button id="chart-type-yield" class="chart-type-tab btn" data-type="yield">📊 收益率分析</button>
+                    </div>
+                    
+                    <!-- 图表控制栏 -->
+                    <div class="chart-controls">
+                        <!-- 时间周期切换 -->
+                        <div class="chart-period-tabs">
+                            <button id="chart-period-year" class="chart-period-tab active" data-period="year">📅 按年</button>
+                            <button id="chart-period-month" class="chart-period-tab" data-period="month">📆 按月</button>
+                        </div>
+                        
+                        <!-- 图表样式选择 -->
+                        <div class="chart-style-selector">
+                            <label for="chart-style-select">图表样式：</label>
+                            <select id="chart-style-select" class="chart-style-select">
+                                <optgroup label="趋势类">
+                                    <option value="line" selected>📈 折线图</option>
+                                    <option value="area">📊 面积图</option>
+                                    <option value="bar">📊 柱状图</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="trade-history-chart" class="chart-container"></div>
+                </div>
+
+                <!-- 交易记录表格 -->
+                <div class="table-container">
+                    <table id="trade-history-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>基金名称</th>
+                                <th>交易类型</th>
+                                <th class="text-right">份额</th>
+                                <th class="text-right">金额</th>
+                                <th class="text-right">手续费</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trade-history-table-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div id="trade-history-pagination" class="pagination-wrapper"></div>
+            </div>
         </main>
 
         <!-- 悬浮按钮 -->
@@ -721,6 +823,7 @@
     <script src="js/detail/accrualHelper.js"></script>
     <script src="js/overview.js"></script>
     <script src="js/detail.js"></script>
+    <script src="js/tradeHistory.js"></script>
 
     <script src="js/conversionCalculator.js"></script>
     <script src="js/toolPage.js"></script>

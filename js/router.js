@@ -21,6 +21,10 @@ const Router = {
         tools: {
             path: 'tools',
             title: '工具箱'
+        },
+        tradeHistory: {
+            path: 'tradeHistory',
+            title: '交易记录'
         }
     },
 

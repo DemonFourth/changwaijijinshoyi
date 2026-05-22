@@ -72,6 +72,12 @@
     --color-tooltip: #667eea;
 }
 
+/* 深色主题 - 图表区域特殊适配 */
+[data-theme="dark"] {
+    /* Tooltip 问号颜色 */
+    --color-tooltip: #667eea;
+}
+
 /* CSS设计令牌 - 深色主题 - 暗紫轻奢风 */
 [data-theme="dark"] {
     /* 品牌色 - 暗紫系 */
