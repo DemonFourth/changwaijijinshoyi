@@ -144,16 +144,39 @@ const StatisticsAppService = {
 
             const cycles = stats.cycles || [];
             for (const cycle of cycles) {
-                const cycleYear = new Date(cycle.startDate).getFullYear();
-                if (cycleYear !== currentYear) {
-                    continue;
-                }
+                let hasTradesInYear = false;
 
-                totalInvest += cycle.totalInvest || 0;
-                sellAmount += cycle.totalSellAmount || 0;
-                fee += (cycle.totalBuyFee || 0) + (cycle.totalSellFee || 0);
-                totalProfit += cycle.totalProfit || 0;
-                cycleCount++;
+                // 按今年实际发生的交易计算
+                cycle.trades?.forEach(trade => {
+                    const tradeYear = new Date(trade.date).getFullYear();
+                    if (tradeYear !== currentYear) {
+                        return;
+                    }
+
+                    hasTradesInYear = true;
+                    const amount = parseFloat(trade.amount) || 0;
+                    const tradeFee = parseFloat(trade.fee || 0);
+
+                    if (trade.type === 'buy') {
+                        totalInvest += amount;
+                        fee += tradeFee;
+                    } else if (trade.type === 'sell') {
+                        sellAmount += amount;
+                        fee += tradeFee;
+                        const costPrice = cycle.holdingShares > 0 
+                            ? cycle.holdingCost / cycle.holdingShares 
+                            : 0;
+                        const costAmount = parseFloat(trade.shares) * costPrice;
+                        const profit = amount - costAmount - tradeFee;
+                        totalProfit += profit;
+                    } else if (trade.type === 'dividend') {
+                        totalProfit += amount;
+                    }
+                });
+
+                if (hasTradesInYear) {
+                    cycleCount++;
+                }
             }
         }
 
@@ -203,16 +226,37 @@ const StatisticsAppService = {
 
                 const cycles = stats.cycles || [];
                 for (const cycle of cycles) {
-                    const hasTradesInMonth = cycle.trades?.some(t => {
-                        const tradeDate = new Date(t.date);
-                        return tradeDate >= monthStart && tradeDate <= monthEnd;
+                    let hasTradesInMonth = false;
+
+                    // 按当月实际发生的交易计算
+                    cycle.trades?.forEach(trade => {
+                        const tradeDate = new Date(trade.date);
+                        if (tradeDate < monthStart || tradeDate > monthEnd) {
+                            return;
+                        }
+
+                        hasTradesInMonth = true;
+                        const amount = parseFloat(trade.amount) || 0;
+                        const tradeFee = parseFloat(trade.fee || 0);
+
+                        if (trade.type === 'buy') {
+                            totalInvest += amount;
+                            fee += tradeFee;
+                        } else if (trade.type === 'sell') {
+                            sellAmount += amount;
+                            fee += tradeFee;
+                            const costPrice = cycle.holdingShares > 0 
+                                ? cycle.holdingCost / cycle.holdingShares 
+                                : 0;
+                            const costAmount = parseFloat(trade.shares) * costPrice;
+                            const profit = amount - costAmount - tradeFee;
+                            totalProfit += profit;
+                        } else if (trade.type === 'dividend') {
+                            totalProfit += amount;
+                        }
                     });
 
                     if (hasTradesInMonth) {
-                        totalInvest += cycle.totalInvest || 0;
-                        sellAmount += cycle.totalSellAmount || 0;
-                        fee += (cycle.totalBuyFee || 0) + (cycle.totalSellFee || 0);
-                        totalProfit += cycle.totalProfit || 0;
                         cycleCount++;
                     }
                 }
@@ -268,15 +312,40 @@ const StatisticsAppService = {
 
                 const cycles = stats.cycles || [];
                 for (const cycle of cycles) {
-                    const cycleYear = new Date(cycle.startDate).getFullYear();
-                    if (cycleYear !== year) {
-                        continue;
-                    }
+                    // 按交易时间分摊到对应年份
+                    cycle.trades?.forEach(trade => {
+                        const tradeYear = new Date(trade.date).getFullYear();
+                        if (tradeYear !== year) {
+                            return;
+                        }
 
-                    totalInvest += cycle.totalInvest || 0;
-                    totalValue += cycle.holdingValue || 0;
-                    totalProfit += cycle.totalProfit || 0;
-                    cycleCount++;
+                        const amount = parseFloat(trade.amount) || 0;
+                        const fee = parseFloat(trade.fee || 0);
+
+                        if (trade.type === 'buy') {
+                            totalInvest += amount;
+                        } else if (trade.type === 'sell') {
+                            const costPrice = cycle.holdingShares > 0 
+                                ? cycle.holdingCost / cycle.holdingShares 
+                                : 0;
+                            const costAmount = parseFloat(trade.shares) * costPrice;
+                            const profit = amount - costAmount - fee;
+                            totalProfit += profit;
+                        } else if (trade.type === 'dividend') {
+                            totalProfit += amount;
+                        }
+                    });
+
+                    // 持仓市值：如果年份在周期范围内则计入
+                    const cycleStartYear = new Date(cycle.startDate).getFullYear();
+                    const cycleEndYear = cycle.endDate 
+                        ? new Date(cycle.endDate).getFullYear() 
+                        : currentYear;
+                    
+                    if (cycleStartYear <= year && year <= cycleEndYear) {
+                        totalValue += cycle.holdingValue || 0;
+                        cycleCount++;
+                    }
                 }
             }
 

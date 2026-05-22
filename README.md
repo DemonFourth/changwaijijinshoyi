@@ -54,36 +54,80 @@
 
 ## 使用方式
 
-### 本地使用
-1. 直接用浏览器打开 `index.html`
-2. 若无 `/api/*` 接口，则自动工作在本地模式
-3. 页面会提示"当前使用本地数据"
+### 方式一：本地直接使用（推荐新手）
 
-### 云端部署
+1. 双击打开 `index.html`
+2. 页面顶部会显示「📁 本地模式」提示条
+3. 数据保存在浏览器本地存储中
+4. 无需网络，离线可用
+5. 刷新页面后数据保留
 
-#### 1. 创建 D1 数据库
-1. Cloudflare Dashboard → Workers & Pages → D1 → Create Database
-2. 名称可设为：`fund-calculator-db`
+**注意事项**：
+- 清除浏览器数据会导致本地数据丢失
+- 建议定期使用「导出数据」功能备份
+- 不同浏览器数据不互通
 
-#### 2. 部署 Pages（前端 + Pages Functions）
+### 方式二：Cloudflare Pages 部署（推荐多设备同步）
+
+#### 步骤 1：创建 D1 数据库
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. 进入 Workers & Pages → D1 → Create Database
+3. 数据库名称：`fund-calculator-db`
+4. 记录生成的 `database_id`
+
+#### 步骤 2：部署 Pages
 1. Dashboard → Workers & Pages → Create → Pages → Connect to Git
 2. 选择 GitHub 仓库和分支
-3. Build command 留空，Build output directory 留空
-4. 在 Settings → Bindings 中添加 D1 绑定
-5. 绑定名填写：`DB`
+3. Build command：**留空**
+4. Build output directory：**留空**
+5. 点击 Save and Deploy
 
-> 运行时会检测 `env.DB` 是否存在：存在则启用云同步，不存在则自动降级为本地模式。
->
-> 如果需要启用 Public API 写入能力，还需额外配置环境变量：
-> - `PUBLIC_API_KEY`：用于 `POST /api/public/trades` 的写入认证
+#### 步骤 3：绑定 D1 数据库
+1. 进入 Pages 项目 → Settings → Functions → D1 database bindings
+2. Variable name：`DB`
+3. D1 database：选择步骤 1 创建的数据库
+4. Save
 
-#### 3. 验证
-1. 打开 Pages URL
-2. 无 `/api/*` 时应提示"当前使用本地数据"
-3. 有 `/api/*` 且 D1 已绑定时应提示"当前使用混合存储（本地 + 云端同步）"
-4. 在工具箱点击"立即同步"验证云端同步链路
-5. 访问 `/api/public/help` 验证 Public API 文档已生效
-6. 用 `curl` 或其他 HTTP 客户端验证公开读取与写入认证
+#### 步骤 4：配置环境变量（可选）
+如需启用 Public API 写入能力：
+1. Settings → Environment variables
+2. 添加：`PUBLIC_API_KEY` = `your-secret-key`
+3. Save
+
+#### 步骤 5：验证部署
+1. 访问 Pages URL
+2. 页面提示「当前使用混合存储（本地 + 云端同步）」
+3. 点击工具箱 → 立即同步，验证同步功能
+
+### 方式三：本地开发（开发者）
+
+```bash
+# 安装依赖
+npm install
+
+# Cloudflare 模拟模式（支持 D1 + 同步测试）
+npm run dev
+
+# 纯静态模式（模拟 file:// 协议）
+npm run dev:static
+
+# 运行测试
+npm test
+
+# 代码检查
+npm run lint
+```
+
+**脚本说明**：
+
+| 脚本 | 用途 |
+|------|------|
+| `npm run dev` | Cloudflare 模拟开发（支持 D1 + Functions） |
+| `npm run dev:static` | 纯静态开发（模拟 file:// 协议） |
+| `npm run deploy` | 部署到 Cloudflare Pages 生产环境 |
+| `npm run deploy:preview` | 部署到预览环境 |
+| `npm test` | 运行所有测试 |
+| `npm run lint` | 代码检查（ESLint + Stylelint） |
 
 ### Public API 使用说明
 

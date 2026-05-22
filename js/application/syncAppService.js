@@ -108,20 +108,66 @@ const SyncAppService = {
         }
 
         this._setupEventListeners();
+        this._setupVisibilitySync();
+        this._setupPeriodicSync(5 * 60 * 1000);
+    },
 
-        if (document && typeof document.addEventListener === 'function') {
-            document.addEventListener('visibilitychange', function () {
-                // 页面切换到后台时触发推送（利用浏览器页面冻结前的机会保存数据）
-                if (!document.hidden) {
-                    return;
-                }
+    _setupVisibilitySync() {
+        if (!document || typeof document.addEventListener !== 'function') return;
 
-                const syncMeta = window.LocalStorageAdapter.getSyncMeta();
+        document.addEventListener('visibilitychange', async function () {
+            const syncMeta = window.LocalStorageAdapter.getSyncMeta();
+
+            if (document.hidden) {
                 if ((syncMeta.pendingChanges || 0) > 0 && syncMeta.syncStatus === 'pending') {
                     SyncAppService._executePush();
                 }
-            });
-        }
+                return;
+            }
+
+            if (syncMeta.provider !== 'cloudflare') return;
+
+            const lastSync = syncMeta.lastSyncAt;
+            const now = Date.now();
+            const minInterval = 30 * 1000;
+
+            if (!lastSync || now - new Date(lastSync).getTime() > minInterval) {
+                console.log('[Sync] 页面重新可见，触发同步检查');
+
+                try {
+                    const result = await SyncAppService._executePull();
+                    if (result?.success && result?.pulledChanges) {
+                        const pc = result.pulledChanges;
+                        const totalChanges = (pc.fundsAdded || 0) + (pc.tradesAdded || 0) +
+                            (pc.fundsUpdated || 0) + (pc.tradesUpdated || 0);
+                        if (totalChanges > 0) {
+                            window.Utils?.showToast(`从云端同步了 ${totalChanges} 条更新`, 'success');
+                            window.Overview?.refresh();
+                        }
+                    }
+                } catch (error) {
+                    console.error('[Sync] 可见性同步失败:', error);
+                }
+            }
+        });
+    },
+
+    _setupPeriodicSync(interval) {
+        if (!interval || interval <= 0) return;
+
+        setInterval(async () => {
+            if (document.visibilityState !== 'visible') return;
+
+            const syncMeta = window.LocalStorageAdapter.getSyncMeta();
+            if (syncMeta.provider !== 'cloudflare') return;
+
+            console.log('[Sync] 定时同步检查');
+            try {
+                await SyncAppService._executePull();
+            } catch (error) {
+                console.error('[Sync] 定时同步失败:', error);
+            }
+        }, interval);
     },
 
     _setupEventListeners() {

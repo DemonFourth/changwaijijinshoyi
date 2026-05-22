@@ -33,6 +33,18 @@ node --test tests/routerNavigation.test.cjs
 node --test tests/*.test.cjs
 node --test tests/fund*.test.cjs
 node --test tests/*sync*.test.cjs
+
+# 本地静态服务器（开发测试）
+npm run dev:static
+
+# Cloudflare Pages 本地开发
+npm run dev
+
+# 部署到 Cloudflare Pages
+npm run deploy
+
+# 预览部署结果
+npm run preview
 ```
 
 ---
@@ -995,3 +1007,77 @@ if (Utils.isNegative(currentShares)) { ... }
 
 ### ESLint 检测
 项目使用 `eslint-plugin-regexp`，启用了 `regexp/no-unused-capturing-group` 规则检测未使用的捕获组。
+
+---
+
+## 最新修改记录（2026-05-22）
+
+### 年度持仓统计计算逻辑修复
+
+**问题描述**：
+原逻辑存在两个关键问题：
+1. 跨年度周期数据未按时间分摊，导致收益全部计入周期开始年份
+2. 月度统计重复计算跨月周期，导致数据被放大
+
+**修复方案**：
+
+| 函数 | 修改前 | 修改后 |
+|------|--------|--------|
+| `getMultiYearSummary()` | 按周期开始年份分组 | 按交易时间分摊到对应年份 |
+| `getMonthlySummary()` | 整个周期数据计入每个有交易的月份 | 仅按当月实际交易计算 |
+| `getYearlySummary()` | 只按周期开始年份判断 | 按今年实际交易计算 |
+
+**核心改进**：
+- **买入交易** → 计入买入年份/月份
+- **卖出交易** → 计入卖出年份/月份，收益 = 卖出金额 - 成本 - 手续费
+- **分红交易** → 计入分红年份/月份
+- **持仓市值** → 如果年份在周期范围内则计入
+
+**示例验证**：
+```
+场景：2023-12 买入 1000元，2024-03 卖出收益 200元
+
+修复前（错误）：
+┌──────┬──────┬──────┐
+│ 年份 │ 投入 │ 收益 │
+├──────┼──────┼──────┤
+│ 2023 │ 1000 │ 200  │
+│ 2024 │ 0    │ 0    │
+└──────┴──────┴──────┘
+
+修复后（正确）：
+┌──────┬──────┬──────┐
+│ 年份 │ 投入 │ 收益 │
+├──────┼──────┼──────┤
+│ 2023 │ 1000 │ 0    │
+│ 2024 │ 0    │ 200  │
+└──────┴──────┴──────┘
+```
+
+### 用户体验改进
+
+**1. 本地模式提示条**
+- 文件：`js/runtimeConfigLoader.js`
+- 功能：检测 `file://` 协议时显示顶部蓝色提示条
+- 内容："📁 本地模式 · 数据仅保存在本浏览器 · 刷新页面后数据保留"
+
+**2. 同步状态面板**
+- 文件：`js/modal/syncStatusPanelHelper.js`
+- 功能：点击同步状态图标弹出详细面板
+- 显示：存储模式、同步状态、数据统计、设备信息
+- 操作：立即同步、强制上传、强制下载
+
+**3. 页面可见性同步优化**
+- 文件：`js/application/syncAppService.js`
+- 功能：页面可见时自动拉取更新，每5分钟定时同步
+
+### 新增文件
+
+| 文件 | 说明 |
+|------|------|
+| `js/errorHandler.js` | 统一错误处理器 |
+| `js/modal/syncStatusPanelHelper.js` | 同步状态面板 |
+| `tests/runtimeConfigFileProtocol.test.cjs` | file:// 协议测试 |
+| `wrangler.toml` | Cloudflare 配置 |
+| `.dev.vars` | 本地开发环境变量 |
+| `docs/improvement-plan.md` | 改进计划文档 |

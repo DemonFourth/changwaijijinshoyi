@@ -36,11 +36,15 @@ const SyncStatusPresenter = {
         const indicator = container.querySelector('#sync-status');
         if (indicator) {
             indicator.style.cursor = 'pointer';
+            indicator.title = '点击查看同步详情';
             indicator.addEventListener('click', () => {
-                window.Modal.show('syncTools');
+                if (window.SyncStatusPanelHelper) {
+                    window.SyncStatusPanelHelper.show();
+                } else {
+                    window.Modal.show('syncTools');
+                }
             });
         }
-        // 初始化 banner 点击（事件委托，只绑定一次）
         SyncStatusPresenter.bindBannerClick();
     },
 
