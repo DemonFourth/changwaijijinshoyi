@@ -553,11 +553,13 @@ td.negative {
 .chart-text-summary {
     margin-top: var(--spacing-sm);
     padding: var(--spacing-sm);
-    background: var(--color-bg-hover);
+    background: var(--color-bg-card);
     border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
     line-height: 1.6;
+    position: relative;
+    z-index: 1;
 }
 
 .chart-text-summary .summary-row {
@@ -578,12 +580,14 @@ td.negative {
 .chart-explain {
     margin-top: var(--spacing-sm);
     padding: var(--spacing-sm);
-    background: var(--color-bg-hover);
+    background: var(--color-bg-card);
     border-radius: var(--radius-sm);
     font-size: 0.75rem;
     color: var(--color-text-secondary);
     line-height: 1.6;
     border-left: 3px solid var(--color-brand-secondary);
+    position: relative;
+    z-index: 1;
 }
 
 .chart-explain b {
