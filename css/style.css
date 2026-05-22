@@ -580,13 +580,15 @@ td.negative {
     padding: var(--spacing-sm);
     background: var(--color-bg-hover);
     border-radius: var(--radius-sm);
-    font-size: var(--font-size-xs);
-    color: var(--color-text-tertiary);
-    line-height: 1.5;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    border-left: 3px solid var(--color-brand-secondary);
 }
 
 .chart-explain b {
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
+    font-weight: 600;
 }
 
 @media (width >= 768px) {
