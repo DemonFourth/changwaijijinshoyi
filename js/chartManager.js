@@ -1894,7 +1894,7 @@ const ChartManager = {
                 })),
                 label: {
                     show: true,
-                    formatter: '{b}'
+                    formatter: params => params.name
                 }
             }]
         };
@@ -1949,7 +1949,7 @@ const ChartManager = {
                     center: ['50%', '60%'],
                     data: pieData.map((d, i) => ({ name: d.name, value: Number(d.value.toFixed(3)), itemStyle: { color: themeConfig.itemColor[i] } })),
                     itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
-                    label: { show: true, formatter: '{b}\n{d}%' },
+                    label: { show: true, formatter: params => `${params.name}\n${params.percent.toFixed(1)}%` },
                     emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } }
                 }]
             };
