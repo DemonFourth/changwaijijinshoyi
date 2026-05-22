@@ -445,7 +445,7 @@ td.negative {
     margin-bottom: 2rem;
     border: 1px solid var(--color-border-primary);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .chart-container::before {
@@ -6042,12 +6042,6 @@ td.negative {
     color: white;
 }
 
-.chart-container {
-    height: 350px;
-    width: 100%;
-}
-
-/* ͼ��������ʽ��ǿ */
 .charts-wrapper {
     background: var(--color-bg-secondary);
     border-radius: 12px;
@@ -6106,11 +6100,6 @@ td.negative {
     background: var(--color-brand-gradient);
     border-color: var(--color-brand-secondary);
     color: var(--color-text-on-brand);
-}
-
-.chart-container {
-    height: 380px;
-    width: 100%;
 }
 
 /* 图表控制栏样式增强 */
