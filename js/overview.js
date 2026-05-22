@@ -667,39 +667,106 @@ const Overview = {
             return;
         }
 
+        this._bindYearlyChartStyleEvents();
+        this._renderYearlyChartsByStyle();
+    },
+
+    /**
+     * 绑定年度图表样式选择器事件
+     */
+    _bindYearlyChartStyleEvents() {
+        const styleSelects = [
+            { id: 'yearly-chart-style-multi', method: '_renderMultiYearChart' },
+            { id: 'yearly-chart-style-detail', method: '_renderYearlyDetailChart' },
+            { id: 'yearly-chart-style-trend', method: '_renderYearlyTrendChart' },
+            { id: 'yearly-chart-style-invest', method: '_renderYearlyInvestChart' }
+        ];
+
+        styleSelects.forEach(({ id, method }) => {
+            const select = document.getElementById(id);
+            if (select && !select.dataset.bound) {
+                select.addEventListener('change', () => {
+                    this._renderYearlyChartsByStyle();
+                });
+                select.dataset.bound = 'true';
+            }
+        });
+    },
+
+    /**
+     * 根据选择器样式渲染年度图表
+     */
+    _renderYearlyChartsByStyle() {
         const multiYearData = StatisticsAppService.getMultiYearSummary();
         const yearlySummary = StatisticsAppService.getYearlySummary();
         const yearlyTrendData = StatisticsAppService.getYearlyTrend();
 
-        // 多年持仓对比
-        const multiYearEl = document.getElementById('chart-multi-year');
-        if (multiYearEl) {
-            ChartManager.createChartLazy('chart-multi-year', ChartManager.buildMultiYearBarChartOption(multiYearData));
-        }
-
-        // 今年详细汇总
-        const yearlyDetailEl = document.getElementById('chart-yearly-detail');
-        if (yearlyDetailEl) {
-            ChartManager.createChartLazy('chart-yearly-detail', ChartManager.buildYearlyDetailBarChartOption(yearlySummary));
-        }
-
-        // 市值变化趋势
-        const yearlyTrendEl = document.getElementById('chart-yearly-trend');
-        if (yearlyTrendEl) {
-            ChartManager.createChartLazy('chart-yearly-trend', ChartManager.buildYearlyTrendLineChartOption(yearlyTrendData));
-        }
-
-        // 年度投入与收益对比
-        const yearlyInvestProfitEl = document.getElementById('chart-yearly-invest-profit');
-        if (yearlyInvestProfitEl) {
-            ChartManager.createChartLazy('chart-yearly-invest-profit', ChartManager.buildYearlyInvestProfitChartOption(multiYearData));
-        }
+        this._renderMultiYearChart(multiYearData);
+        this._renderYearlyDetailChart(yearlySummary);
+        this._renderYearlyTrendChart(yearlyTrendData);
+        this._renderYearlyInvestChart(multiYearData);
 
         // 渲染文字汇总
         this.renderMultiYearTextSummary(multiYearData);
         this.renderYearlyDetailTextSummary(yearlySummary);
         this.renderYearlyTrendTextSummary(yearlyTrendData);
         this.renderYearlyInvestProfitTextSummary(multiYearData);
+    },
+
+    /**
+     * 渲染多年持仓对比图表
+     */
+    _renderMultiYearChart(multiYearData) {
+        const multiYearEl = document.getElementById('chart-multi-year');
+        if (!multiYearEl) return;
+
+        const styleSelect = document.getElementById('yearly-chart-style-multi');
+        const style = styleSelect ? styleSelect.value : 'bar';
+
+        const option = ChartManager.buildMultiYearChartOption(multiYearData, style);
+        ChartManager.createChartLazy('chart-multi-year', option);
+    },
+
+    /**
+     * 渲染今年详细汇总图表
+     */
+    _renderYearlyDetailChart(yearlySummary) {
+        const yearlyDetailEl = document.getElementById('chart-yearly-detail');
+        if (!yearlyDetailEl) return;
+
+        const styleSelect = document.getElementById('yearly-chart-style-detail');
+        const style = styleSelect ? styleSelect.value : 'bar';
+
+        const option = ChartManager.buildYearlyDetailChartOption(yearlySummary, style);
+        ChartManager.createChartLazy('chart-yearly-detail', option);
+    },
+
+    /**
+     * 渲染持仓分布图表
+     */
+    _renderYearlyTrendChart(yearlyTrendData) {
+        const yearlyTrendEl = document.getElementById('chart-yearly-trend');
+        if (!yearlyTrendEl) return;
+
+        const styleSelect = document.getElementById('yearly-chart-style-trend');
+        const style = styleSelect ? styleSelect.value : 'bar';
+
+        const option = ChartManager.buildYearlyTrendChartOption(yearlyTrendData, style);
+        ChartManager.createChartLazy('chart-yearly-trend', option);
+    },
+
+    /**
+     * 渲染年度投入与收益对比图表
+     */
+    _renderYearlyInvestChart(multiYearData) {
+        const yearlyInvestProfitEl = document.getElementById('chart-yearly-invest-profit');
+        if (!yearlyInvestProfitEl) return;
+
+        const styleSelect = document.getElementById('yearly-chart-style-invest');
+        const style = styleSelect ? styleSelect.value : 'bar';
+
+        const option = ChartManager.buildYearlyInvestProfitChartOption(multiYearData, style);
+        ChartManager.createChartLazy('chart-yearly-invest-profit', option);
     },
 
     /**

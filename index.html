@@ -139,7 +139,24 @@
                     <h3 class="chart-section-title">年度持仓统计</h3>
                     <div class="yearly-chart-grid">
                         <div class="chart-item">
-                            <h4>多年持仓对比</h4>
+                            <div class="chart-item-header">
+                                <h4>多年持仓对比</h4>
+                                <select id="yearly-chart-style-multi" class="chart-style-select btn">
+                                    <optgroup label="对比类">
+                                        <option value="bar" selected>📊 柱状图</option>
+                                        <option value="bar-stack">📚 堆叠柱状图</option>
+                                        <option value="bar-horizontal">↔️ 条形图</option>
+                                    </optgroup>
+                                    <optgroup label="趋势类">
+                                        <option value="line">📈 折线图</option>
+                                        <option value="area">📊 面积图</option>
+                                    </optgroup>
+                                    <optgroup label="分布类">
+                                        <option value="pie">🥧 饼图</option>
+                                        <option value="doughnut">🍩 环形图</option>
+                                    </optgroup>
+                                </select>
+                            </div>
                             <div id="chart-multi-year" class="chart"></div>
                             <div id="chart-multi-year-text" class="chart-text-summary"></div>
                             <div class="chart-explain">
@@ -150,7 +167,20 @@
                             </div>
                         </div>
                         <div class="chart-item">
-                            <h4>今年详细汇总</h4>
+                            <div class="chart-item-header">
+                                <h4>今年详细汇总</h4>
+                                <select id="yearly-chart-style-detail" class="chart-style-select btn">
+                                    <optgroup label="对比类">
+                                        <option value="bar" selected>📊 柱状图</option>
+                                        <option value="bar-stack">📚 堆叠柱状图</option>
+                                        <option value="bar-horizontal">↔️ 条形图</option>
+                                    </optgroup>
+                                    <optgroup label="趋势类">
+                                        <option value="line">📈 折线图</option>
+                                        <option value="area">📊 面积图</option>
+                                    </optgroup>
+                                </select>
+                            </div>
                             <div id="chart-yearly-detail" class="chart"></div>
                             <div id="chart-yearly-detail-text" class="chart-text-summary"></div>
                             <div class="chart-explain">
@@ -162,7 +192,20 @@
                             </div>
                         </div>
                         <div class="chart-item">
-                            <h4>持仓分布（按买入年份）</h4>
+                            <div class="chart-item-header">
+                                <h4>持仓分布（按买入年份）</h4>
+                                <select id="yearly-chart-style-trend" class="chart-style-select btn">
+                                    <optgroup label="对比类">
+                                        <option value="bar" selected>📊 柱状图</option>
+                                        <option value="bar-stack">📚 堆叠柱状图</option>
+                                        <option value="bar-horizontal">↔️ 条形图</option>
+                                    </optgroup>
+                                    <optgroup label="趋势类">
+                                        <option value="line">📈 折线图</option>
+                                        <option value="area">📊 面积图</option>
+                                    </optgroup>
+                                </select>
+                            </div>
                             <div id="chart-yearly-trend" class="chart"></div>
                             <div id="chart-yearly-trend-text" class="chart-text-summary"></div>
                             <div class="chart-explain">
@@ -173,7 +216,20 @@
                             </div>
                         </div>
                         <div class="chart-item">
-                            <h4>年度投入与收益对比</h4>
+                            <div class="chart-item-header">
+                                <h4>年度投入与收益对比</h4>
+                                <select id="yearly-chart-style-invest" class="chart-style-select btn">
+                                    <optgroup label="对比类">
+                                        <option value="bar" selected>📊 柱状图</option>
+                                        <option value="bar-stack">📚 堆叠柱状图</option>
+                                        <option value="bar-horizontal">↔️ 条形图</option>
+                                    </optgroup>
+                                    <optgroup label="趋势类">
+                                        <option value="line">📈 折线图</option>
+                                        <option value="area">📊 面积图</option>
+                                    </optgroup>
+                                </select>
+                            </div>
                             <div id="chart-yearly-invest-profit" class="chart"></div>
                             <div id="chart-yearly-invest-profit-text" class="chart-text-summary"></div>
                             <div class="chart-explain">

@@ -1901,11 +1901,12 @@ const ChartManager = {
     },
 
     /**
-     * 生成多年持仓对比柱状图配置
+     * 生成多年持仓对比图表配置（支持多种样式）
      * @param {Array} multiYearData - 近5年汇总数据 [{year, totalInvest, totalValue, totalProfit}]
+     * @param {string} style - 图表样式：bar, bar-stack, bar-horizontal, line, area, pie, doughnut
      * @returns {Object} ECharts option
      */
-    buildMultiYearBarChartOption(multiYearData) {
+    buildMultiYearChartOption(multiYearData, style = 'bar') {
         const themeConfig = ChartManager.getThemeConfig();
 
         if (!multiYearData || multiYearData.length === 0) {
@@ -1917,77 +1918,176 @@ const ChartManager = {
         const valueData = multiYearData.map(d => d.totalValue);
         const profitData = multiYearData.map(d => d.totalProfit);
 
+        // Tooltip 格式化函数
+        const tooltipFormatter = function(params) {
+            let result = params[0].name + '<br/>';
+            params.forEach(p => {
+                const color = p.value >= 0 ? themeConfig.profitColor : themeConfig.lossColor;
+                const valueStr = Math.abs(p.value) >= 10000
+                    ? (p.value / 10000).toFixed(2) + '万'
+                    : p.value.toFixed(2);
+                result += `${p.marker} ${p.seriesName}: <span style="color:${color}">¥${valueStr}</span><br/>`;
+            });
+            return result;
+        };
+
+        // 饼图数据
+        if (style === 'pie' || style === 'doughnut') {
+            const pieData = [
+                { name: '累计投入', value: investData.reduce((a, b) => a + b, 0) },
+                { name: '当前市值', value: valueData.reduce((a, b) => a + b, 0) },
+                { name: '总收益', value: profitData.reduce((a, b) => a + b, 0) }
+            ];
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'item', formatter: '{b}: ¥{c} ({d}%)' },
+                legend: { data: pieData.map(d => d.name), textStyle: { color: themeConfig.textColor }, top: 0 },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+                series: [{
+                    type: 'pie',
+                    radius: style === 'doughnut' ? ['40%', '70%'] : '60%',
+                    center: ['50%', '60%'],
+                    data: pieData.map((d, i) => ({ name: d.name, value: Number(d.value.toFixed(3)), itemStyle: { color: themeConfig.itemColor[i] } })),
+                    itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
+                    label: { show: true, formatter: '{b}\n{d}%' },
+                    emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } }
+                }]
+            };
+        }
+
+        // 折线/面积图
+        if (style === 'line' || style === 'area') {
+            const commonConfig = {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', formatter: tooltipFormatter },
+                legend: { data: ['累计投入', '当前市值', '总收益'], textStyle: { color: themeConfig.textColor }, top: 0 },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: years,
+                    axisLabel: { color: themeConfig.textColor, fontSize: 11 },
+                    axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: {
+                        color: themeConfig.textColor,
+                        formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
+                    },
+                    axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                    splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+                },
+                series: [
+                    {
+                        name: '累计投入', type: 'line', smooth: true, data: investData.map(v => Number(v.toFixed(3))),
+                        lineStyle: { color: themeConfig.itemColor[0], width: 3 },
+                        areaStyle: style === 'area' ? { color: themeConfig.itemColor[0] + '33' } : null,
+                        itemStyle: { color: themeConfig.itemColor[0] }
+                    },
+                    {
+                        name: '当前市值', type: 'line', smooth: true, data: valueData.map(v => Number(v.toFixed(3))),
+                        lineStyle: { color: themeConfig.itemColor[1], width: 3 },
+                        areaStyle: style === 'area' ? { color: themeConfig.itemColor[1] + '33' } : null,
+                        itemStyle: { color: themeConfig.itemColor[1] }
+                    },
+                    {
+                        name: '总收益', type: 'line', smooth: true, data: profitData.map(v => Number(v.toFixed(3))),
+                        lineStyle: { color: themeConfig.profitColor, width: 3 },
+                        areaStyle: style === 'area' ? { color: themeConfig.profitColor + '33' } : null,
+                        itemStyle: { color: v => v >= 0 ? themeConfig.profitColor : themeConfig.lossColor }
+                    }
+                ]
+            };
+            return commonConfig;
+        }
+
+        // 条形图（水平柱状图）
+        if (style === 'bar-horizontal') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+                legend: { data: ['累计投入', '当前市值', '总收益'], textStyle: { color: themeConfig.textColor }, top: 0 },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+                xAxis: {
+                    type: 'value',
+                    axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) },
+                    axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                    splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: years,
+                    axisLabel: { color: themeConfig.textColor },
+                    axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+                },
+                series: [
+                    { name: '累计投入', type: 'bar', data: investData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[0] } },
+                    { name: '当前市值', type: 'bar', data: valueData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[1] } },
+                    { name: '总收益', type: 'bar', data: profitData.map(v => ({ value: Number(v.toFixed(3)), itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor } })) }
+                ]
+            };
+        }
+
+        // 堆叠柱状图
+        if (style === 'bar-stack') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+                legend: { data: ['累计投入', '当前市值', '总收益'], textStyle: { color: themeConfig.textColor }, top: 0 },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: years,
+                    axisLabel: { color: themeConfig.textColor, fontSize: 11 },
+                    axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) },
+                    axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
+                    splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
+                },
+                series: [
+                    { name: '累计投入', type: 'bar', stack: 'total', data: investData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[0] } },
+                    { name: '当前市值', type: 'bar', stack: 'total', data: valueData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[1] } },
+                    { name: '总收益', type: 'bar', stack: 'total', data: profitData.map(v => ({ value: Number(v.toFixed(3)), itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor } })) }
+                ]
+            };
+        }
+
+        // 默认柱状图
         return {
             textStyle: { color: themeConfig.textColor },
-            tooltip: {
-                trigger: 'axis',
-                formatter: function(params) {
-                    let result = params[0].name + '<br/>';
-                    params.forEach(p => {
-                        const color = p.value >= 0 ? themeConfig.profitColor : themeConfig.lossColor;
-                        const valueStr = Math.abs(p.value) >= 10000
-                            ? (p.value / 10000).toFixed(2) + '万'
-                            : p.value.toFixed(2);
-                        result += `${p.marker} ${p.seriesName}: <span style="color:${color}">¥${valueStr}</span><br/>`;
-                    });
-                    return result;
-                }
-            },
-            legend: {
-                data: ['累计投入', '当前市值', '总收益'],
-                textStyle: { color: themeConfig.textColor },
-                top: 0
-            },
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+            legend: { data: ['累计投入', '当前市值', '总收益'], textStyle: { color: themeConfig.textColor }, top: 0 },
             grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
             xAxis: {
                 type: 'category',
                 data: years,
-                axisLabel: { color: themeConfig.textColor, fontSize: 11 },
+                axisLabel: { color: themeConfig.textColor, fontSize: 11, rotate: years.length > 5 ? 45 : 0 },
                 axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
             },
             yAxis: {
                 type: 'value',
-                axisLabel: {
-                    color: themeConfig.textColor,
-                    formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
-                },
+                axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) },
                 axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
                 splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
             },
             series: [
-                {
-                    name: '累计投入',
-                    type: 'bar',
-                    data: investData,
-                    itemStyle: { color: themeConfig.itemColor[0] },
-                    barMaxWidth: 40
-                },
-                {
-                    name: '当前市值',
-                    type: 'bar',
-                    data: valueData,
-                    itemStyle: { color: themeConfig.itemColor[1] },
-                    barMaxWidth: 40
-                },
-                {
-                    name: '总收益',
-                    type: 'bar',
-                    data: profitData.map(v => ({
-                        value: v,
-                        itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor }
-                    })),
-                    barMaxWidth: 40
-                }
+                { name: '累计投入', type: 'bar', data: investData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[0] }, barMaxWidth: 40 },
+                { name: '当前市值', type: 'bar', data: valueData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[1] }, barMaxWidth: 40 },
+                { name: '总收益', type: 'bar', data: profitData.map(v => ({ value: Number(v.toFixed(3)), itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor } })), barMaxWidth: 40 }
             ]
         };
     },
 
     /**
-     * 生成当年详细汇总柱状图配置
+     * 生成今年详细汇总图表配置（支持多种样式）
      * @param {Object} yearlySummary - 年度汇总数据
+     * @param {string} style - 图表样式
      * @returns {Object} ECharts option
      */
-    buildYearlyDetailBarChartOption(yearlySummary) {
+    buildYearlyDetailChartOption(yearlySummary, style = 'bar') {
         const themeConfig = ChartManager.getThemeConfig();
 
         if (!yearlySummary) {
@@ -2001,83 +2101,75 @@ const ChartManager = {
             { name: '已实现收益', value: yearlySummary.totalProfit || 0 }
         ];
 
+        const tooltipFormatter = function(params) {
+            let result = params[0].name + '<br/>';
+            params.forEach(p => {
+                const valueStr = Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(2) + '万' : p.value.toFixed(2);
+                result += `${p.marker} ¥${valueStr}<br/>`;
+            });
+            return result;
+        };
+
+        // 折线/面积图
+        if (style === 'line' || style === 'area') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', formatter: tooltipFormatter },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '15%', containLabel: true },
+                xAxis: { type: 'category', data: data.map(d => d.name), axisLabel: { color: themeConfig.textColor }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+                yAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
+                series: [{
+                    name: '金额', type: 'line', smooth: true, data: data.map(d => Number(d.value.toFixed(3))),
+                    lineStyle: { color: themeConfig.primaryColor, width: 3 },
+                    areaStyle: style === 'area' ? { color: themeConfig.primaryColor + '33' } : null,
+                    itemStyle: { color: themeConfig.primaryColor },
+                    label: { show: true, position: 'top', formatter: v => Utils.formatMoneySmart(v.value) }
+                }]
+            };
+        }
+
+        // 条形图
+        if (style === 'bar-horizontal') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '15%', containLabel: true },
+                xAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
+                yAxis: { type: 'category', data: data.map(d => d.name), axisLabel: { color: themeConfig.textColor }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+                series: [{ name: '金额', type: 'bar', data: data.map((d, i) => ({ value: Number(d.value.toFixed(3)), itemStyle: { color: themeConfig.itemColor[i] } })), label: { show: true, position: 'right', formatter: v => Utils.formatMoneySmart(v.value) } }]
+            };
+        }
+
+        // 堆叠柱状图（只有一组数据，堆叠无意义但保留接口）
+        if (style === 'bar-stack') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', formatter: tooltipFormatter },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '15%', containLabel: true },
+                xAxis: { type: 'category', data: data.map(d => d.name), axisLabel: { color: themeConfig.textColor, rotate: 30 }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+                yAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
+                series: [{ name: '金额', type: 'bar', data: data.map((d, i) => ({ value: Number(d.value.toFixed(3)), itemStyle: { color: themeConfig.itemColor[i] } })), label: { show: true, position: 'top', formatter: v => Utils.formatMoneySmart(v.value) } }]
+            };
+        }
+
+        // 默认柱状图
         return {
             textStyle: { color: themeConfig.textColor },
-            tooltip: {
-                trigger: 'axis',
-                formatter: function(params) {
-                    let result = params[0].name + '<br/>';
-                    params.forEach(p => {
-                        const valueStr = Math.abs(p.value) >= 10000
-                            ? (p.value / 10000).toFixed(2) + '万'
-                            : p.value.toFixed(2);
-                        result += `${p.marker} ${p.seriesName}: ¥${valueStr}<br/>`;
-                    });
-                    return result;
-                }
-            },
-            legend: {
-                data: ['累计买入', '累计卖出', '手续费', '已实现收益'],
-                textStyle: { color: themeConfig.textColor, fontSize: 10 },
-                top: 0
-            },
-            grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
-            xAxis: {
-                type: 'category',
-                data: [yearlySummary.year + '年'],
-                axisLabel: { color: themeConfig.textColor },
-                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
-            },
-            yAxis: {
-                type: 'value',
-                axisLabel: {
-                    color: themeConfig.textColor,
-                    formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
-                },
-                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
-                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
-            },
-            series: [
-                {
-                    name: '累计买入',
-                    type: 'bar',
-                    data: [data[0].value],
-                    itemStyle: { color: themeConfig.itemColor[0] },
-                    barMaxWidth: 50
-                },
-                {
-                    name: '累计卖出',
-                    type: 'bar',
-                    data: [data[1].value],
-                    itemStyle: { color: themeConfig.itemColor[1] },
-                    barMaxWidth: 50
-                },
-                {
-                    name: '手续费',
-                    type: 'bar',
-                    data: [data[2].value],
-                    itemStyle: { color: themeConfig.itemColor[2] },
-                    barMaxWidth: 50
-                },
-                {
-                    name: '已实现收益',
-                    type: 'bar',
-                    data: [{
-                        value: data[3].value,
-                        itemStyle: { color: data[3].value >= 0 ? themeConfig.profitColor : themeConfig.lossColor }
-                    }],
-                    barMaxWidth: 50
-                }
-            ]
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+            grid: { left: '3%', right: '4%', bottom: '10%', top: '15%', containLabel: true },
+            xAxis: { type: 'category', data: data.map(d => d.name), axisLabel: { color: themeConfig.textColor, rotate: 30 }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+            yAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
+            series: [{ name: '金额', type: 'bar', data: data.map((d, i) => ({ value: Number(d.value.toFixed(3)), itemStyle: { color: themeConfig.itemColor[i] } })), barMaxWidth: 60, label: { show: true, position: 'top', formatter: v => Utils.formatMoneySmart(v.value) } }]
         };
     },
 
     /**
-     * 生成持仓分布折线图（按买入年份）
+     * 生成持仓分布图表配置（按买入年份，支持多种样式）
      * @param {Array} yearlyTrendData - 年度持仓分布数据 [{year, holdingCost, marketValue}]
+     * @param {string} style - 图表样式
      * @returns {Object} ECharts option
      */
-    buildYearlyTrendLineChartOption(yearlyTrendData) {
+    buildYearlyTrendChartOption(yearlyTrendData, style = 'bar') {
         const themeConfig = ChartManager.getThemeConfig();
 
         if (!yearlyTrendData || yearlyTrendData.length === 0) {
@@ -2088,89 +2180,85 @@ const ChartManager = {
         const costData = yearlyTrendData.map(d => d.holdingCost);
         const valueData = yearlyTrendData.map(d => d.marketValue);
 
+        const tooltipFormatter = function(params) {
+            let result = params[0].name + '<br/>';
+            params.forEach(p => {
+                const valueStr = Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(2) + '万' : p.value.toFixed(2);
+                result += `${p.marker} ${p.seriesName}: ¥${valueStr}<br/>`;
+            });
+            return result;
+        };
+
+        // 折线/面积图
+        if (style === 'line' || style === 'area') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', formatter: tooltipFormatter },
+                legend: { data: ['持仓成本', '当前市值'], textStyle: { color: themeConfig.textColor }, top: 0 },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+                xAxis: { type: 'category', data: years, axisLabel: { color: themeConfig.textColor, fontSize: 11 }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+                yAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
+                series: [
+                    { name: '持仓成本', type: 'line', smooth: true, data: costData.map(v => Number(v.toFixed(3))), lineStyle: { color: themeConfig.itemColor[0], width: 3 }, areaStyle: style === 'area' ? { color: themeConfig.itemColor[0] + '33' } : null, itemStyle: { color: themeConfig.itemColor[0] } },
+                    { name: '当前市值', type: 'line', smooth: true, data: valueData.map(v => Number(v.toFixed(3))), lineStyle: { color: themeConfig.itemColor[1], width: 3 }, areaStyle: style === 'area' ? { color: themeConfig.itemColor[1] + '33' } : null, itemStyle: { color: themeConfig.itemColor[1] } }
+                ]
+            };
+        }
+
+        // 条形图
+        if (style === 'bar-horizontal') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+                legend: { data: ['持仓成本', '当前市值'], textStyle: { color: themeConfig.textColor }, top: 0 },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+                xAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
+                yAxis: { type: 'category', data: years, axisLabel: { color: themeConfig.textColor }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+                series: [
+                    { name: '持仓成本', type: 'bar', data: costData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[0] } },
+                    { name: '当前市值', type: 'bar', data: valueData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[1] } }
+                ]
+            };
+        }
+
+        // 堆叠柱状图
+        if (style === 'bar-stack') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+                legend: { data: ['持仓成本', '当前市值'], textStyle: { color: themeConfig.textColor }, top: 0 },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+                xAxis: { type: 'category', data: years, axisLabel: { color: themeConfig.textColor, fontSize: 11 }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+                yAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
+                series: [
+                    { name: '持仓成本', type: 'bar', stack: 'total', data: costData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[0] } },
+                    { name: '当前市值', type: 'bar', stack: 'total', data: valueData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[1] } }
+                ]
+            };
+        }
+
+        // 默认柱状图
         return {
             textStyle: { color: themeConfig.textColor },
-            tooltip: {
-                trigger: 'axis',
-                formatter: function(params) {
-                    let result = params[0].name + '<br/>';
-                    params.forEach(p => {
-                        const valueStr = Math.abs(p.value) >= 10000
-                            ? (p.value / 10000).toFixed(2) + '万'
-                            : p.value.toFixed(2);
-                        result += `${p.marker} ${p.seriesName}: <span style="color:${p.color}">¥${valueStr}</span><br/>`;
-                    });
-                    return result;
-                }
-            },
-            legend: {
-                data: ['持仓成本', '当前市值'],
-                textStyle: { color: themeConfig.textColor },
-                top: 0
-            },
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+            legend: { data: ['持仓成本', '当前市值'], textStyle: { color: themeConfig.textColor }, top: 0 },
             grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
-            xAxis: {
-                type: 'category',
-                data: years,
-                axisLabel: { color: themeConfig.textColor, fontSize: 11 },
-                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
-            },
-            yAxis: {
-                type: 'value',
-                axisLabel: {
-                    color: themeConfig.textColor,
-                    formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
-                },
-                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
-                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
-            },
+            xAxis: { type: 'category', data: years, axisLabel: { color: themeConfig.textColor, fontSize: 11 }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+            yAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
             series: [
-                {
-                    name: '持仓成本',
-                    type: 'line',
-                    data: costData,
-                    lineStyle: { color: themeConfig.itemColor[0], width: 2 },
-                    itemStyle: { color: themeConfig.itemColor[0] },
-                    smooth: true,
-                    label: {
-                        show: true,
-                        position: 'top',
-                        formatter: p => Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(1) + '万' : p.value.toFixed(0),
-                        fontSize: 9,
-                        color: themeConfig.textColor
-                    }
-                },
-                {
-                    name: '当前市值',
-                    type: 'line',
-                    data: valueData,
-                    lineStyle: { color: themeConfig.itemColor[3], width: 2 },
-                    itemStyle: { color: themeConfig.itemColor[3] },
-                    smooth: true,
-                    areaStyle: {
-                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                            { offset: 0, color: themeConfig.itemColor[3] + '40' },
-                            { offset: 1, color: themeConfig.itemColor[3] + '10' }
-                        ])
-                    },
-                    label: {
-                        show: true,
-                        position: 'top',
-                        formatter: p => Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(1) + '万' : p.value.toFixed(0),
-                        fontSize: 9,
-                        color: themeConfig.textColor
-                    }
-                }
+                { name: '持仓成本', type: 'bar', data: costData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[0] }, barMaxWidth: 40 },
+                { name: '当前市值', type: 'bar', data: valueData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[1] }, barMaxWidth: 40 }
             ]
         };
     },
 
     /**
-     * 生成年度投入与收益对比折线图
+     * 生成年度投入与收益对比图表配置（支持多种样式）
      * @param {Array} multiYearData - 多年数据 [{year, totalInvest, totalProfit}]
+     * @param {string} style - 图表样式
      * @returns {Object} ECharts option
      */
-    buildYearlyInvestProfitChartOption(multiYearData) {
+    buildYearlyInvestProfitChartOption(multiYearData, style = 'bar') {
         const themeConfig = ChartManager.getThemeConfig();
 
         if (!multiYearData || multiYearData.length === 0) {
@@ -2181,76 +2269,75 @@ const ChartManager = {
         const investData = multiYearData.map(d => d.totalInvest);
         const profitData = multiYearData.map(d => d.totalProfit);
 
+        const tooltipFormatter = function(params) {
+            let result = params[0].name + '<br/>';
+            params.forEach(p => {
+                const color = p.value >= 0 ? themeConfig.profitColor : themeConfig.lossColor;
+                const valueStr = Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(2) + '万' : p.value.toFixed(2);
+                result += `${p.marker} ${p.seriesName}: <span style="color:${color}">¥${valueStr}</span><br/>`;
+            });
+            return result;
+        };
+
+        // 折线/面积图
+        if (style === 'line' || style === 'area') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', formatter: tooltipFormatter },
+                legend: { data: ['投入金额', '总收益'], textStyle: { color: themeConfig.textColor }, top: 0 },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+                xAxis: { type: 'category', data: years, axisLabel: { color: themeConfig.textColor, fontSize: 11 }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+                yAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
+                series: [
+                    { name: '投入金额', type: 'line', smooth: true, data: investData.map(v => Number(v.toFixed(3))), lineStyle: { color: themeConfig.itemColor[0], width: 3 }, areaStyle: style === 'area' ? { color: themeConfig.itemColor[0] + '33' } : null, itemStyle: { color: themeConfig.itemColor[0] } },
+                    { name: '总收益', type: 'line', smooth: true, data: profitData.map(v => Number(v.toFixed(3))), lineStyle: { color: themeConfig.profitColor, width: 3 }, areaStyle: style === 'area' ? { color: themeConfig.profitColor + '33' } : null, itemStyle: { color: v => v >= 0 ? themeConfig.profitColor : themeConfig.lossColor } }
+                ]
+            };
+        }
+
+        // 条形图
+        if (style === 'bar-horizontal') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+                legend: { data: ['投入金额', '总收益'], textStyle: { color: themeConfig.textColor }, top: 0 },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+                xAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
+                yAxis: { type: 'category', data: years, axisLabel: { color: themeConfig.textColor }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+                series: [
+                    { name: '投入金额', type: 'bar', data: investData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[0] } },
+                    { name: '总收益', type: 'bar', data: profitData.map(v => ({ value: Number(v.toFixed(3)), itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor } })) }
+                ]
+            };
+        }
+
+        // 堆叠柱状图
+        if (style === 'bar-stack') {
+            return {
+                textStyle: { color: themeConfig.textColor },
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+                legend: { data: ['投入金额', '总收益'], textStyle: { color: themeConfig.textColor }, top: 0 },
+                grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
+                xAxis: { type: 'category', data: years, axisLabel: { color: themeConfig.textColor, fontSize: 11 }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+                yAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
+                series: [
+                    { name: '投入金额', type: 'bar', stack: 'total', data: investData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[0] } },
+                    { name: '总收益', type: 'bar', stack: 'total', data: profitData.map(v => ({ value: Number(v.toFixed(3)), itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor } })) }
+                ]
+            };
+        }
+
+        // 默认柱状图
         return {
             textStyle: { color: themeConfig.textColor },
-            tooltip: {
-                trigger: 'axis',
-                formatter: function(params) {
-                    let result = params[0].name + '<br/>';
-                    params.forEach(p => {
-                        const valueStr = Math.abs(p.value) >= 10000
-                            ? (p.value / 10000).toFixed(2) + '万'
-                            : p.value.toFixed(2);
-                        const color = p.seriesName === '收益' ? (p.value >= 0 ? themeConfig.profitColor : themeConfig.lossColor) : p.color;
-                        result += `${p.marker} ${p.seriesName}: <span style="color:${color}">¥${valueStr}</span><br/>`;
-                    });
-                    return result;
-                }
-            },
-            legend: {
-                data: ['投入金额', '收益'],
-                textStyle: { color: themeConfig.textColor },
-                top: 0
-            },
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFormatter },
+            legend: { data: ['投入金额', '总收益'], textStyle: { color: themeConfig.textColor }, top: 0 },
             grid: { left: '3%', right: '4%', bottom: '10%', top: '30%', containLabel: true },
-            xAxis: {
-                type: 'category',
-                data: years,
-                axisLabel: { color: themeConfig.textColor, fontSize: 11 },
-                axisLine: { lineStyle: { color: themeConfig.axisLineColor } }
-            },
-            yAxis: {
-                type: 'value',
-                axisLabel: {
-                    color: themeConfig.textColor,
-                    formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0)
-                },
-                axisLine: { lineStyle: { color: themeConfig.axisLineColor } },
-                splitLine: { lineStyle: { color: themeConfig.splitLineColor } }
-            },
+            xAxis: { type: 'category', data: years, axisLabel: { color: themeConfig.textColor, fontSize: 11 }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } } },
+            yAxis: { type: 'value', axisLabel: { color: themeConfig.textColor, formatter: val => Math.abs(val) >= 10000 ? (val / 10000).toFixed(1) + '万' : val.toFixed(0) }, axisLine: { lineStyle: { color: themeConfig.axisLineColor } }, splitLine: { lineStyle: { color: themeConfig.splitLineColor } } },
             series: [
-                {
-                    name: '投入金额',
-                    type: 'line',
-                    data: investData,
-                    lineStyle: { color: themeConfig.itemColor[0], width: 2 },
-                    itemStyle: { color: themeConfig.itemColor[0] },
-                    smooth: true,
-                    label: {
-                        show: true,
-                        position: 'top',
-                        formatter: p => Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(1) + '万' : p.value.toFixed(0),
-                        fontSize: 9,
-                        color: themeConfig.textColor
-                    }
-                },
-                {
-                    name: '收益',
-                    type: 'line',
-                    data: profitData.map(v => ({
-                        value: v,
-                        itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor }
-                    })),
-                    lineStyle: { color: themeConfig.profitColor, width: 2 },
-                    smooth: true,
-                    label: {
-                        show: true,
-                        position: 'top',
-                        formatter: p => Math.abs(p.value) >= 10000 ? (p.value / 10000).toFixed(1) + '万' : p.value.toFixed(0),
-                        fontSize: 9,
-                        color: themeConfig.textColor
-                    }
-                }
+                { name: '投入金额', type: 'bar', data: investData.map(v => Number(v.toFixed(3))), itemStyle: { color: themeConfig.itemColor[0] }, barMaxWidth: 40 },
+                { name: '总收益', type: 'bar', data: profitData.map(v => ({ value: Number(v.toFixed(3)), itemStyle: { color: v >= 0 ? themeConfig.profitColor : themeConfig.lossColor } })), barMaxWidth: 40 }
             ]
         };
     }
