@@ -697,6 +697,14 @@
                                 <option value="dividend">分红</option>
                             </select>
                         </div>
+                        <div class="filter-group">
+                            <label>持仓状态</label>
+                            <div id="chart-holding-tabs" class="chart-holding-tabs">
+                                <button id="holding-filter-all" class="chart-holding-tab active" data-holding="all">📋 全部</button>
+                                <button id="holding-filter-holding" class="chart-holding-tab" data-holding="holding">📌 持仓中</button>
+                                <button id="holding-filter-closed" class="chart-holding-tab" data-holding="closed">✅ 已清仓</button>
+                            </div>
+                        </div>
                         <div class="filter-actions">
                             <button id="trade-history-search" class="btn btn-primary">🔍 筛选</button>
                             <button id="trade-history-reset" class="btn btn-secondary">🔄 重置</button>
@@ -725,13 +733,6 @@
                         <div class="chart-period-tabs">
                             <button id="chart-period-year" class="chart-period-tab active" data-period="year">📅 按年</button>
                             <button id="chart-period-month" class="chart-period-tab" data-period="month">📆 按月</button>
-                        </div>
-
-                        <!-- 持仓状态切换（分布类图表专用） -->
-                        <div id="chart-holding-tabs" class="chart-holding-tabs" style="display:none;">
-                            <button id="holding-filter-all" class="chart-holding-tab active" data-holding="all">📋 全部</button>
-                            <button id="holding-filter-holding" class="chart-holding-tab" data-holding="holding">📌 持仓中</button>
-                            <button id="holding-filter-closed" class="chart-holding-tab" data-holding="closed">✅ 已清仓</button>
                         </div>
 
                         <!-- 时间段选择器（分布类图表专用） -->

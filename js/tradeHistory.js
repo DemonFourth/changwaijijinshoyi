@@ -26,6 +26,7 @@ const TradeHistory = {
         this.loadFundOptions();
         this._updateChartStyleOptions();
         this.refresh();
+        this._updateHoldingFilterTabs();
 
         // 监听主题切换事件
         if (window.EventBus) {
@@ -170,6 +171,7 @@ const TradeHistory = {
                     TradeHistory._holdingFilter = type;
                     TradeHistory._updateHoldingFilterTabs();
                     TradeHistory.renderChart();
+                    TradeHistory.renderTable();
                 });
             }
         });
@@ -318,17 +320,11 @@ const TradeHistory = {
         const container = document.getElementById('chart-period-selectors');
         if (!container) return;
 
-        const holdingTabs = document.getElementById('chart-holding-tabs');
         const isDistribution = this._isDistributionChart();
         container.style.display = isDistribution ? 'flex' : 'none';
 
-        if (holdingTabs) {
-            holdingTabs.style.display = isDistribution ? 'flex' : 'none';
-        }
-
         if (!isDistribution) return;
 
-        this._updateHoldingFilterTabs();
         this._populateYearOptions();
         this._populateMonthOptions(this._selectedYear);
     },
@@ -435,6 +431,7 @@ const TradeHistory = {
         this._endDate = '';
         this._filterType = 'all';
         this._filterFund = 'all';
+        this._holdingFilter = 'all';
         this._currentPage = 1;
 
         const startDateInput = document.getElementById('trade-history-start-date');
@@ -447,6 +444,7 @@ const TradeHistory = {
         if (typeSelect) typeSelect.value = 'all';
         if (fundSelect) fundSelect.value = 'all';
 
+        this._updateHoldingFilterTabs();
         this.renderTable();
         this.renderChart();
     },
@@ -484,6 +482,19 @@ const TradeHistory = {
 
         if (this._filterType !== 'all') {
             filteredTrades = filteredTrades.filter(trade => trade.type === this._filterType);
+        }
+
+        if (this._holdingFilter !== 'all') {
+            const fundStatusCache = {};
+            filteredTrades = filteredTrades.filter(function(trade) {
+                if (fundStatusCache[trade.fundId] === undefined) {
+                    const stats = window.FundManager.getFundStats(trade.fundId);
+                    fundStatusCache[trade.fundId] = stats
+                        ? Utils.isPositive(stats.summary.currentHolding.shares) ? 'holding' : 'closed'
+                        : 'closed';
+                }
+                return fundStatusCache[trade.fundId] === TradeHistory._holdingFilter;
+            });
         }
 
         filteredTrades.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -685,9 +696,8 @@ const TradeHistory = {
             }
         }
 
-        let data = [];
+        const data = [];
         for (const [name, values] of Object.entries(fundMap)) {
-            const isHolding = this._getFundHoldingStatus(values.fundId) === 'holding';
             let value;
 
             if (values.fundId && this._holdingFilter === 'closed') {
@@ -701,15 +711,7 @@ const TradeHistory = {
                 value: value,
                 buy: values.buy,
                 sell: values.sell,
-                dividend: values.dividend,
-                fundId: values.fundId,
-                isHolding: isHolding
-            });
-        }
-
-        if (this._holdingFilter !== 'all') {
-            data = data.filter(function(d) {
-                return d.isHolding === (TradeHistory._holdingFilter === 'holding');
+                dividend: values.dividend
             });
         }
 
@@ -732,21 +734,10 @@ const TradeHistory = {
             const stats = window.FundManager.getFundStats(trade.fundId);
             const fundName = fund ? fund.name : '未知基金';
             const profit = stats && stats.summary ? (stats.summary.totalProfit || 0) : 0;
-            const isHolding = stats
-                ? Utils.isPositive(stats.summary.currentHolding.shares)
-                : false;
-            fundProfitMap[trade.fundId] = { name: fundName, profit: profit, isHolding: isHolding };
+            fundProfitMap[trade.fundId] = { name: fundName, profit: profit };
         }
 
-        let results = Object.values(fundProfitMap);
-
-        if (this._holdingFilter !== 'all') {
-            results = results.filter(function(d) {
-                return d.isHolding === (TradeHistory._holdingFilter === 'holding');
-            });
-        }
-
-        return results
+        return Object.values(fundProfitMap)
             .filter(function(d) { return Math.abs(d.profit) > 0.001; })
             .map(function(d) { return { name: d.name, profit: d.profit, isProfit: d.profit > 0 }; })
             .sort(function(a, b) { return Math.abs(b.profit) - Math.abs(a.profit); });
