@@ -1,4 +1,184 @@
 # 场外基金收益计算器 - AGENTS.md
+## AI 助手工作流程规范
+
+> **重要**：AI 助手在执行任何任务时，必须遵循以下工作流程：
+
+### 1. 任务分析阶段
+
+**每次执行任务前，必须先调用 `using-superpowers` skill 进行任务分析**：
+
+```
+1. 接收用户任务
+2. 调用 SkillTool(skill_name="using-superpowers")
+3. 根据 skill 指导确定任务类型和执行策略
+4. 制定详细的执行计划
+```
+
+**同时，根据任务类型查阅 `SKILLS_GUIDE.md` 选择合适的 Skills**：
+
+| 任务类型 | 首选 Skill | 辅助 Skills |
+|---------|-----------|------------|
+| **新增功能/需求** | `idea-refine` → `brainstorming` | `spec-driven-development`, `planning-and-task-breakdown` |
+| **UI 界面开发** | `frontend-ui-engineering` | `design-taste-frontend`, `frontend-design` |
+| **重构代码** | `code-simplification` | `code-review-and-quality` |
+| **Bug 修复** | `debugging-and-error-recovery` | `test-driven-development` |
+| **API 设计** | `api-and-interface-design` | `security-and-hardening` |
+| **性能优化** | `performance-optimization` | `browser-testing-with-devtools` |
+| **代码审查** | `code-review-and-quality` | `receiving-code-review` |
+| **文档编写** | `documentation-and-adrs` | `doc-coauthoring` |
+| **安全加固** | `security-and-hardening` | `code-review-and-quality` |
+| **数据处理** | `context-mode` | `debugging-and-error-recovery` |
+| **部署上线** | `shipping-and-launch` | `ci-cd-and-automation` |
+| **多人协作** | `git-workflow-and-versioning` | `code-review-and-quality` |
+
+**完整 Skills 使用指南**：请参考 `SKILLS_GUIDE.md`
+
+**目的**：
+- 确保任务理解准确
+- 选择正确的执行策略
+- 避免遗漏关键步骤
+- 提高执行效率
+
+### 2. 任务执行阶段
+
+**执行过程中必须遵循**：
+- 使用 TodoWrite 工具跟踪任务进度
+- 每完成一个步骤立即标记为 completed
+- 遇到问题及时调整计划
+
+
+
+### 2.1 新增功能/修改前置调研（必须执行）
+
+在执行任何新功能开发或重大修改前，**必须**按顺序执行以下步骤：
+
+#### 步骤 1：读取项目上下文
+- [ ] 读取 `AGENTS.md` 中的「核心模块说明」章节
+- [ ] 读取 `ARCHIVE.md` 中的功能列表
+- [ ] 读取 `moduleRegistry.js` 了解已注册模块
+
+#### 步骤 2：设计适配检查
+- [ ] 确认现有模块是否有扩展点（如 `config.js` 配置项）
+- [ ] 确认是否有现成工具可用（如 `Pagination`、`TooltipManager`）
+- [ ] 优先通过配置/扩展实现，而非新建模块
+
+#### 步骤 3：提出方案
+- [ ] 向用户展示实现方案
+- [ ] 说明为何选择此方案（而非其他方式）
+- [ ] 等待用户确认后再执行
+
+#### 禁止行为
+
+🚫 严禁未经调研直接创建新文件/新模块
+🚫 严禁绕过现有配置系统直接硬编码
+🚫 严禁重复实现已有功能（如已有 `Pagination` 再写一个分页）
+
+### 3. Git 提交规范
+
+
+
+### 3.1 Git 操作流程（必须遵守）
+
+#### 操作流程
+
+```
+修改代码 → git add → git commit → [展示提交信息] → 等待用户指令
+```
+
+#### 自动执行
+- ✅ `git add <修改的文件>`
+- ✅ `git commit -m "..."`（按规范格式）
+
+#### 需用户指令
+- ⏸️ `git push`：**仅当用户明确要求时执行**
+- ⏸️ `git push --force`：**严禁执行**（除非用户明确批准）
+
+#### 禁止行为
+
+🚫 严禁跳过 git commit
+🚫 严禁自动执行 git push
+🚫 严禁 git push --force
+🚫 严禁在未 staging 的情况下提交
+
+### 3.2 修改后验证清单（必须执行）
+
+每次修改代码后，**必须**执行以下验证：
+
+#### 基础验证（必须）
+- [ ] 页面可正常打开（无白屏、无 JS 错误）
+- [ ] 核心数据可正常显示（股票列表、交易记录）
+- [ ] 无控制台错误（打开 DevTools 检查）
+
+#### 功能验证（根据修改类型）
+| 修改类型 | 验证内容 |
+|----------|----------|
+| 计算逻辑 | 手动验证收益计算结果 |
+| UI 组件 | 检查各页面正常显示 |
+| 数据存储 | 导入导出功能正常 |
+| 股价获取 | 当前股价显示正常 |
+
+#### 验证命令
+```bash
+# 检查语法错误
+npm run lint
+```
+
+#### 禁止行为
+
+🚫 严禁在未验证的情况下声称任务完成
+🚫 严禁忽略控制台错误
+🚫 严禁修改后不检查页面是否正常打开
+
+
+### 4. 任务完成阶段
+
+**任务完成后必须**：
+1. 总结任务执行情况
+2. 列出所有修改的文件
+3. 确认 git 提交已完成
+4. 在最后一行添加 🎯 标记
+
+**任务终止规范（重要）**：
+
+```
+🚨 [ERROR] 任务终止与工具调用强制规范（必须严格遵守）
+
+当你尚未完成用户任务时：
+➤ 必须主动调用合适的工具继续执行，不得停止、不得仅输出结论或空内容。
+
+当你确信任务已完成时：
+➤ 必须先提供清晰、完整的任务总结（包括关键结果或行动回顾），
+➤ 然后在总结的最后一行末尾添加 🎯 以正式结束任务。
+
+[ERROR] 严禁以下行为：
+❌ 单独返回 🎯；
+❌ 在无总结的情况下输出 🎯；
+❌ 未调用工具却声称任务完成。
+
+⚠️ 违反上述任一规则将被视为 [ERROR] —— 请始终确保：总结 + 🎯 = 合法终止，否则继续使用工具推进。
+```
+
+**正确示例**：
+```
+## 任务完成总结
+
+我已成功完成任务...
+
+### ✅ 执行情况
+...
+
+### 📝 修改的文件
+...
+
+🎯
+```
+
+**错误示例**：
+```
+❌ 任务完成了 🎯  （缺少详细总结）
+❌ 🎯  （只有标记，没有总结）
+❌ 任务完成了  （缺少 🎯 标记，会导致系统重复提示）
+```
 
 ## 项目概述
 
