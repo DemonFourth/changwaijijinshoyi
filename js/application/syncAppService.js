@@ -170,14 +170,21 @@ const SyncAppService = {
         }, interval);
     },
 
-    _setupEventListeners() {
-        EventBus.on(EventType.FUND_ADDED, () => SyncAppService._onDataChanged());
-        EventBus.on(EventType.FUND_UPDATED, () => SyncAppService._onDataChanged());
-        EventBus.on(EventType.FUND_DELETED, () => SyncAppService._onDataChanged());
+    _dataChangePending: false,
 
-        EventBus.on(EventType.TRADE_ADDED, () => SyncAppService._onDataChanged());
-        EventBus.on(EventType.TRADE_UPDATED, () => SyncAppService._onDataChanged());
-        EventBus.on(EventType.TRADE_DELETED, () => SyncAppService._onDataChanged());
+    _setupEventListeners() {
+        EventBus.on(EventType.FUND_ADDED, () => SyncAppService._onDataChanged('event'));
+        EventBus.on(EventType.FUND_UPDATED, () => SyncAppService._onDataChanged('event'));
+        EventBus.on(EventType.FUND_DELETED, () => SyncAppService._onDataChanged('event'));
+
+        EventBus.on(EventType.TRADE_ADDED, () => SyncAppService._onDataChanged('event'));
+        EventBus.on(EventType.TRADE_UPDATED, (data) => {
+            const isBatchDelete = data?.reason === 'batch-delete';
+            SyncAppService._onDataChanged(isBatchDelete ? 'batch-delete' : 'event');
+        });
+        EventBus.on(EventType.TRADE_DELETED, () => SyncAppService._onDataChanged('event'));
+        EventBus.on(EventType.DATA_IMPORTED, () => SyncAppService._onDataChanged('import'));
+        EventBus.on(EventType.DATA_CLEARED, () => SyncAppService._onDataChanged('clear'));
     },
 
     pauseEventListeners() {
@@ -230,12 +237,17 @@ const SyncAppService = {
         });
     },
 
-    _onDataChanged() {
+    _onDataChanged(source = 'event') {
         if (SyncAppService._listenersPaused) {
             SyncAppService._pausedChanges++;
             return;
         }
-        return SyncAppService.notifyBusinessDataChanged('event');
+        if (SyncAppService._dataChangePending) return;
+        SyncAppService._dataChangePending = true;
+        setTimeout(() => {
+            SyncAppService._dataChangePending = false;
+            SyncAppService.notifyBusinessDataChanged(source);
+        }, 0);
     },
 
     _getPushDelay(source) {

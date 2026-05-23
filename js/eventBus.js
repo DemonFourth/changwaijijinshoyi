@@ -141,6 +141,7 @@ const EventType = {
     FUND_UPDATED: 'fund:updated',
     FUND_DELETED: 'fund:deleted',
     FUND_REFRESHED: 'fund:refreshed',
+    NET_VALUE_UPDATED: 'fund:net-value-updated',
 
     // 交易相关事件
     TRADE_ADDED: 'trade:added',

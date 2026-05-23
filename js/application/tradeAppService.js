@@ -24,9 +24,6 @@ const TradeAppService = {
         EventBus.emit(EventType.TRADE_ADDED, { trade: normalizedTrade });
         EventBus.emit(EventType.TRADE_UPDATED, { trade: normalizedTrade });
         EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: normalizedTrade.fundId });
-        if (typeof window.SyncAppService !== 'undefined') {
-            await window.SyncAppService.notifyBusinessDataChanged('event');
-        }
 
         return { success: true, trade: normalizedTrade, fundId: normalizedTrade.fundId, reason: '' };
     },
@@ -55,9 +52,6 @@ const TradeAppService = {
 
         EventBus.emit(EventType.TRADE_UPDATED, { trade: trades[index] });
         EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: trades[index].fundId });
-        if (typeof window.SyncAppService !== 'undefined') {
-            await window.SyncAppService.notifyBusinessDataChanged('event');
-        }
 
         return { success: true, trade: trades[index], fundId: trades[index].fundId, reason: '' };
     },
@@ -72,9 +66,6 @@ const TradeAppService = {
 
         EventBus.emit(EventType.TRADE_DELETED, { trade });
         EventBus.emit(EventType.CALCULATION_UPDATED, { fundId: trade ? trade.fundId : null });
-        if (typeof window.SyncAppService !== 'undefined') {
-            await window.SyncAppService.notifyBusinessDataChanged('event');
-        }
 
         return { success: true, trade, fundId: trade ? trade.fundId : null, reason: '' };
     },
@@ -105,9 +96,6 @@ const TradeAppService = {
 
         EventBus.emit(EventType.TRADE_UPDATED, { fundId, affectedTradeIds, reason: 'batch-delete' });
         EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
-        if (typeof window.SyncAppService !== 'undefined') {
-            await window.SyncAppService.notifyBusinessDataChanged('batch-delete');
-        }
 
         return { success: true, fundId, affectedTradeIds, reason: '' };
     }

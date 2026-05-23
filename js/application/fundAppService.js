@@ -1,4 +1,16 @@
 const FundAppService = {
+    // 不需要同步到云端的字段（净值等 API 实时数据）
+    TRANSIENT_FIELDS: new Set([
+        'netValue', 'netValueDate',
+        'estimatedValue', 'estimatedGrowth', 'estimatedDate',
+        'nameSource', 'nameUpdateTime'
+    ]),
+
+    // 元数据键（不计入任何变更判断）
+    META_KEYS: new Set([
+        'updatedAt', 'updateTime', 'lastSyncedAt', 'createdAt', 'deletedAt'
+    ]),
+
     getAllFunds() {
         return window.FundRepository.getAll();
     },
@@ -19,9 +31,6 @@ const FundAppService = {
 
         EventBus.emit(EventType.FUND_ADDED, { fund: normalizedFund });
         EventBus.emit(EventType.FUND_UPDATED, { fund: normalizedFund });
-        if (typeof window.SyncAppService !== 'undefined') {
-            await window.SyncAppService.notifyBusinessDataChanged('event');
-        }
 
         return { success: true, fund: normalizedFund, affectedTradeIds: [], reason: '' };
     },
@@ -36,11 +45,19 @@ const FundAppService = {
         }
 
         const existing = funds[index];
-        const metaKeys = new Set(['updatedAt', 'updateTime', 'lastSyncedAt', 'createdAt', 'deletedAt']);
-        const hasChanged = Object.keys(updates).some(key => {
-            if (metaKeys.has(key)) return false;
-            return JSON.stringify(existing[key]) !== JSON.stringify(updates[key]);
-        });
+
+        // 判断是否有净值类变更（瞬态字段变化）
+        const hasNetValueChange = Object.keys(updates).some(key =>
+            FundAppService.TRANSIENT_FIELDS.has(key) &&
+            JSON.stringify(existing[key]) !== JSON.stringify(updates[key])
+        );
+
+        // 判断是否有结构性变更（业务字段变化）
+        const hasStructuralChange = Object.keys(updates).some(key =>
+            !FundAppService.META_KEYS.has(key) &&
+            !FundAppService.TRANSIENT_FIELDS.has(key) &&
+            JSON.stringify(existing[key]) !== JSON.stringify(updates[key])
+        );
 
         funds[index] = window.StorageSchema.createFundEntity({
             ...existing,
@@ -55,11 +72,12 @@ const FundAppService = {
             return { success: false, fund: null, affectedTradeIds: [], reason: 'save_failed' };
         }
 
-        if (hasChanged) {
+        // 净值变化 → 发射 NET_VALUE_UPDATED（不触发同步）
+        // 结构性变化 → 发射 FUND_UPDATED（触发同步）
+        if (hasNetValueChange && !hasStructuralChange) {
+            EventBus.emit(EventType.NET_VALUE_UPDATED, { fund: funds[index] });
+        } else if (hasStructuralChange) {
             EventBus.emit(EventType.FUND_UPDATED, { fund: funds[index] });
-            if (typeof window.SyncAppService !== 'undefined') {
-                await window.SyncAppService.notifyBusinessDataChanged('event');
-            }
         }
 
         return { success: true, fund: funds[index], affectedTradeIds: [], reason: '' };
@@ -95,9 +113,6 @@ const FundAppService = {
         EventBus.emit(EventType.FUND_DELETED, { fund });
         EventBus.emit(EventType.TRADE_UPDATED, { fundId, affectedTradeIds });
         EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
-        if (typeof window.SyncAppService !== 'undefined') {
-            await window.SyncAppService.notifyBusinessDataChanged('event');
-        }
 
         return { success: true, fund, affectedTradeIds, reason: '' };
     }

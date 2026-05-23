@@ -92,6 +92,7 @@ const Detail = {
 
         // 监听数据变化事件
         EventBus.on(EventType.FUND_UPDATED, () => this.refresh());
+        EventBus.on(EventType.NET_VALUE_UPDATED, () => this.refresh());
         EventBus.on(EventType.TRADE_ADDED, () => this.refresh());
         EventBus.on(EventType.TRADE_UPDATED, () => this.refresh());
         EventBus.on(EventType.TRADE_DELETED, () => this.refresh());

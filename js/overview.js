@@ -97,6 +97,7 @@ const Overview = {
         EventBus.on(EventType.FUND_ADDED, () => this.refresh());
         EventBus.on(EventType.FUND_UPDATED, () => this.refresh());
         EventBus.on(EventType.FUND_DELETED, () => this.refresh());
+        EventBus.on(EventType.NET_VALUE_UPDATED, () => this.refresh());
         EventBus.on(EventType.TRADE_ADDED, () => this.refresh());
         EventBus.on(EventType.TRADE_UPDATED, () => this.refresh());
         EventBus.on(EventType.TRADE_DELETED, () => this.refresh());

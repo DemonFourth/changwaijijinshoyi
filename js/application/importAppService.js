@@ -104,9 +104,6 @@ const ImportAppService = {
         }
 
         EventBus.emit(EventType.DATA_IMPORTED, { merge, data: normalized });
-        if (typeof window.SyncAppService !== 'undefined') {
-            await window.SyncAppService.notifyBusinessDataChanged('import');
-        }
 
         return {
             success: true,
@@ -141,9 +138,6 @@ const ImportAppService = {
         }
 
         EventBus.emit(EventType.DATA_CLEARED);
-        if (typeof window.SyncAppService !== 'undefined') {
-            await window.SyncAppService.notifyBusinessDataChanged('clear');
-        }
 
         return {
             success: true,

@@ -19,6 +19,7 @@ const FundManager = {
         // 监听数据变更事件，自动清除缓存
         EventBus.on(EventType.FUND_UPDATED, () => this.clearStatsCache());
         EventBus.on(EventType.FUND_DELETED, () => this.clearStatsCache());
+        EventBus.on(EventType.NET_VALUE_UPDATED, () => this.clearStatsCache());
         EventBus.on(EventType.TRADE_ADDED, () => this.clearStatsCache());
         EventBus.on(EventType.TRADE_UPDATED, () => this.clearStatsCache());
         EventBus.on(EventType.TRADE_DELETED, () => this.clearStatsCache());
