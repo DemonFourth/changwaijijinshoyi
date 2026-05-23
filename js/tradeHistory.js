@@ -662,22 +662,18 @@ const TradeHistory = {
      */
     _getFundProfitData(trades) {
         const filteredTrades = this._filterByPeriod(trades);
+        const seenFundIds = new Set();
         const fundProfitMap = {};
 
         for (const trade of filteredTrades) {
-            if (!fundProfitMap[trade.fundId]) {
-                const fund = window.FundManager.getFund(trade.fundId);
-                const fundName = fund ? fund.name : '未知基金';
-                fundProfitMap[trade.fundId] = { name: fundName, profit: 0 };
-            }
+            if (seenFundIds.has(trade.fundId)) continue;
+            seenFundIds.add(trade.fundId);
 
-            if (trade.type === 'buy') {
-                fundProfitMap[trade.fundId].profit -= trade.amount;
-            } else if (trade.type === 'sell') {
-                fundProfitMap[trade.fundId].profit += trade.amount;
-            } else if (trade.type === 'dividend') {
-                fundProfitMap[trade.fundId].profit += trade.amount;
-            }
+            const fund = window.FundManager.getFund(trade.fundId);
+            const stats = window.FundManager.getFundStats(trade.fundId);
+            const fundName = fund ? fund.name : '未知基金';
+            const profit = stats && stats.summary ? (stats.summary.totalProfit || 0) : 0;
+            fundProfitMap[trade.fundId] = { name: fundName, profit: profit };
         }
 
         return Object.values(fundProfitMap)
