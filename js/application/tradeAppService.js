@@ -3,6 +3,10 @@ const TradeAppService = {
         return window.TradeRepository.getByFundId(fundId);
     },
 
+    getAllTrades() {
+        return window.TradeRepository.getAll();
+    },
+
     getTrade(tradeId) {
         return window.TradeRepository.getById(tradeId);
     },

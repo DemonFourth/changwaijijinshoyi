@@ -31,6 +31,14 @@ const TradeManager = {
     },
 
     /**
+     * 获取所有交易记录
+     * @returns {array}
+     */
+    getAllTrades() {
+        return window.TradeAppService.getAllTrades();
+    },
+
+    /**
      * 添加交易记录
      * @param {object} tradeData - 交易数据
      * @returns {object}
