@@ -135,6 +135,53 @@ const Modal = {
     },
 
     /**
+     * 显示自定义弹窗（支持自定义标题、内容、按钮）
+     * @param {object} options - 配置选项
+     * @param {string} options.title - 弹窗标题
+     * @param {string|function} options.content - 弹窗内容（HTML字符串或渲染函数）
+     * @param {array} options.buttons - 按钮配置数组 [{text, primary?, class?, action?}]
+     */
+    showCustom(options) {
+        const { title, content, buttons = [] } = options;
+
+        const container = document.getElementById('modal-container');
+        const titleEl = document.getElementById('modal-title');
+        const body = document.getElementById('modal-body');
+        const footer = document.getElementById('modal-footer');
+
+        container.className = 'modal-container modal-custom';
+        titleEl.textContent = title || '';
+
+        // 渲染内容
+        if (typeof content === 'function') {
+            body.innerHTML = content();
+        } else {
+            body.innerHTML = content || '';
+        }
+
+        // 渲染按钮
+        let footerHtml = '';
+        buttons.forEach((btn, index) => {
+            const primaryClass = btn.primary ? 'btn-primary' : (btn.class || 'btn-secondary');
+            footerHtml += `<button class="btn ${primaryClass}" id="modal-btn-${index}">${btn.text}</button>`;
+        });
+        footer.innerHTML = footerHtml;
+
+        // 绑定按钮事件
+        buttons.forEach((btn, index) => {
+            const el = document.getElementById(`modal-btn-${index}`);
+            if (el && btn.action) {
+                el.addEventListener('click', btn.action);
+            }
+        });
+
+        container.classList.remove('hidden');
+        body.scrollTop = 0;
+
+        EventBus.emit(EventType.MODAL_OPENED, { type: 'custom', data: options });
+    },
+
+    /**
      * 渲染基金名称字段HTML（公共方法）
      * @param {object} options - 配置选项
      * @param {string} options.idPrefix - ID前缀

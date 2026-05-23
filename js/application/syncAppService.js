@@ -450,6 +450,12 @@ const SyncAppService = {
             if (mergeResult.hasChanges) {
                 window.LocalStorageAdapter.saveSnapshot(mergeResult.snapshot);
                 SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: true });
+                window.Utils?.showToast(`从云端同步了 ${mergeResult.pulledChanges.fundsAdded + mergeResult.pulledChanges.tradesAdded + mergeResult.pulledChanges.fundsUpdated + mergeResult.pulledChanges.tradesUpdated} 条更新`, 'success');
+                window.Overview?.refresh();
+            } else {
+                // 无变化：给用户明确反馈
+                SyncAppService._emitSyncApplied({ mode: 'pull', hasChanges: false });
+                window.Utils?.showToast('数据已是最新', 'info');
             }
 
             window.LocalStorageAdapter.updateSyncMeta({
