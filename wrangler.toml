@@ -10,14 +10,8 @@ pages_build_output_dir = "."
 ENVIRONMENT = "production"
 
 # D1 数据库绑定
-# 部署步骤：
-# 1. Cloudflare Dashboard → D1 → Create Database
-# 2. 复制生成的 database_id 到下方
-# 3. Pages → Settings → Bindings → Add D1 → Variable name: DB
-[[d1_databases]]
-binding = "DB"
-database_name = "fund-calculator-db"
-database_id = "your-database-id-here"
+# 请在 Cloudflare Dashboard 中手动绑定 D1 数据库
+# Pages → Settings → Bindings → Add D1 → Variable name: DB
 
 # 预览环境配置
 [env.preview]
