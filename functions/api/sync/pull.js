@@ -11,8 +11,6 @@
 import { ensureTables } from '../../_shared/d1Schema.js';
 import { getSnapshot, getChangesSince } from '../../_shared/syncRepository.js';
 import { jsonResponse } from '../../_shared/syncUtils.js';
-import { checkApiKey, unauthorizedResponse } from '../../_shared/authMiddleware.js';
-
 export const onRequest = async (context) => {
     const { request, env } = context;
     const url = new URL(request.url);
@@ -20,11 +18,6 @@ export const onRequest = async (context) => {
     // OPTIONS 预检
     if (request.method === 'OPTIONS') {
         return jsonResponse({}, 200, request);
-    }
-
-    // 鉴权：同步拉取需要 X-Sync-Key
-    if (!checkApiKey(env, request)) {
-        return unauthorizedResponse('Invalid or missing X-Sync-Key');
     }
 
     try {

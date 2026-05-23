@@ -12,7 +12,7 @@
 import { ensureTables } from '../../_shared/d1Schema.js';
 import { getSnapshot, updateSnapshot } from '../../_shared/syncRepository.js';
 import { jsonResponse } from '../../_shared/syncUtils.js';
-import { checkApiKey, unauthorizedResponse, badRequestResponse } from '../../_shared/authMiddleware.js';
+import { badRequestResponse } from '../../_shared/authMiddleware.js';
 
 export const onRequest = async (context) => {
     const { request, env } = context;
@@ -20,11 +20,6 @@ export const onRequest = async (context) => {
     // OPTIONS 预检
     if (request.method === 'OPTIONS') {
         return jsonResponse({}, 200, request);
-    }
-
-    // 鉴权：冲突解决需要 X-Sync-Key
-    if (!checkApiKey(env, request)) {
-        return unauthorizedResponse('Invalid or missing X-Sync-Key');
     }
 
     try {
