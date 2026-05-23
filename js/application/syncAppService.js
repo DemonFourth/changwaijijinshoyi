@@ -720,6 +720,10 @@ const SyncAppService = {
             if (Array.isArray(obj)) {
                 return obj.map(item => cleanEntity(item)).filter(item => item !== undefined);
             }
+            // 保护特殊类型：Date, RegExp, Map, Set 等直接返回原值
+            if (obj instanceof Date || obj instanceof RegExp || obj instanceof Map || obj instanceof Set) {
+                return obj;
+            }
             if (typeof obj === 'object') {
                 const cleaned = {};
                 for (const [key, value] of Object.entries(obj)) {

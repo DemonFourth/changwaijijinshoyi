@@ -17,6 +17,7 @@ import { badRequestResponse } from '../../_shared/authMiddleware.js';
 /**
  * 深度清理对象，移除所有 undefined 值
  * 防止 undefined 值导致 JSON 序列化异常或 D1 写入错误
+ * 同时保护特殊类型（Date/RegExp/Map/Set 等）不被错误转换
  * @param {any} obj - 待清理的对象
  * @returns {any} 清理后的对象
  */
@@ -24,6 +25,10 @@ function cleanEntity(obj) {
     if (obj === null || obj === undefined) return obj;
     if (Array.isArray(obj)) {
         return obj.map(item => cleanEntity(item)).filter(item => item !== undefined);
+    }
+    // 保护特殊类型：Date, RegExp, Map, Set 等直接返回原值，避免被当作普通对象处理
+    if (obj instanceof Date || obj instanceof RegExp || obj instanceof Map || obj instanceof Set) {
+        return obj;
     }
     if (typeof obj === 'object') {
         const cleaned = {};
@@ -66,6 +71,10 @@ export const onRequest = async (context) => {
             }
         }
         for (const conflict of conflicts) {
+            // 先检查 conflict 元素本身是否为有效对象，防止 null/undefined 元素导致 TypeError
+            if (!conflict || typeof conflict !== 'object') {
+                return badRequestResponse('each conflict must be a valid object');
+            }
             if (!conflict.syncId || !conflict.entityType) {
                 return badRequestResponse('each conflict must have syncId and entityType');
             }
@@ -124,17 +133,28 @@ export const onRequest = async (context) => {
             revision: updateResult.revision
         }, 200, request);
     } catch (error) {
+        const errorMessage = error && typeof error.message === 'string' ? error.message : String(error || 'unknown error');
         console.error('[Sync/Resolve] Error details:', {
-            message: error.message,
-            stack: error.stack,
+            message: errorMessage,
+            stack: error?.stack,
             conflictsCount: conflicts?.length,
             resolutionCount: resolution?.length,
             baseRevision
         });
-        return jsonResponse({
-            success: false,
-            error: error.message,
-            errorType: error.name || 'unknown'
-        }, 500, request);
+        // 防御性编程：确保 jsonResponse 不会再次抛出异常
+        try {
+            return jsonResponse({
+                success: false,
+                error: errorMessage,
+                errorType: error?.name || 'unknown'
+            }, 500, request);
+        } catch (innerError) {
+            // 如果 jsonResponse 也失败，返回最简响应
+            return new Response(JSON.stringify({
+                success: false,
+                error: 'internal_server_error',
+                details: errorMessage
+            }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+        }
     }
 };
