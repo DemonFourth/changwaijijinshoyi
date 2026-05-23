@@ -727,6 +727,16 @@
                             <button id="chart-period-month" class="chart-period-tab" data-period="month">📆 按月</button>
                         </div>
                         
+                        <!-- 时间段选择器（分布类图表专用） -->
+                        <div id="chart-period-selectors" class="chart-period-selectors" style="display:none;">
+                            <select id="chart-year-select" class="chart-period-select">
+                                <option value="">— 选择年份 —</option>
+                            </select>
+                            <select id="chart-month-select" class="chart-period-select" style="display:none;">
+                                <option value="">— 选择月份 —</option>
+                            </select>
+                        </div>
+
                         <!-- 图表样式选择 -->
                         <div class="chart-style-selector">
                             <label for="chart-style-select">图表样式：</label>

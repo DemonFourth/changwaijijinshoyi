@@ -13,6 +13,8 @@ const TradeHistory = {
     _chartType: 'structure',
     _chartPeriod: 'year',
     _chartStyle: 'line',
+    _selectedYear: '',
+    _selectedMonth: '',
     _chartInstance: null,
 
     /**
@@ -102,6 +104,7 @@ const TradeHistory = {
                     this._chartType = type;
                     this._updateChartTypeTabs();
                     this._updateChartStyleOptions();
+                    this._updatePeriodSelectors();
                     this.renderChart();
                 });
             }
@@ -113,14 +116,20 @@ const TradeHistory = {
         if (yearTab) {
             yearTab.addEventListener('click', () => {
                 this._chartPeriod = 'year';
+                this._selectedYear = '';
+                this._selectedMonth = '';
                 this._updateChartPeriodTabs();
+                this._updatePeriodSelectors();
                 this.renderChart();
             });
         }
         if (monthTab) {
             monthTab.addEventListener('click', () => {
                 this._chartPeriod = 'month';
+                this._selectedYear = '';
+                this._selectedMonth = '';
                 this._updateChartPeriodTabs();
+                this._updatePeriodSelectors();
                 this.renderChart();
             });
         }
@@ -129,7 +138,26 @@ const TradeHistory = {
         if (styleSelect) {
             styleSelect.addEventListener('change', () => {
                 this._chartStyle = styleSelect.value;
+                this._updatePeriodSelectors();
                 this.renderChart();
+            });
+        }
+
+        const yearSelect = document.getElementById('chart-year-select');
+        if (yearSelect) {
+            yearSelect.addEventListener('change', function() {
+                TradeHistory._selectedYear = this.value ? parseInt(this.value, 10) : '';
+                TradeHistory._selectedMonth = '';
+                TradeHistory._populateMonthOptions(TradeHistory._selectedYear);
+                TradeHistory.renderChart();
+            });
+        }
+
+        const monthSelect = document.getElementById('chart-month-select');
+        if (monthSelect) {
+            monthSelect.addEventListener('change', function() {
+                TradeHistory._selectedMonth = this.value ? parseInt(this.value, 10) : '';
+                TradeHistory.renderChart();
             });
         }
     },
@@ -261,6 +289,100 @@ const TradeHistory = {
         }
 
         styleSelect.innerHTML = options;
+    },
+
+    /**
+     * 是否为分布类图表（可显示时间段选择器）
+     */
+    _isDistributionChart() {
+        return this._chartType === 'structure' || (this._chartType === 'profit' && (this._chartStyle === 'pie' || this._chartStyle === 'doughnut' || this._chartStyle === 'rose'));
+    },
+
+    /**
+     * 更新时间段选择器
+     */
+    _updatePeriodSelectors() {
+        const container = document.getElementById('chart-period-selectors');
+        if (!container) return;
+
+        const isDistribution = this._isDistributionChart();
+        container.style.display = isDistribution ? 'flex' : 'none';
+        if (!isDistribution) return;
+
+        this._populateYearOptions();
+        this._populateMonthOptions(this._selectedYear);
+    },
+
+    /**
+     * 填充年份下拉选项
+     */
+    _populateYearOptions() {
+        const trades = this.getFilteredTrades();
+        const years = new Set();
+        for (const trade of trades) {
+            years.add(new Date(trade.date).getFullYear());
+        }
+        const sortedYears = Array.from(years).sort(function(a, b) { return b - a; });
+        const select = document.getElementById('chart-year-select');
+        if (!select) return;
+
+        let html = '<option value="">— 选择年份 —</option>';
+        for (const year of sortedYears) {
+            const selected = year === this._selectedYear ? ' selected' : '';
+            html += '<option value="' + year + '"' + selected + '>' + year + '年</option>';
+        }
+        select.innerHTML = html;
+    },
+
+    /**
+     * 填充月份下拉选项
+     */
+    _populateMonthOptions(year) {
+        const select = document.getElementById('chart-month-select');
+        if (!select) return;
+
+        if (!year) {
+            select.style.display = 'none';
+            select.innerHTML = '<option value="">— 选择月份 —</option>';
+            return;
+        }
+
+        const trades = this.getFilteredTrades();
+        const months = new Set();
+        for (const trade of trades) {
+            const d = new Date(trade.date);
+            if (d.getFullYear() === Number(year)) {
+                months.add(d.getMonth() + 1);
+            }
+        }
+        const sortedMonths = Array.from(months).sort(function(a, b) { return a - b; });
+
+        let html = '<option value="">— 选择月份 —</option>';
+        for (const month of sortedMonths) {
+            const selected = month === this._selectedMonth ? ' selected' : '';
+            html += '<option value="' + month + '"' + selected + '>' + month + '月</option>';
+        }
+        select.innerHTML = html;
+        select.style.display = this._chartPeriod === 'month' && sortedMonths.length ? '' : 'none';
+    },
+
+    /**
+     * 按选定年月过滤交易
+     */
+    _filterByPeriod(trades) {
+        if (this._chartPeriod === 'year' && this._selectedYear) {
+            const year = Number(this._selectedYear);
+            return trades.filter(function(t) { return new Date(t.date).getFullYear() === year; });
+        }
+        if (this._chartPeriod === 'month' && this._selectedYear && this._selectedMonth) {
+            const year = Number(this._selectedYear);
+            const month = Number(this._selectedMonth);
+            return trades.filter(function(t) {
+                const d = new Date(t.date);
+                return d.getFullYear() === year && d.getMonth() + 1 === month;
+            });
+        }
+        return trades;
     },
 
     /**
@@ -501,9 +623,10 @@ const TradeHistory = {
      * 获取资产结构数据
      */
     _getStructureData(trades) {
+        const filteredTrades = this._filterByPeriod(trades);
         const fundMap = {};
 
-        for (const trade of trades) {
+        for (const trade of filteredTrades) {
             const fund = FundManager.getFund(trade.fundId);
             const fundName = fund ? fund.name : '未知基金';
 
@@ -538,18 +661,23 @@ const TradeHistory = {
      * 获取基金盈亏数据（用于盈亏分析饼图）
      */
     _getFundProfitData(trades) {
+        const filteredTrades = this._filterByPeriod(trades);
         const fundProfitMap = {};
-        const seenFundIds = new Set();
 
-        for (const trade of trades) {
-            if (seenFundIds.has(trade.fundId)) continue;
-            seenFundIds.add(trade.fundId);
+        for (const trade of filteredTrades) {
+            if (!fundProfitMap[trade.fundId]) {
+                const fund = window.FundManager.getFund(trade.fundId);
+                const fundName = fund ? fund.name : '未知基金';
+                fundProfitMap[trade.fundId] = { name: fundName, profit: 0 };
+            }
 
-            const fund = window.FundManager.getFund(trade.fundId);
-            const stats = window.FundManager.getFundStats(trade.fundId);
-            const fundName = fund ? fund.name : '未知基金';
-            const profit = stats && stats.summary ? (stats.summary.totalProfit || 0) : 0;
-            fundProfitMap[trade.fundId] = { name: fundName, profit: profit };
+            if (trade.type === 'buy') {
+                fundProfitMap[trade.fundId].profit -= trade.amount;
+            } else if (trade.type === 'sell') {
+                fundProfitMap[trade.fundId].profit += trade.amount;
+            } else if (trade.type === 'dividend') {
+                fundProfitMap[trade.fundId].profit += trade.amount;
+            }
         }
 
         return Object.values(fundProfitMap)
@@ -851,6 +979,8 @@ const TradeHistory = {
      * 渲染图表
      */
     renderChart() {
+        this._updatePeriodSelectors();
+
         const chartContainer = document.getElementById('trade-history-chart');
         if (!chartContainer) return;
 
