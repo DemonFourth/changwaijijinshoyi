@@ -1036,15 +1036,32 @@ const TradeHistory = {
         if (!summaryDiv) return;
 
         let totalBuy = 0, totalSell = 0, totalDividend = 0, totalFee = 0;
+        const fundShares = {};
 
         for (const trade of trades) {
-            if (trade.type === 'buy') totalBuy += trade.amount;
-            else if (trade.type === 'sell') totalSell += trade.amount;
-            else if (trade.type === 'dividend') totalDividend += trade.amount;
+            if (trade.type === 'buy') {
+                totalBuy += trade.amount;
+                fundShares[trade.fundId] = (fundShares[trade.fundId] || 0) + trade.shares;
+            } else if (trade.type === 'sell') {
+                totalSell += trade.amount;
+                fundShares[trade.fundId] = (fundShares[trade.fundId] || 0) - trade.shares;
+            } else if (trade.type === 'dividend') {
+                totalDividend += trade.amount;
+            }
             totalFee += trade.fee || 0;
         }
 
-        const profit = (totalSell - totalBuy * 0.8) + totalDividend - totalFee;
+        let portfolioValue = 0;
+        for (const fundId in fundShares) {
+            const shares = fundShares[fundId];
+            if (Utils.isPositive(shares)) {
+                const fund = window.FundManager.getFund(fundId);
+                const netValue = fund ? (fund.estimatedValue || fund.netValue || 0) : 0;
+                portfolioValue += shares * netValue;
+            }
+        }
+
+        const profit = portfolioValue + totalSell + totalDividend - totalBuy - totalFee;
 
         summaryDiv.innerHTML = `
             <div class="summary-card">
