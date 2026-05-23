@@ -199,7 +199,25 @@ const TradeHistory = {
                 </optgroup>
             `;
             this._chartStyle = 'line';
-        } else if (this._chartType === 'profit' || this._chartType === 'flow') {
+        } else if (this._chartType === 'profit') {
+            options = `
+                <optgroup label="分布类">
+                    <option value="pie">🥧 饼图</option>
+                    <option value="doughnut">🍩 环形图</option>
+                    <option value="rose">🌹 玫瑰图</option>
+                </optgroup>
+                <optgroup label="对比类">
+                    <option value="bar">📊 柱状图</option>
+                    <option value="bar-stack">📚 堆叠柱状图</option>
+                    <option value="bar-horizontal">↔️ 条形图</option>
+                </optgroup>
+                <optgroup label="趋势类">
+                    <option value="line">📈 折线图</option>
+                    <option value="area">📊 面积图</option>
+                </optgroup>
+            `;
+            this._chartStyle = 'pie';
+        } else if (this._chartType === 'flow') {
             options = `
                 <optgroup label="对比类">
                     <option value="bar">📊 柱状图</option>
@@ -514,6 +532,30 @@ const TradeHistory = {
         }
 
         return data.filter(d => d.value > 0).sort((a, b) => b.value - a.value);
+    },
+
+    /**
+     * 获取基金盈亏数据（用于盈亏分析饼图）
+     */
+    _getFundProfitData(trades) {
+        const fundProfitMap = {};
+        const seenFundIds = new Set();
+
+        for (const trade of trades) {
+            if (seenFundIds.has(trade.fundId)) continue;
+            seenFundIds.add(trade.fundId);
+
+            const fund = window.FundManager.getFund(trade.fundId);
+            const stats = window.FundManager.getFundStats(trade.fundId);
+            const fundName = fund ? fund.name : '未知基金';
+            const profit = stats && stats.summary ? (stats.summary.totalProfit || 0) : 0;
+            fundProfitMap[trade.fundId] = { name: fundName, profit: profit };
+        }
+
+        return Object.values(fundProfitMap)
+            .filter(function(d) { return Math.abs(d.profit) > 0.001; })
+            .map(function(d) { return { name: d.name, profit: d.profit, isProfit: d.profit > 0 }; })
+            .sort(function(a, b) { return Math.abs(b.profit) - Math.abs(a.profit); });
     },
 
     /**
@@ -908,6 +950,53 @@ const TradeHistory = {
      */
     _renderProfitChart() {
         const trades = this.getFilteredTrades();
+        const style = this._chartStyle;
+
+        if (style === 'pie' || style === 'doughnut' || style === 'rose') {
+            const profitData = this._getFundProfitData(trades);
+            if (!profitData.length) {
+                const chartContainer = document.getElementById('trade-history-chart');
+                if (chartContainer) chartContainer.innerHTML = '<div class="text-center text-muted py-8">暂无盈亏数据</div>';
+                return;
+            }
+
+            const pieData = profitData.map(d => ({
+                name: d.name,
+                value: Number(Math.abs(d.profit).toFixed(3)),
+                rawValue: d.profit,
+                isProfit: d.isProfit,
+                itemStyle: { color: d.isProfit ? '#10b981' : '#ef4444' }
+            }));
+
+            this._renderEChart({
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        const sign = params.data.isProfit ? '+' : '';
+                        return params.name + '<br/>盈亏: ' + sign + params.data.rawValue.toFixed(2) + ' 元<br/>占比: ' + params.percent.toFixed(1) + '%';
+                    }
+                },
+                legend: { type: 'scroll', orient: 'vertical', right: 10, top: 20, bottom: 20 },
+                series: [{
+                    type: 'pie',
+                    radius: style === 'doughnut' ? ['40%', '70%'] : (style === 'rose' ? [20, 100] : '60%'),
+                    center: ['40%', '50%'],
+                    roseType: style === 'rose' ? 'radius' : false,
+                    data: pieData,
+                    itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
+                    label: {
+                        show: true,
+                        formatter: function(params) {
+                            const sign = params.data.isProfit ? '+' : '';
+                            return params.name + '\n' + sign + params.data.rawValue.toFixed(2);
+                        }
+                    },
+                    emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' }, shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' }
+                }]
+            });
+            return;
+        }
+
         const data = this._getProfitData(trades);
         this._renderComparisonChart(data, ['买入', '卖出', '分红'], ['#10b981', '#ef4444', '#3b82f6']);
     },
