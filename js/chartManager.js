@@ -1760,7 +1760,7 @@ const ChartManager = {
                 }
             },
             legend: {
-                data: ['收益额', '持有天数'],
+                data: ['收益额', '收益率'],
                 textStyle: { color: themeConfig.textColor }
             },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
