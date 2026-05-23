@@ -734,7 +734,7 @@ const TradeHistory = {
      */
     _getYieldData(trades) {
         const period = this._chartPeriod;
-        const dataMap = {};
+        const periodTrades = {};
 
         for (const trade of trades) {
             const date = new Date(trade.date);
@@ -743,42 +743,84 @@ const TradeHistory = {
             if (period === 'year') {
                 key = date.getFullYear().toString();
             } else {
-                key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
             }
 
-            if (!dataMap[key]) {
-                dataMap[key] = { buy: 0, sell: 0, dividend: 0, profit: 0 };
+            if (!periodTrades[key]) {
+                periodTrades[key] = [];
             }
 
-            if (trade.type === 'buy') {
-                dataMap[key].buy += trade.amount;
-            } else if (trade.type === 'sell') {
-                dataMap[key].sell += trade.amount;
-                // 估算盈利
-                dataMap[key].profit += trade.amount * 0.2;
-            } else if (trade.type === 'dividend') {
-                dataMap[key].dividend += trade.amount;
-                dataMap[key].profit += trade.amount;
-            }
+            periodTrades[key].push(trade);
         }
 
-        const keys = Object.keys(dataMap).sort();
+        const keys = Object.keys(periodTrades).sort();
         const labels = [];
         const totalInvest = [];
         const totalProfit = [];
         const profitRate = [];
+        const fundData = {};
         let investSum = 0;
-        let profitSum = 0;
+        let sellSum = 0;
+        let dividendSum = 0;
+        const lastKey = keys[keys.length - 1];
 
         for (const key of keys) {
-            const data = dataMap[key];
-            investSum += data.buy;
-            profitSum += data.profit;
+            const tradesInPeriod = periodTrades[key];
+
+            for (const trade of tradesInPeriod) {
+                if (!fundData[trade.fundId]) {
+                    fundData[trade.fundId] = { shares: 0, lastNetValue: trade.netValue || 0 };
+                }
+
+                const fd = fundData[trade.fundId];
+
+                if (trade.type === 'buy') {
+                    investSum += trade.amount;
+                    fd.shares += trade.shares;
+                    fd.lastNetValue = trade.netValue;
+                } else if (trade.type === 'sell') {
+                    sellSum += trade.amount;
+                    fd.shares -= trade.shares;
+                    fd.lastNetValue = trade.netValue;
+                } else if (trade.type === 'dividend') {
+                    fd.lastNetValue = trade.netValue;
+
+                    if (trade.dividendMode === 'reinvest') {
+                        fd.shares += trade.shares || 0;
+                    } else {
+                        dividendSum += trade.amount;
+                    }
+                }
+            }
+
+            let portfolioValue = 0;
+
+            for (const fundId in fundData) {
+                const fd = fundData[fundId];
+
+                if (Utils.isPositive(fd.shares)) {
+                    let netValue;
+
+                    if (key === lastKey) {
+                        const fund = window.FundManager.getFund(fundId);
+                        netValue = fund
+                            ? (fund.estimatedValue || fund.netValue || fd.lastNetValue)
+                            : fd.lastNetValue;
+                    } else {
+                        netValue = fd.lastNetValue;
+                    }
+
+                    portfolioValue += fd.shares * netValue;
+                }
+            }
+
+            const totalValue = portfolioValue + sellSum + dividendSum;
+            const profit = totalValue - investSum;
 
             labels.push(this._formatPeriodLabel(key));
             totalInvest.push(investSum);
-            totalProfit.push(profitSum);
-            profitRate.push(investSum > 0 ? (profitSum / investSum * 100) : 0);
+            totalProfit.push(profit);
+            profitRate.push(investSum > 0 ? (profit / investSum * 100) : 0);
         }
 
         return { labels, totalInvest, totalProfit, profitRate };
@@ -1037,7 +1079,7 @@ const TradeHistory = {
         if (style === 'line' || style === 'area') {
             this._renderEChart({
                 tooltip: { trigger: 'axis', formatter: this._baseTooltipFormatter.bind(this) },
-                legend: { data: ['累计投入', '持仓市值'], top: 10 },
+                legend: { data: ['累计投入', '总资产'], top: 10 },
                 grid: { left: '3%', right: '4%', bottom: '3%', top: 60, containLabel: true },
                 xAxis: { type: 'category', data: data.labels, axisLabel: { rotate: data.labels.length > 6 ? 45 : 0 } },
                 yAxis: { type: 'value', axisLabel: { formatter: v => this._formatMoneyWithUnit(v) } },
@@ -1049,7 +1091,7 @@ const TradeHistory = {
                         itemStyle: { color: '#3b82f6' }
                     },
                     {
-                        name: '持仓市值', type: 'line', smooth: true, data: data.totalValues,
+                        name: '总资产', type: 'line', smooth: true, data: data.totalValues,
                         lineStyle: { color: '#10b981', width: 3 },
                         areaStyle: style === 'area' ? { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(16, 185, 129, 0.3)' }, { offset: 1, color: 'rgba(16, 185, 129, 0.05)' }] } } : null,
                         itemStyle: { color: '#10b981' }
@@ -1059,13 +1101,13 @@ const TradeHistory = {
         } else if (style === 'bar') {
             this._renderEChart({
                 tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: this._baseTooltipFormatter.bind(this) },
-                legend: { data: ['累计投入', '持仓市值'], top: 10 },
+                legend: { data: ['累计投入', '总资产'], top: 10 },
                 grid: { left: '3%', right: '4%', bottom: '3%', top: 60, containLabel: true },
                 xAxis: { type: 'category', data: data.labels, axisLabel: { rotate: data.labels.length > 6 ? 45 : 0 } },
                 yAxis: { type: 'value', axisLabel: { formatter: v => this._formatMoneyWithUnit(v) } },
                 series: [
                     { name: '累计投入', type: 'bar', data: data.cumulativeInvest, itemStyle: { color: '#3b82f6' } },
-                    { name: '持仓市值', type: 'bar', data: data.totalValues, itemStyle: { color: '#10b981' } }
+                    { name: '总资产', type: 'bar', data: data.totalValues, itemStyle: { color: '#10b981' } }
                 ]
             });
         }
