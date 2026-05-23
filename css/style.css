@@ -6102,6 +6102,34 @@ td.negative {
     color: var(--color-text-on-brand);
 }
 
+/* 持仓状态切换按钮组 */
+.chart-holding-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chart-holding-tab {
+    padding: 0.375rem 1rem;
+    border: 1px solid var(--color-border-primary);
+    border-radius: 6px;
+    background: var(--color-bg-card);
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.chart-holding-tab:hover {
+    border-color: var(--color-brand-primary);
+    color: var(--color-text-primary);
+}
+
+.chart-holding-tab.active {
+    background: var(--color-brand-gradient);
+    border-color: var(--color-brand-secondary);
+    color: var(--color-text-on-brand);
+}
+
 /* 交易记录页图表容器 */
 #trade-history-chart {
     width: 100%;
