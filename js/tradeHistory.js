@@ -951,6 +951,9 @@ const TradeHistory = {
     _renderProfitChart() {
         const trades = this.getFilteredTrades();
         const style = this._chartStyle;
+        const themeConfig = window.ChartManager ? window.ChartManager.getThemeConfig() : null;
+        const profitColor = themeConfig ? themeConfig.profitColor : '#ef4444';
+        const lossColor = themeConfig ? themeConfig.lossColor : '#10b981';
 
         if (style === 'pie' || style === 'doughnut' || style === 'rose') {
             const profitData = this._getFundProfitData(trades);
@@ -965,7 +968,7 @@ const TradeHistory = {
                 value: Number(Math.abs(d.profit).toFixed(3)),
                 rawValue: d.profit,
                 isProfit: d.isProfit,
-                itemStyle: { color: d.isProfit ? '#10b981' : '#ef4444' }
+                itemStyle: { color: d.isProfit ? profitColor : lossColor }
             }));
 
             this._renderEChart({
@@ -1210,6 +1213,8 @@ const TradeHistory = {
         const trades = this.getFilteredTrades();
         const data = this._getYieldData(trades);
         const style = this._chartStyle;
+        const themeConfig = window.ChartManager ? window.ChartManager.getThemeConfig() : null;
+        const profitColor = themeConfig ? themeConfig.profitColor : '#ef4444';
 
         if (style === 'pie' || style === 'doughnut') {
             const totalInvest = data.totalInvest[data.totalInvest.length - 1] || 0;
@@ -1224,7 +1229,7 @@ const TradeHistory = {
                     center: ['60%', '50%'],
                     data: [
                         { name: '累计投入', value: Number(totalInvest.toFixed(3)), itemStyle: { color: '#3b82f6' } },
-                        { name: '累计收益', value: Number(totalProfit.toFixed(3)), itemStyle: { color: '#10b981' } }
+                        { name: '累计收益', value: Number(totalProfit.toFixed(3)), itemStyle: { color: profitColor } }
                     ],
                     itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
                     label: { show: true, formatter: '{b}\n{d}%' },
@@ -1243,7 +1248,7 @@ const TradeHistory = {
                 ],
                 series: [
                     { name: '累计投入', type: 'bar', data: data.totalInvest.map(v => Number(v.toFixed(3))), yAxisIndex: 0, itemStyle: { color: '#3b82f6' } },
-                    { name: '累计收益', type: 'bar', data: data.totalProfit.map(v => Number(v.toFixed(3))), yAxisIndex: 0, itemStyle: { color: '#10b981' } },
+                    { name: '累计收益', type: 'bar', data: data.totalProfit.map(v => Number(v.toFixed(3))), yAxisIndex: 0, itemStyle: { color: profitColor } },
                     { name: '收益率%', type: 'line', smooth: true, data: data.profitRate.map(v => Number(v.toFixed(3))), yAxisIndex: 1, itemStyle: { color: '#f59e0b' }, lineStyle: { width: 3 } }
                 ]
             });
