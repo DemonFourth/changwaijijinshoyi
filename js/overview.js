@@ -682,7 +682,7 @@ const Overview = {
             { id: 'yearly-chart-style-invest', method: '_renderYearlyInvestChart' }
         ];
 
-        styleSelects.forEach(({ id, method }) => {
+        styleSelects.forEach(({ id }) => {
             const select = document.getElementById(id);
             if (select && !select.dataset.bound) {
                 select.addEventListener('change', () => {

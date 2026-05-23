@@ -126,6 +126,7 @@ module.exports = {
     'DetailHoldingHelper': 'readonly',
     'AccrualHelper': 'readonly',
     'FeeCalculator': 'readonly',
-    'SyncAdapterRegistry': 'readonly'
+    'SyncAdapterRegistry': 'readonly',
+    'TradeHistory': 'readonly'
   }
 };
