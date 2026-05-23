@@ -163,8 +163,8 @@ const StatisticsAppService = {
                     } else if (trade.type === 'sell') {
                         sellAmount += amount;
                         fee += tradeFee;
-                        const costPrice = cycle.holdingShares > 0 
-                            ? cycle.holdingCost / cycle.holdingShares 
+                        const costPrice = cycle.holdingShares > 0
+                            ? cycle.holdingCost / cycle.holdingShares
                             : 0;
                         const costAmount = parseFloat(trade.shares) * costPrice;
                         const profit = amount - costAmount - tradeFee;
@@ -245,8 +245,8 @@ const StatisticsAppService = {
                         } else if (trade.type === 'sell') {
                             sellAmount += amount;
                             fee += tradeFee;
-                            const costPrice = cycle.holdingShares > 0 
-                                ? cycle.holdingCost / cycle.holdingShares 
+                            const costPrice = cycle.holdingShares > 0
+                                ? cycle.holdingCost / cycle.holdingShares
                                 : 0;
                             const costAmount = parseFloat(trade.shares) * costPrice;
                             const profit = amount - costAmount - tradeFee;
@@ -325,8 +325,8 @@ const StatisticsAppService = {
                         if (trade.type === 'buy') {
                             totalInvest += amount;
                         } else if (trade.type === 'sell') {
-                            const costPrice = cycle.holdingShares > 0 
-                                ? cycle.holdingCost / cycle.holdingShares 
+                            const costPrice = cycle.holdingShares > 0
+                                ? cycle.holdingCost / cycle.holdingShares
                                 : 0;
                             const costAmount = parseFloat(trade.shares) * costPrice;
                             const profit = amount - costAmount - fee;
@@ -338,10 +338,10 @@ const StatisticsAppService = {
 
                     // 持仓市值：如果年份在周期范围内则计入
                     const cycleStartYear = new Date(cycle.startDate).getFullYear();
-                    const cycleEndYear = cycle.endDate 
-                        ? new Date(cycle.endDate).getFullYear() 
+                    const cycleEndYear = cycle.endDate
+                        ? new Date(cycle.endDate).getFullYear()
                         : currentYear;
-                    
+
                     if (cycleStartYear <= year && year <= cycleEndYear) {
                         totalValue += cycle.holdingValue || 0;
                         cycleCount++;
