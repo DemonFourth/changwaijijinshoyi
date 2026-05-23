@@ -14,6 +14,30 @@ import { getSnapshot, updateSnapshot } from '../../_shared/syncRepository.js';
 import { jsonResponse } from '../../_shared/syncUtils.js';
 import { badRequestResponse } from '../../_shared/authMiddleware.js';
 
+/**
+ * 深度清理对象，移除所有 undefined 值
+ * 防止 undefined 值导致 JSON 序列化异常或 D1 写入错误
+ * @param {any} obj - 待清理的对象
+ * @returns {any} 清理后的对象
+ */
+function cleanEntity(obj) {
+    if (obj === null || obj === undefined) return obj;
+    if (Array.isArray(obj)) {
+        return obj.map(item => cleanEntity(item)).filter(item => item !== undefined);
+    }
+    if (typeof obj === 'object') {
+        const cleaned = {};
+        for (const [key, value] of Object.entries(obj)) {
+            const cleanedValue = cleanEntity(value);
+            if (cleanedValue !== undefined) {
+                cleaned[key] = cleanedValue;
+            }
+        }
+        return cleaned;
+    }
+    return obj;
+}
+
 export const onRequest = async (context) => {
     const { request, env } = context;
 
@@ -45,6 +69,13 @@ export const onRequest = async (context) => {
             if (!conflict.syncId || !conflict.entityType) {
                 return badRequestResponse('each conflict must have syncId and entityType');
             }
+            // 检查 cloud/local 数据是否存在且有效
+            if (conflict.cloud && typeof conflict.cloud !== 'object') {
+                return badRequestResponse('conflict.cloud must be an object or null');
+            }
+            if (conflict.local && typeof conflict.local !== 'object') {
+                return badRequestResponse('conflict.local must be an object or null');
+            }
         }
 
         // 获取当前云端数据
@@ -67,13 +98,15 @@ export const onRequest = async (context) => {
         for (let i = 0; i < conflicts.length; i++) {
             const conflict = conflicts[i];
             const choice = resolution && resolution[i] === 'cloud' ? conflict.cloud : conflict.local;
+            // 清理 undefined 值，防止 D1 写入错误
+            const cleanedChoice = choice ? cleanEntity(choice) : null;
 
             if (conflict.entityType === 'fund') {
                 funds = funds.filter(f => f.syncId !== conflict.syncId);
-                if (choice) funds.push(choice);
+                if (cleanedChoice) funds.push(cleanedChoice);
             } else {
                 trades = trades.filter(t => t.syncId !== conflict.syncId);
-                if (choice) trades.push(choice);
+                if (cleanedChoice) trades.push(cleanedChoice);
             }
         }
 
@@ -91,9 +124,17 @@ export const onRequest = async (context) => {
             revision: updateResult.revision
         }, 200, request);
     } catch (error) {
+        console.error('[Sync/Resolve] Error details:', {
+            message: error.message,
+            stack: error.stack,
+            conflictsCount: conflicts?.length,
+            resolutionCount: resolution?.length,
+            baseRevision
+        });
         return jsonResponse({
             success: false,
-            error: error.message
+            error: error.message,
+            errorType: error.name || 'unknown'
         }, 500, request);
     }
 };

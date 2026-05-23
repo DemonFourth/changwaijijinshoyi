@@ -714,7 +714,32 @@ const SyncAppService = {
             }
         });
 
-        const result = await adapter.resolve(conflicts, resolutions);
+        // 深度清理冲突数据，移除 undefined 值，防止推送时 D1 写入错误
+        function cleanEntity(obj) {
+            if (obj === null || obj === undefined) return obj;
+            if (Array.isArray(obj)) {
+                return obj.map(item => cleanEntity(item)).filter(item => item !== undefined);
+            }
+            if (typeof obj === 'object') {
+                const cleaned = {};
+                for (const [key, value] of Object.entries(obj)) {
+                    const cleanedValue = cleanEntity(value);
+                    if (cleanedValue !== undefined) {
+                        cleaned[key] = cleanedValue;
+                    }
+                }
+                return cleaned;
+            }
+            return obj;
+        }
+
+        const cleanedConflicts = conflicts.map(c => ({
+            ...c,
+            cloud: c.cloud ? cleanEntity(c.cloud) : null,
+            local: c.local ? cleanEntity(c.local) : null
+        }));
+
+        const result = await adapter.resolve(cleanedConflicts, resolutions);
         if (result && result.success) {
             // 将用户选择的解决结果写回本地 snapshot
             const now = SyncAppService._getNowIso();
