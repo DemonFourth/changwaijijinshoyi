@@ -57,11 +57,16 @@ const RuntimeConfigLoader = {
 
             const banner = document.createElement('div');
             banner.id = 'local-mode-banner';
-            banner.innerHTML = '📁 本地模式 · 数据仅保存在本浏览器 · 刷新页面后数据保留';
+            banner.innerHTML = '<span>📁 本地模式 · 数据仅保存在本浏览器 · 刷新页面后数据保留</span><span id="local-mode-banner-close" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:18px;cursor:pointer;opacity:.7;line-height:1;user-select:none">&times;</span>';
             banner.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); color: #0369a1; padding: 10px 16px; text-align: center; font-size: 14px; font-weight: 500; z-index: 10000; border-bottom: 2px solid #0ea5e9; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);';
 
             document.body.style.paddingTop = '44px';
             document.body.prepend(banner);
+
+            document.getElementById('local-mode-banner-close').addEventListener('click', function() {
+                document.body.removeChild(banner);
+                document.body.style.paddingTop = '';
+            });
         };
 
         showBanner();
