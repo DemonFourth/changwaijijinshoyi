@@ -10,7 +10,7 @@ const TradeHistory = {
     _filterFund: 'all',
     _currentPage: 1,
     _pageSize: 20,
-    _chartType: 'trend',
+    _chartType: 'structure',
     _chartPeriod: 'year',
     _chartStyle: 'line',
     _chartInstance: null,
