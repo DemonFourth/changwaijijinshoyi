@@ -118,6 +118,7 @@ const FIFOCalculator = {
                     });
                     holdingShares += reinvestShares;
                     holdingCost += amount;
+                    realizedProfit += amount;
                 } else {
                     realizedProfit += amount;
                 }
@@ -219,11 +220,14 @@ const FIFOCalculator = {
                     });
                     holdingShares += reinvestShares;
                     holdingCost += amount;
+                    realizedProfit += amount;
+                    step.realizedProfit = amount;
                     step.holdingShares = holdingShares;
                     step.holdingCost = holdingCost;
                     step.note = `红利再投 ${reinvestShares.toFixed(2)}份`;
                 } else {
                     realizedProfit += amount;
+                    step.realizedProfit = amount;
                     step.note = '现金分红';
                 }
             }

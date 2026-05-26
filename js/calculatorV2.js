@@ -216,15 +216,16 @@ const CalculatorV2 = {
 
                 if (dividendMode === 'reinvest') {
                     holdingShares += shares;
+                    holdingCost += amount;
 
-                    realizedProfit -= amount;
+                    realizedProfit += amount;
                     realizedDetails.push({
                         tradeId: trade.id,
                         date: trade.date,
                         type: 'dividend_reinvest',
                         shares: shares,
                         amount: amount,
-                        profit: -amount
+                        profit: amount
                     });
 
                     tradeDetails.push({
@@ -374,11 +375,14 @@ const CalculatorV2 = {
                 if (dividendMode === 'reinvest') {
                     holdingShares += shares;
                     holdingCost += amount;
+                    realizedProfit += amount;
+                    step.realizedProfit = amount;
                     step.holdingShares = holdingShares;
                     step.holdingCost = holdingCost;
                     step.note = `红利再投 ${shares.toFixed(2)}份`;
                 } else {
                     realizedProfit += amount;
+                    step.realizedProfit = amount;
                     step.note = '现金分红';
                 }
             }
