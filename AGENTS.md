@@ -293,6 +293,43 @@ SyncStatusPresenter, RuntimeConfigLoader, StorageSchema, StorageMigrations
 - 数据读取优先通过manager或repository
 - 持久化统一通过`LocalStorageAdapter`与`StorageSchema`
 
+### FundAppService 字段类型与同步触发规则
+
+`FundAppService` 将基金字段分为三类，决定变更时是否触发云端同步：
+
+| 类型 | 定义位置 | 包含字段 | 变更时发射事件 | 是否触发同步 |
+|------|----------|---------|---------------|------------|
+| **瞬态字段 (TRANSIENT)** | `TRANSIENT_FIELDS` Set | `netValue`, `netValueDate`, `estimatedValue`, `estimatedGrowth`, `estimatedDate`, `nameSource`, `nameUpdateTime` | `NET_VALUE_UPDATED` | ❌ 否 |
+| **元数据键 (META)** | `META_KEYS` Set | `updatedAt`, `updateTime`, `lastSyncedAt`, `createdAt`, `deletedAt` | 不计入变更判断 | ❌ 否 |
+| **业务字段** | 以上之外的所有字段 | `name`, `code`, `feeTiers` 等 | `FUND_UPDATED` | ✅ 是 |
+
+**关键逻辑**（`fundAppService.js:107-111`）：
+```javascript
+if (hasNetValueChange && !hasStructuralChange) {
+    EventBus.emit(EventType.NET_VALUE_UPDATED, { fund: funds[index] });
+    // 仅 NET_VALUE_UPDATED → 不触发同步
+} else if (hasStructuralChange) {
+    EventBus.emit(EventType.FUND_UPDATED, { fund: funds[index] });
+    // FUND_UPDATED → syncAppService 监听 → notifyBusinessDataChanged
+}
+```
+
+**批量更新方法 `batchUpdateFunds(fundUpdates)`**（`fundAppService.js:22-50`）：
+- 用途：一次性批量更新多只基金的净值（刷新场景），避免 N 次独立写入和 N 次事件发射
+- 参数：`[{ fundId, updates }]`
+- 行为：单次 `FundRepository.saveAll()` + 单次 `NET_VALUE_UPDATED` 事件（含 `batch: true` 标志）
+- **不会触发同步**（净值是瞬态数据，非用户操作）
+
+### App 启动顺序
+
+`App.init()` 执行顺序（`app.js`）：
+```
+1. 同步 localStorage 操作：DataService → Storage → ThemeManager → Router → Overview → Detail
+2. hideLoading()  — 立即显示页面内容
+3. 网络异步操作：RuntimeConfigLoader → SyncAppService.setupEventListeners → SyncAppService.startBackgroundSync
+```
+**原则**：所有同步操作（本地数据读取）先执行完毕再隐藏 loading，网络相关异步操作后置执行，避免启动白屏。
+
 ---
 
 ## 数据模型
@@ -587,6 +624,24 @@ if (selectedCycleId) {
 ### 概述
 
 本应用使用 Cloudflare Pages Functions + D1 实现云端同步，采用 **乐观并发控制** 模式，通过 `revision` 版本号协调多端数据一致性。
+
+### 本地变更 → 同步触发规则
+
+`SyncAppService._setupEventListeners()`（`syncAppService.js:175-188`）监听以下 EventBus 事件决定是否触发云端推送：
+
+| 事件 | 触发条件 | 行为 |
+|------|---------|------|
+| `FUND_UPDATED` | 基金业务字段变更（名称、代码、费率等） | `notifyBusinessDataChanged()` → `pendingChanges++` → 触发 Push |
+| `TRADE_UPDATED` | 交易业务字段变更 | 同上 |
+| `DATA_IMPORTED` | 数据导入完成 | 同上 |
+| `DATA_CLEARED` | 数据清空 | 同上 |
+| `NET_VALUE_UPDATED` | **净值/估算值刷新（瞬态字段）** | **不触发同步** |
+| `CALCULATION_UPDATED` | 计算结果变更 | **不触发同步** |
+| `FUND_DELETED` | 基金删除 | 不触发（但 FUND_DELETED 同时发射 TRADE_UPDATED，由后者触发） |
+
+**规则**：只有用户主动的**业务数据变更**（基金信息、交易记录、导入数据）才会触发同步，**净值刷新**等 API 实时数据变化被隔离在同步通道外。
+
+**验证此设计的主要测试**：`tests/fundManagerRefresh.test.cjs` — 验证 `addFund` 触发同步（1 次），`updateFund(netValue)` 不触发同步（不增加计数）。
 
 ### 核心组件
 
@@ -1190,7 +1245,29 @@ if (Utils.isNegative(currentShares)) { ... }
 
 ---
 
-## 最新修改记录（2026-05-22）
+## 最新修改记录（2026-05-26）
+
+### 启动优化 + 批量净值更新 + 去除冗余 DATA_IMPORTED
+
+**1. 启动顺序优化**（`app.js`）
+- 所有同步 localStorage 操作（DataService → ThemeManager → Router → Overview → Detail）移至 `hideLoading()` **之前**
+- 网络异步操作（RuntimeConfigLoader、SyncAppService）后置到 `hideLoading()` 之后
+- 效果：页面立即显示本地数据，无白屏
+
+**2. 批量净值更新**（`fundAppService.js`，`fundManager.js`，`overview.js`）
+- 新增 `FundAppService.batchUpdateFunds(fundUpdates)` — 单次 `saveAll()` + 单次 `NET_VALUE_UPDATED` 事件
+- `FundManager.refreshAllFunds()` 收集所有 API 响应后统一调用批量接口
+- 效果：N 次独立写入+N 次事件 → 1 次写入+1 次事件
+
+**3. 净值变化的 UI 定向更新**（`overview.js`）
+- `Overview.refresh(fundIds)` 支持传入部分 fund ID 实现增量渲染
+- `NET_VALUE_UPDATED` 事件携带 `{ funds: [...], batch: true }`，overview 提取 fundIds 仅更新受影响的卡片/行
+- 效果：批量刷新时不重建整个列表
+
+**4. 去除冗余 DATA_IMPORTED emit**（`importPreviewHelper.js:274,293`）
+- `ImportPreviewHelper` 中 2 处手动 `EventBus.emit(DATA_IMPORTED)` 被注释
+- `ImportAppService.importData()`（line 106）已负责发射此事件
+- 效果：导入流程不再重复触发同步推送
 
 ### 年度持仓统计计算逻辑修复
 
