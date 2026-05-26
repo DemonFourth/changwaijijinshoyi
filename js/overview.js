@@ -320,6 +320,7 @@ const Overview = {
 
         const holding = stats ? stats.holding : {};
         const total = stats ? stats.total : {};
+        const summary = stats ? stats.summary : {};
 
         return `
             <div class="fund-card" data-fund-id="${fund.id}">
@@ -350,8 +351,8 @@ const Overview = {
                     </div>
                     <div class="fund-stat">
                         <span class="fund-stat-label">收益率</span>
-                        <span class="fund-stat-value ${Utils.getValueColor(total.rate || 0)}">
-                            ${Utils.formatPercent(total.rate || 0)}
+                        <span class="fund-stat-value ${Utils.getValueColor((summary.currentCycleProfitRate ?? summary.profitRate) || 0)}">
+                            ${Utils.formatPercent((summary.currentCycleProfitRate ?? summary.profitRate) || 0)}
                         </span>
                     </div>
                     <div class="fund-stat">
@@ -390,8 +391,8 @@ const Overview = {
 
             switch (sortField) {
             case 'profitRate':
-                valA = statsA ? (statsA.summary.profitRate || 0) : 0;
-                valB = statsB ? (statsB.summary.profitRate || 0) : 0;
+                valA = statsA ? ((statsA.summary.currentCycleProfitRate ?? statsA.summary.profitRate) || 0) : 0;
+                valB = statsB ? ((statsB.summary.currentCycleProfitRate ?? statsB.summary.profitRate) || 0) : 0;
                 break;
             case 'profitAmount':
                 valA = statsA ? (statsA.summary.totalProfit || 0) : 0;
@@ -406,8 +407,8 @@ const Overview = {
                 valB = b.name || '';
                 return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
             default:
-                valA = statsA ? (statsA.summary.profitRate || 0) : 0;
-                valB = statsB ? (statsB.summary.profitRate || 0) : 0;
+                valA = statsA ? ((statsA.summary.currentCycleProfitRate ?? statsA.summary.profitRate) || 0) : 0;
+                valB = statsB ? ((statsB.summary.currentCycleProfitRate ?? statsB.summary.profitRate) || 0) : 0;
             }
             return sortOrder === 'asc' ? valA - valB : valB - valA;
         });
@@ -431,7 +432,7 @@ const Overview = {
             const stats = FundManager.getFundStats(fund.id);
             const summary = stats ? stats.summary : {};
             const holding = summary.currentHolding || {};
-            const profitRate = summary.profitRate || 0;
+            const profitRate = (summary.currentCycleProfitRate ?? summary.profitRate) || 0;
             const profitAmount = summary.totalProfit || 0;
             const marketValue = holding.value || 0;
             const growthClass = fund.estimatedGrowth > 0 ? 'positive' : fund.estimatedGrowth < 0 ? 'negative' : '';
@@ -536,7 +537,7 @@ const Overview = {
             const stats = FundManager.getFundStats(fund.id);
             return {
                 fund,
-                profitRate: stats ? (stats.summary.profitRate || 0) : 0,
+                profitRate: stats ? ((stats.summary.currentCycleProfitRate ?? stats.summary.profitRate) || 0) : 0,
                 profitAmount: stats ? (stats.summary.totalProfit || 0) : 0
             };
         });

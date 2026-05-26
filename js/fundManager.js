@@ -291,6 +291,16 @@ const FundManager = {
         // 汇总页当前持仓相关统计：估算净值优先，空时回退最新净值
         const stats = CalculatorV2.calculateFundProfit(trades, currentNetValue);
 
+        // 计算当前周期的收益率（持仓中基金取active周期的收益率，已清仓基金回退整体）
+        if (stats && stats.cycles) {
+            const activeCycle = stats.cycles.find(function(c) {
+                return c.status === 'active';
+            });
+            stats.summary.currentCycleProfitRate = activeCycle
+                ? (activeCycle.profitRate || 0)
+                : (stats.summary.profitRate || 0);
+        }
+
         // 清除缓存以获取最新数据
         this._statsCache.delete(fundId);
         this._statsCache.set(fundId, stats);
