@@ -81,6 +81,11 @@ test('ImportAppService importData merges business data and emits one import even
         }
     };
 
+    // Bridge EventBus → sync notification（模拟 syncAppService._setupEventListeners）
+    context.window.EventBus.on(context.window.EventType.DATA_IMPORTED, () => {
+        context.window.SyncAppService.notifyBusinessDataChanged('import');
+    });
+
     context.window.EventBus.on(context.window.EventType.DATA_IMPORTED, (payload) => {
         importedEvents.push(payload);
     });
@@ -181,6 +186,11 @@ test('ImportAppService clearAll clears business data and notifies sync', async (
             return Promise.resolve();
         }
     };
+
+    // Bridge EventBus → sync notification（模拟 syncAppService._setupEventListeners）
+    context.window.EventBus.on(context.window.EventType.DATA_CLEARED, () => {
+        context.window.SyncAppService.notifyBusinessDataChanged('clear');
+    });
 
     context.window.EventBus.on(context.window.EventType.DATA_CLEARED, () => {
         clearedEvents.push('cleared');

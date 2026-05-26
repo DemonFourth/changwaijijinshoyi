@@ -19,6 +19,36 @@ const FundAppService = {
         return window.FundRepository.getById(fundId);
     },
 
+    async batchUpdateFunds(fundUpdates) {
+        const now = new Date().toISOString();
+        const funds = window.FundRepository.getAll();
+        const updatedFunds = [];
+
+        for (const { fundId, updates } of fundUpdates) {
+            const idx = funds.findIndex(f => f.id === fundId);
+            if (idx === -1) continue;
+            funds[idx] = window.StorageSchema.createFundEntity({
+                ...funds[idx],
+                ...updates,
+                updatedAt: now,
+                updateTime: updates.updateTime || now
+            });
+            updatedFunds.push(funds[idx]);
+        }
+
+        const success = window.FundRepository.saveAll(funds);
+        if (!success) {
+            return { success: false };
+        }
+
+        EventBus.emit(EventType.NET_VALUE_UPDATED, {
+            funds: updatedFunds,
+            batch: true
+        });
+
+        return { success: true };
+    },
+
     async addFund(fund) {
         const funds = window.FundRepository.getAll();
         const normalizedFund = window.StorageSchema.createFundEntity(fund);

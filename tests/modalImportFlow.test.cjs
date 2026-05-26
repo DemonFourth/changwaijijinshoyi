@@ -35,6 +35,26 @@ test('Modal import uses AppSettingsService importData and does not emit duplicat
         ]
     };
 
+    // 模拟 Repositories（绑定导入时的 analyzeImportData 需要）
+    context.window.FundRepository = {
+        getAll: () => [],
+        saveAll: () => true
+    };
+    context.window.TradeRepository = {
+        getAll: () => [],
+        saveAll: () => true
+    };
+
+    // 模拟 ImportPreviewHelper（绑定导入时自动完成导入流程）
+    // 注意：modal.js 中直接引用 ImportPreviewHelper（非 window.），需设为全局变量
+    context.ImportPreviewHelper = {
+        show: function(analysis) {
+            if (analysis && analysis.normalized) {
+                context.window.ImportAppService.importData(analysis.normalized, { merge: true });
+            }
+        }
+    };
+
     context.window.EventBus.on(context.window.EventType.DATA_IMPORTED, (payload) => {
         importedEvents.push(payload);
     });

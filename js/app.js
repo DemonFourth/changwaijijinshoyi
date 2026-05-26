@@ -18,13 +18,43 @@ const App = {
             // 显示加载提示
             Utils.showLoading();
 
-            // 加载运行时配置（从 /api/runtime-config 获取环境配置）
+            // 第一步：本地数据初始化（同步，无网络依赖）
+            DataService.init();
+            ThemeManager.init();
+            FundManager.init();
+            TradeManager.init();
+            ChartManager.init();
+            Router.init();
+
+            // 第二步：UI 组件初始化
+            Overview.init();
+            Detail.init();
+            ToolPage.init();
+            TradeHistory.init();
+
+            if (TooltipManager) {
+                TooltipManager.init();
+                TooltipManager.bindExistingTooltips();
+                TooltipManager.bindLargeNumberTooltips();
+            }
+
+            // 第三步：绑定 UI 事件
+            this.setupThemeToggle();
+            this.setupTradeHistoryButton();
+            this.setupToolsButton();
+            this.setupSettingsButton();
+            this.setupHeaderBackButton();
+            this.setupRouteListener();
+
+            // 第四步：显示页面（从 localStorage 读取数据，不依赖网络）
+            this.showCurrentPage();
+
+            // 隐藏加载提示 — localStorage 数据已展示，不再阻塞
+            Utils.hideLoading();
+
+            // 第五步：后台初始化网络依赖的服务（不阻塞页面渲染）
             await RuntimeConfigLoader.load();
 
-            // 初始化数据服务
-            DataService.init();
-
-            // 初始化同步服务（使用运行时配置）
             const syncEnabled = Config.get('sync.enabled', false);
             const syncBasePath = Config.get('sync.basePath', '');
             const syncKey = Config.get('sync.syncKey', null);
@@ -40,62 +70,10 @@ const App = {
                 Utils.showToast('当前使用本地数据', 'info');
             }
 
-            // 启动后台同步（不阻塞页面渲染）
+            // 启动后台同步（100ms 后拉取云端 + 刷新净值）
             setTimeout(async () => {
                 await App.handleStartupSyncCheck();
             }, 100);
-
-            // 初始化主题管理器
-            ThemeManager.init();
-
-            // 初始化基金管理器
-            FundManager.init();
-
-            // 初始化交易管理器
-            TradeManager.init();
-
-            // 初始化图表管理器
-            ChartManager.init();
-
-            // 初始化路由
-            Router.init();
-
-            // 初始化UI组件
-            Overview.init();
-            Detail.init();
-            ToolPage.init();
-            TradeHistory.init();
-
-            // 初始化 TooltipManager
-            if (TooltipManager) {
-                TooltipManager.init();
-                TooltipManager.bindExistingTooltips();
-                TooltipManager.bindLargeNumberTooltips();
-            }
-
-            // 绑定主题切换按钮
-            this.setupThemeToggle();
-
-            // 绑定交易记录按钮
-            this.setupTradeHistoryButton();
-
-            // 绑定工具箱按钮
-            this.setupToolsButton();
-
-            // 绑定设置按钮
-            this.setupSettingsButton();
-
-            // 绑定 header 返回按钮
-            this.setupHeaderBackButton();
-
-            // 监听路由变化
-            this.setupRouteListener();
-
-            // 根据当前路由显示页面
-            this.showCurrentPage();
-
-            // 隐藏加载提示
-            Utils.hideLoading();
 
             console.log('Application initialized successfully');
         } catch (error) {

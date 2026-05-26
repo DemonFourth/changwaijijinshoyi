@@ -53,6 +53,11 @@ test('FundAppService addFund normalizes persisted fields and emits sync side eff
         }
     };
 
+    // Bridge EventBus → sync notification（模拟 syncAppService._setupEventListeners）
+    context.window.EventBus.on(context.window.EventType.FUND_UPDATED, () => {
+        context.window.SyncAppService.notifyBusinessDataChanged('event');
+    });
+
     const result = await context.window.FundAppService.addFund({
         id: 'fund-1',
         code: '000001',
@@ -100,6 +105,11 @@ test('FundAppService updateFund refreshes updatedAt and emits update side effect
         }
     };
 
+    // Bridge EventBus → sync notification（模拟 syncAppService._setupEventListeners）
+    context.window.EventBus.on(context.window.EventType.FUND_UPDATED, () => {
+        context.window.SyncAppService.notifyBusinessDataChanged('event');
+    });
+
     const result = await context.window.FundAppService.updateFund('fund-1', { name: '新名称' });
 
     assert.equal(result.success, true);
@@ -139,6 +149,12 @@ test('FundAppService deleteFund soft deletes related trades and emits delete sid
             return Promise.resolve();
         }
     };
+
+    // Bridge EventBus → sync notification（模拟 syncAppService._setupEventListeners）
+    context.window.EventBus.on(context.window.EventType.TRADE_UPDATED, (data) => {
+        const source = data && data.reason === 'batch-delete' ? 'batch-delete' : 'event';
+        context.window.SyncAppService.notifyBusinessDataChanged(source);
+    });
 
     const result = await context.window.FundAppService.deleteFund('fund-1');
 

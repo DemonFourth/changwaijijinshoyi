@@ -97,7 +97,15 @@ const Overview = {
         EventBus.on(EventType.FUND_ADDED, () => this.refresh());
         EventBus.on(EventType.FUND_UPDATED, () => this.refresh());
         EventBus.on(EventType.FUND_DELETED, () => this.refresh());
-        EventBus.on(EventType.NET_VALUE_UPDATED, () => this.refresh());
+        EventBus.on(EventType.NET_VALUE_UPDATED, (data) => {
+            if (data && data.batch && data.funds) {
+                this.refresh(data.funds.map(function(f) { return f.id; }));
+            } else if (data && data.fund) {
+                this.refresh([data.fund.id]);
+            } else {
+                this.refresh();
+            }
+        });
         EventBus.on(EventType.TRADE_ADDED, () => this.refresh());
         EventBus.on(EventType.TRADE_UPDATED, () => this.refresh());
         EventBus.on(EventType.TRADE_DELETED, () => this.refresh());
@@ -136,12 +144,17 @@ const Overview = {
 
     /**
      * 刷新汇总页
+     * @param {array} [updatedFundIds] - 有变动的基金 ID 列表，传此参数则只更新对应卡片
      */
-    refresh() {
+    refresh(updatedFundIds) {
         window.SyncAppService.pauseEventListeners();
         try {
             this.updateStats();
-            this.updateFundList();
+            if (updatedFundIds && updatedFundIds.length > 0) {
+                this.updateFundCards(updatedFundIds);
+            } else {
+                this.updateFundList();
+            }
             this.updateTop5();
             Overview.updateChart();
             Overview.renderYearlyCharts();
@@ -308,6 +321,77 @@ const Overview = {
         const sortOrder = document.getElementById('sort-order');
         if (sortField) sortField.value = prefs.sortField;
         if (sortOrder) sortOrder.textContent = prefs.sortOrder === 'desc' ? '↓' : '↑';
+    },
+
+    /**
+     * 定向更新指定基金的卡片或行
+     * @param {array} fundIds - 需要更新的基金ID列表
+     */
+    updateFundCards(fundIds) {
+        const fundList = document.getElementById('fund-list');
+        if (!fundList || fundIds.length === 0) return;
+
+        const viewMode = (Overview._viewPrefs || Overview.loadViewPreferences()).viewMode;
+
+        fundIds.forEach(function(fundId) {
+            const fund = FundManager.getFund(fundId);
+            if (!fund) return;
+
+            if (viewMode === 'list') {
+                Overview._updateFundRow(fundList, fund);
+            } else {
+                Overview._updateFundCard(fundList, fund);
+            }
+        });
+    },
+
+    /**
+     * 替换单张基金卡片（不重建整个列表）
+     */
+    _updateFundCard(fundList, fund) {
+        const oldCard = fundList.querySelector('.fund-card[data-fund-id="' + fund.id + '"]');
+        if (!oldCard) return;
+
+        oldCard.insertAdjacentHTML('afterend', Overview.renderFundCard(fund));
+        oldCard.remove();
+
+        const newCard = fundList.querySelector('.fund-card[data-fund-id="' + fund.id + '"]');
+        if (newCard) {
+            newCard.addEventListener('click', function(e) {
+                if (e.target.closest('.fund-group-header')) return;
+                Router.navigate('detail', { fundId: fund.id });
+            });
+        }
+    },
+
+    /**
+     * 更新单行基金数据（列表视图，不重建整行 DOM）
+     */
+    _updateFundRow(fundList, fund) {
+        const row = fundList.querySelector('.fund-row[data-fund-id="' + fund.id + '"]');
+        if (!row) return;
+
+        const stats = FundManager.getFundStats(fund.id);
+        const summary = stats ? stats.summary : {};
+        const holding = summary.currentHolding || {};
+        const profitRate = (summary.currentCycleProfitRate ?? summary.profitRate) || 0;
+        const profitAmount = summary.totalProfit || 0;
+        const marketValue = holding.value || 0;
+        const growthClass = fund.estimatedGrowth > 0 ? 'positive' : fund.estimatedGrowth < 0 ? 'negative' : '';
+
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 7) return;
+
+        cells[0].textContent = fund.name;
+        cells[1].textContent = fund.code;
+        cells[2].textContent = Utils.formatPercent(profitRate);
+        cells[2].className = Utils.getValueColor(profitRate);
+        cells[3].textContent = Utils.formatMoneySmart(profitAmount);
+        cells[3].className = Utils.getValueColor(profitAmount);
+        cells[4].textContent = Utils.formatMoneySmart(marketValue);
+        cells[5].textContent = Utils.formatNumber(fund.netValue || 0, 4);
+        cells[6].textContent = fund.estimatedValue ? Utils.formatNumber(fund.estimatedValue, 4) : '-';
+        cells[6].className = growthClass;
     },
 
     /**

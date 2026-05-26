@@ -268,10 +268,11 @@ const ImportPreviewHelper = {
                 if (result.success) {
                     const firstFund = this._analysis.normalized?.funds?.[0];
                     const fundId = firstFund?.id || firstFund?.fundId;
-                    const data = this._analysis.normalized;
                     Utils.showToast(`合并成功：${result.importedTrades}条交易记录`, 'success');
                     this.hide();
-                    EventBus.emit(EventType.DATA_IMPORTED, { merge: true, data: data });
+                    // ImportAppService.importData() 内部已 emit DATA_IMPORTED（参见 importAppService.js:106）
+                    // 此 emit 为重复，删除无影响
+                    // EventBus.emit(EventType.DATA_IMPORTED, { merge: true, data: data });
                     if (fundId) {
                         EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
                     }
@@ -287,10 +288,11 @@ const ImportPreviewHelper = {
                 if (result.success) {
                     const firstFund = this._analysis.normalized?.funds?.[0];
                     const fundId = firstFund?.id || firstFund?.fundId;
-                    const data = this._analysis.normalized;
                     Utils.showToast(`覆盖成功：${result.importedTrades}条交易记录`, 'success');
                     this.hide();
-                    EventBus.emit(EventType.DATA_IMPORTED, { merge: false, data: data });
+                    // ImportAppService.importData() 内部已 emit DATA_IMPORTED（参见 importAppService.js:106）
+                    // 此 emit 为重复，删除无影响
+                    // EventBus.emit(EventType.DATA_IMPORTED, { merge: false, data: data });
                     if (fundId) {
                         EventBus.emit(EventType.CALCULATION_UPDATED, { fundId });
                     }

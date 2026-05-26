@@ -248,19 +248,25 @@ const FundManager = {
 
             const apiResults = await FundAPI.batchGetFundData(fundCodes);
 
+            const batchUpdates = [];
             for (const apiData of apiResults) {
                 const fund = funds.find(f => f.code === apiData.code);
                 if (fund) {
-                    const updates = {
-                        netValue: apiData.netValue,
-                        netValueDate: apiData.netValueDate,
-                        estimatedValue: apiData.estimatedValue,
-                        estimatedGrowth: apiData.estimatedGrowth,
-                        updateTime: apiData.estimatedDate || new Date().toISOString()
-                    };
-
-                    this.updateFund(fund.id, updates);
+                    batchUpdates.push({
+                        fundId: fund.id,
+                        updates: {
+                            netValue: apiData.netValue,
+                            netValueDate: apiData.netValueDate,
+                            estimatedValue: apiData.estimatedValue,
+                            estimatedGrowth: apiData.estimatedGrowth,
+                            updateTime: apiData.estimatedDate || new Date().toISOString()
+                        }
+                    });
                 }
+            }
+
+            if (batchUpdates.length > 0) {
+                await fundAppServiceModule.batchUpdateFunds(batchUpdates);
             }
 
             Utils.hideLoading();
